@@ -1,0 +1,181 @@
+{
+ "portal": "243635806",
+ "timezone": "America/New_York",
+ "as_of": "2026-09-14",
+ "pulled_at_et": "Sep 14, 2026 11:10 AM ET",
+ "supplemental_pulled_at_et": "Sep 14, 2026 5:10 PM ET",
+ "supplemental_fields": [
+  "weighted_amount",
+  "deal_source_drill_down",
+  "company.swan_score"
+ ],
+ "stages": [
+  {
+   "id": "3753890497",
+   "label": "Intro & Challenge",
+   "pipeline": "2313721535",
+   "probability": 0.1,
+   "won": false,
+   "lost": false,
+   "order": 0
+  },
+  {
+   "id": "3753890498",
+   "label": "Discovery / Demo",
+   "pipeline": "2313721535",
+   "probability": 0.2,
+   "won": false,
+   "lost": false,
+   "order": 1
+  },
+  {
+   "id": "3753890499",
+   "label": "Business Case & Stakeholder Alignment",
+   "pipeline": "2313721535",
+   "probability": 0.4,
+   "won": false,
+   "lost": false,
+   "order": 2
+  },
+  {
+   "id": "3753890500",
+   "label": "Negotiation & Execution",
+   "pipeline": "2313721535",
+   "probability": 0.6,
+   "won": false,
+   "lost": false,
+   "order": 3
+  },
+  {
+   "id": "3753890501",
+   "label": "Trial",
+   "pipeline": "2313721535",
+   "probability": 0.8,
+   "won": false,
+   "lost": false,
+   "order": 4
+  },
+  {
+   "id": "3753890502",
+   "label": "Closed Won",
+   "pipeline": "2313721535",
+   "probability": 1.0,
+   "won": true,
+   "lost": false,
+   "order": 5
+  },
+  {
+   "id": "3753890503",
+   "label": "Closed Lost",
+   "pipeline": "2313721535",
+   "probability": 0.0,
+   "won": false,
+   "lost": true,
+   "order": 6
+  },
+  {
+   "id": "3752297191",
+   "label": "Intro & Challenge",
+   "pipeline": "2313830082",
+   "probability": 0.2,
+   "won": false,
+   "lost": false,
+   "order": 0
+  },
+  {
+   "id": "3752297192",
+   "label": "Discovery / Demo",
+   "pipeline": "2313830082",
+   "probability": 0.4,
+   "won": false,
+   "lost": false,
+   "order": 1
+  },
+  {
+   "id": "3752297193",
+   "label": "Business case & Stakeholder alignment",
+   "pipeline": "2313830082",
+   "probability": 0.6,
+   "won": false,
+   "lost": false,
+   "order": 2
+  },
+  {
+   "id": "3752297194",
+   "label": "Negotiation & Execution",
+   "pipeline": "2313830082",
+   "probability": 0.8,
+   "won": false,
+   "lost": false,
+   "order": 3
+  },
+  {
+   "id": "3752297195",
+   "label": "Implementation / Contract signed",
+   "pipeline": "2313830082",
+   "probability": 0.9,
+   "won": false,
+   "lost": false,
+   "order": 4
+  },
+  {
+   "id": "3752297196",
+   "label": "Closed Won",
+   "pipeline": "2313830082",
+   "probability": 1.0,
+   "won": true,
+   "lost": false,
+   "order": 5
+  },
+  {
+   "id": "3752297197",
+   "label": "Closed Lost",
+   "pipeline": "2313830082",
+   "probability": 0.0,
+   "won": false,
+   "lost": true,
+   "order": 6
+  }
+ ],
+ "owners": {
+  "1053057926": {
+   "name": "Phil Aroian",
+   "active": true
+  },
+  "167857460": {
+   "name": "Spencer Wuthrich",
+   "active": true
+  },
+  "2111244871": {
+   "name": "Ben de Winter",
+   "active": true
+  },
+  "1032502194": {
+   "name": "Matt Lynch",
+   "active": true
+  },
+  "981129967": {
+   "name": "Grace Doering",
+   "active": true
+  },
+  "686754956": {
+   "name": "Clay Stapleford",
+   "active": true
+  },
+  "26451111": {
+   "name": "Ian McLaughlin",
+   "active": true
+  },
+  "663611618": {
+   "name": "Reese Ryan",
+   "active": true
+  },
+  "1542312872": {
+   "name": "Hayden Ashwill",
+   "active": false
+  }
+ },
+ "notes": [
+  "1 New Logo deal (Newport Pacific - New Deal, $1,163,432.40) was created between the base and supplemental pulls and is excluded from this snapshot."
+ ]
+}

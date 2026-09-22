@@ -1,0 +1,1072 @@
+[
+ {
+  "id": "346153148106",
+  "properties": {
+   "dealname": "Sentral - Expansion",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "41832.6",
+   "units__c": "617",
+   "segment": "MM + ENT",
+   "closedate": "2026-09-08T18:17:51Z",
+   "createdate": "2026-09-04T22:50:20Z",
+   "hs_deal_stage_probability": "1.0",
+   "acv": "41832.6"
+  }
+ },
+ {
+  "id": "344730517224",
+  "properties": {
+   "dealname": "Sentral - Expansion",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "54714.6",
+   "units__c": "807",
+   "segment": "MM + ENT",
+   "closedate": "2026-09-02T16:00:01Z",
+   "createdate": "2026-08-29T00:02:10Z",
+   "hs_deal_stage_probability": "1.0",
+   "acv": "54714.6"
+  }
+ },
+ {
+  "id": "333324922614",
+  "properties": {
+   "dealname": "Skylight Real Estate Partners - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "2111244871",
+   "amount": "94547.04",
+   "units__c": "1596",
+   "segment": "MM + ENT",
+   "closedate": "2026-08-07T14:11:25Z",
+   "createdate": "2026-06-29T18:10:53Z",
+   "hs_deal_stage_probability": "1.0",
+   "acv": "94547.04"
+  }
+ },
+ {
+  "id": "327024275140",
+  "properties": {
+   "dealname": "Exit Realty-Realty Place - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "10990",
+   "units__c": "140",
+   "segment": "SMB",
+   "closedate": "2026-07-14T18:56:33Z",
+   "createdate": "2026-05-26T18:43:16Z",
+   "hs_deal_stage_probability": "1.0",
+   "acv": "10990"
+  }
+ },
+ {
+  "id": "333824928472",
+  "properties": {
+   "dealname": "Lin Real Estate, LLC - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "26577.2",
+   "units__c": "380",
+   "segment": "SMB",
+   "closedate": "2026-07-13T14:16:18Z",
+   "createdate": "2026-07-01T18:17:30Z",
+   "hs_deal_stage_probability": "1.0",
+   "acv": "26577.2"
+  }
+ },
+ {
+  "id": "334798418653",
+  "properties": {
+   "dealname": "Allegiant Management Group - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "981129967",
+   "amount": "828",
+   "units__c": "230",
+   "segment": "SMB",
+   "closedate": "2026-07-09T04:00:00Z",
+   "createdate": "2026-07-07T18:19:41Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "332639185595",
+  "properties": {
+   "dealname": "MJW Investments - Up/Cross-Sell (Pet Verification)",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1032502194",
+   "amount": "5061.6",
+   "units__c": "1406",
+   "segment": "SMB",
+   "closedate": "2026-06-26T04:00:00Z",
+   "createdate": "2026-06-26T17:14:26Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "329476280029",
+  "properties": {
+   "dealname": "Above Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "7315",
+   "units__c": "100",
+   "segment": "SMB (<100)",
+   "closedate": "2026-06-25T04:00:00Z",
+   "createdate": "2026-06-12T14:23:52Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "329246419695",
+  "properties": {
+   "dealname": "Infinite Property Management LLC - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "14916",
+   "units__c": "220",
+   "segment": "SMB",
+   "closedate": "2026-06-24T04:00:00Z",
+   "createdate": "2026-06-09T21:17:06Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "330079510203",
+  "properties": {
+   "dealname": "Charleston Property Company - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "9763.75",
+   "units__c": "365",
+   "segment": "SMB",
+   "closedate": "2026-06-22T04:00:00Z",
+   "createdate": "2026-06-16T13:14:38Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "202221337291",
+  "properties": {
+   "dealname": "Equity Real Estate - Property Management Division - New Logo with Pilot Period",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "2111244871",
+   "amount": "182875",
+   "units__c": "2500",
+   "segment": "SMB",
+   "closedate": "2026-06-17T04:00:00Z",
+   "createdate": "2025-10-28T21:42:54Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "327909263053",
+  "properties": {
+   "dealname": "TPG Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "2111244871",
+   "amount": "30510",
+   "units__c": "450",
+   "segment": "SMB",
+   "closedate": "2026-06-15T04:00:00Z",
+   "createdate": "2026-06-02T19:58:19Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "323885077182",
+  "properties": {
+   "dealname": "Howard Management Group - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1032502194",
+   "amount": "105406",
+   "units__c": "1400",
+   "segment": "SMB",
+   "closedate": "2026-06-05T04:00:00Z",
+   "createdate": "2026-05-04T15:38:20Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "327143606974",
+  "properties": {
+   "dealname": "HNN Atlanta - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "8250",
+   "units__c": "330",
+   "segment": "SMB",
+   "closedate": "2026-06-03T04:00:00Z",
+   "createdate": "2026-05-27T17:26:43Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "324410174200",
+  "properties": {
+   "dealname": "North State Financial - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "11187",
+   "units__c": "165",
+   "segment": "SMB (<100)",
+   "closedate": "2026-05-22T04:00:00Z",
+   "createdate": "2026-05-08T19:00:38Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "320328109800",
+  "properties": {
+   "dealname": "Modern City - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1032502194",
+   "amount": "76360",
+   "units__c": "1000",
+   "segment": "SMB",
+   "closedate": "2026-05-19T04:00:00Z",
+   "createdate": "2026-04-09T19:48:29Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "319859735254",
+  "properties": {
+   "dealname": "Amerihome - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "11439.8",
+   "units__c": "173",
+   "segment": "SMB",
+   "closedate": "2026-05-18T04:00:00Z",
+   "createdate": "2026-04-07T14:26:38Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "324127476439",
+  "properties": {
+   "dealname": "Rehmann Realty Group Inc - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "981129967",
+   "amount": "144",
+   "units__c": "40",
+   "segment": "SMB (<100)",
+   "closedate": "2026-05-11T04:00:00Z",
+   "createdate": "2026-05-06T15:07:42Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "319789006582",
+  "properties": {
+   "dealname": "FBM Properties - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "70224",
+   "units__c": "1200",
+   "segment": "SMB",
+   "closedate": "2026-05-11T04:00:00Z",
+   "createdate": "2026-04-07T16:33:24Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "320167621312",
+  "properties": {
+   "dealname": "New City Property Management - New Logo - Tranche 1",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "67800",
+   "units__c": "1000",
+   "segment": "SMB",
+   "closedate": "2026-05-11T04:00:00Z",
+   "createdate": "2026-04-08T16:17:58Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316672281310",
+  "properties": {
+   "dealname": "Real Property Management Southland - New Logo with Pilot Period",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "981129967",
+   "amount": "50633.33",
+   "units__c": "750",
+   "segment": "SMB",
+   "closedate": "2026-05-11T04:00:00Z",
+   "createdate": "2026-03-16T19:46:19Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "321664408277",
+  "properties": {
+   "dealname": "The Windsor Companies - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "56730.24",
+   "units__c": "864",
+   "segment": "SMB",
+   "closedate": "2026-05-08T04:00:00Z",
+   "createdate": "2026-04-20T22:07:46Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "324144115431",
+  "properties": {
+   "dealname": "Willowdale Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "24408",
+   "units__c": "360",
+   "segment": "SMB",
+   "closedate": "2026-05-08T04:00:00Z",
+   "createdate": "2026-05-06T17:29:05Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "320994552566",
+  "properties": {
+   "dealname": "Real Property Management Three Bridges - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "13560",
+   "units__c": "200",
+   "segment": "SMB",
+   "closedate": "2026-05-06T04:00:00Z",
+   "createdate": "2026-04-16T19:56:27Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "271487297226",
+  "properties": {
+   "dealname": "Oakland Management Corp. (Beztak) - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "981129967",
+   "amount": "1078660.8",
+   "units__c": "23247",
+   "segment": "STRAT",
+   "closedate": "2026-04-30T04:00:00Z",
+   "createdate": "2025-03-23T06:31:30Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "283635115766",
+  "properties": {
+   "dealname": "Woodlake Properties - New Logo with Pilot Period",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "2111244871",
+   "amount": "78403",
+   "units__c": "1300",
+   "segment": "MM + ENT",
+   "closedate": "2026-04-27T04:00:00Z",
+   "createdate": "2026-02-02T21:57:14Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316761352907",
+  "properties": {
+   "dealname": "Zest Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "26264",
+   "units__c": "400",
+   "segment": "SMB",
+   "closedate": "2026-04-21T04:00:00Z",
+   "createdate": "2026-03-17T17:58:26Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316902924010",
+  "properties": {
+   "dealname": "Lawson Realty Group - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "27120",
+   "units__c": "400",
+   "segment": "SMB",
+   "closedate": "2026-04-20T04:00:00Z",
+   "createdate": "2026-03-18T16:58:03Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "320425028334",
+  "properties": {
+   "dealname": "Benjamin H Realty - New Logo with Pilot Period",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "2111244871",
+   "amount": "98490",
+   "units__c": "1500",
+   "segment": "SMB",
+   "closedate": "2026-04-16T04:00:00Z",
+   "createdate": "2026-04-10T14:40:56Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "318275596006",
+  "properties": {
+   "dealname": "RentIt Colorado - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "16950",
+   "units__c": "250",
+   "segment": "SMB",
+   "closedate": "2026-04-14T04:00:00Z",
+   "createdate": "2026-03-27T18:48:31Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "320462527165",
+  "properties": {
+   "dealname": "Sentral - LA / Beverly Hills Expansion",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "4881.6",
+   "units__c": "72",
+   "segment": "MM + ENT",
+   "closedate": "2026-04-10T04:00:00Z",
+   "createdate": "2026-04-10T13:48:09Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316700602064",
+  "properties": {
+   "dealname": "MT Properties Group - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1542312872",
+   "amount": "36113",
+   "units__c": "550",
+   "segment": "SMB",
+   "closedate": "2026-04-10T04:00:00Z",
+   "createdate": "2026-03-17T18:34:16Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "242154855160",
+  "properties": {
+   "dealname": "MGC Leasing & Property Management - New Logo with Pilot Period",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "686754956",
+   "amount": "80465",
+   "units__c": "1100",
+   "segment": "SMB",
+   "closedate": "2026-04-10T04:00:00Z",
+   "createdate": "2025-12-16T22:14:52Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316994283233",
+  "properties": {
+   "dealname": "Sound Mind Realty - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "13560",
+   "units__c": "200",
+   "segment": "SMB",
+   "closedate": "2026-04-09T04:00:00Z",
+   "createdate": "2026-03-18T19:54:32Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "276688236234",
+  "properties": {
+   "dealname": "MJW Investments - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1032502194",
+   "amount": "79734.26",
+   "units__c": "1406",
+   "segment": "SMB",
+   "closedate": "2026-04-08T04:00:00Z",
+   "createdate": "2026-01-28T16:58:00Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "301495524085",
+  "properties": {
+   "dealname": "Yancey Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "11303.25",
+   "units__c": "175",
+   "segment": "SMB",
+   "closedate": "2026-04-06T04:00:00Z",
+   "createdate": "2026-02-18T20:39:35Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316962970320",
+  "properties": {
+   "dealname": "InveServe Corp - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "49125",
+   "units__c": "2500",
+   "segment": "SMB",
+   "closedate": "2026-03-30T04:00:00Z",
+   "createdate": "2026-03-19T19:53:19Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "317618631403",
+  "properties": {
+   "dealname": "Out Fast Property Management - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "7490",
+   "units__c": "350",
+   "segment": "SMB",
+   "closedate": "2026-03-27T04:00:00Z",
+   "createdate": "2026-03-25T01:56:40Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "311694313174",
+  "properties": {
+   "dealname": "Elda Management Services - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "14059.8",
+   "units__c": "219",
+   "segment": "SMB",
+   "closedate": "2026-03-27T04:00:00Z",
+   "createdate": "2026-03-05T22:40:45Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "173439293132",
+  "properties": {
+   "dealname": "Brick and Timber, Inc - Pilot Conversion",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "981129967",
+   "amount": "177490.53",
+   "units__c": "2830",
+   "segment": "MM + ENT",
+   "closedate": "2026-03-27T04:00:00Z",
+   "createdate": "2025-09-30T19:56:55Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316065759947",
+  "properties": {
+   "dealname": "Fresno Management Company - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1032502194",
+   "amount": "150228",
+   "units__c": "2700",
+   "segment": "SMB",
+   "closedate": "2026-03-27T04:00:00Z",
+   "createdate": "2026-03-13T06:10:02Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "317353008885",
+  "properties": {
+   "dealname": "Toomey Property Advisors - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "2595.6",
+   "units__c": "721",
+   "segment": "SMB",
+   "closedate": "2026-03-26T04:00:00Z",
+   "createdate": "2026-03-23T17:00:40Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "317670266575",
+  "properties": {
+   "dealname": "Sentral - Charlotte",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "34442.4",
+   "units__c": "508",
+   "segment": "MM + ENT",
+   "closedate": "2026-03-24T04:00:00Z",
+   "createdate": "2026-03-24T23:19:07Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "275051698917",
+  "properties": {
+   "dealname": "Ace Rental Management, LLC - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "40038",
+   "units__c": "600",
+   "segment": "SMB",
+   "closedate": "2026-03-24T04:00:00Z",
+   "createdate": "2026-01-26T14:21:03Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316997138129",
+  "properties": {
+   "dealname": "Sentral - LA Expansion",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "16882.2",
+   "units__c": "249",
+   "segment": "MM + ENT",
+   "closedate": "2026-03-20T04:00:00Z",
+   "createdate": "2026-03-19T21:22:24Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316614952685",
+  "properties": {
+   "dealname": "Bryten Real Estate Partners - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1053057926",
+   "amount": "32655.17",
+   "units__c": "529",
+   "segment": "STRAT",
+   "closedate": "2026-03-20T04:00:00Z",
+   "createdate": "2026-03-16T16:47:24Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "294115782392",
+  "properties": {
+   "dealname": "Mississippi Coast Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "10170",
+   "units__c": "150",
+   "segment": "SMB",
+   "closedate": "2026-03-18T04:00:00Z",
+   "createdate": "2026-02-11T18:20:46Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "301465016004",
+  "properties": {
+   "dealname": "KCP Real Estate LLC - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "25680",
+   "units__c": "400",
+   "segment": "SMB",
+   "closedate": "2026-03-18T04:00:00Z",
+   "createdate": "2026-02-18T22:13:18Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "306393564899",
+  "properties": {
+   "dealname": "Firethorn Realty - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "9630",
+   "units__c": "150",
+   "segment": "SMB",
+   "closedate": "2026-03-17T04:00:00Z",
+   "createdate": "2026-02-26T21:10:45Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "315962756801",
+  "properties": {
+   "dealname": "NWA Peak Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "7458",
+   "units__c": "110",
+   "segment": "SMB",
+   "closedate": "2026-03-16T04:00:00Z",
+   "createdate": "2026-03-11T17:03:28Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "316293681859",
+  "properties": {
+   "dealname": "Sentral - Atlanta(Star) + Vegas",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1053057926",
+   "amount": "30442.2",
+   "units__c": "449",
+   "segment": "MM + ENT",
+   "closedate": "2026-03-16T04:00:00Z",
+   "createdate": "2026-03-13T19:15:19Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "289234027198",
+  "properties": {
+   "dealname": "Sentral - Denver",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1053057926",
+   "amount": "56341.8",
+   "units__c": "831",
+   "segment": "MM + ENT",
+   "closedate": "2026-03-12T04:00:00Z",
+   "createdate": "2025-04-09T20:49:46Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "315272806104",
+  "properties": {
+   "dealname": "Veritas Property Management & Maintenance - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1542312872",
+   "amount": "12204",
+   "units__c": "180",
+   "segment": "SMB",
+   "closedate": "2026-03-12T04:00:00Z",
+   "createdate": "2026-03-10T13:26:22Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "306555213556",
+  "properties": {
+   "dealname": "Core Residential Co. - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "7119",
+   "units__c": "105",
+   "segment": "SMB",
+   "closedate": "2026-03-11T04:00:00Z",
+   "createdate": "2026-02-28T03:01:00Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "216579241703",
+  "properties": {
+   "dealname": "Tim Carr Group - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "1260",
+   "units__c": "350",
+   "segment": "SMB",
+   "closedate": "2026-03-06T05:00:00Z",
+   "createdate": "2025-11-11T14:42:29Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "310595242683",
+  "properties": {
+   "dealname": "Lease Las Vegas - Up/Cross-Sell (PetV)",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "1032502194",
+   "amount": "3600",
+   "units__c": "1000",
+   "segment": "SMB",
+   "closedate": "2026-03-03T05:00:00Z",
+   "createdate": "2026-03-03T18:45:19Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "302646881991",
+  "properties": {
+   "dealname": "iProperties International - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1542312872",
+   "amount": "35310",
+   "units__c": "550",
+   "segment": "SMB",
+   "closedate": "2026-03-03T05:00:00Z",
+   "createdate": "2026-02-20T15:12:30Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "300722519770",
+  "properties": {
+   "dealname": "Red Bricks Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "27120",
+   "units__c": "400",
+   "segment": "SMB",
+   "closedate": "2026-02-27T05:00:00Z",
+   "createdate": "2026-02-18T00:18:01Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "305985268439",
+  "properties": {
+   "dealname": "Real Property Management Rental Solutions - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "32544",
+   "units__c": "480",
+   "segment": "SMB",
+   "closedate": "2026-02-27T05:00:00Z",
+   "createdate": "2026-02-25T19:27:53Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "301330280127",
+  "properties": {
+   "dealname": "Excalibur Homes - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "41730",
+   "units__c": "1500",
+   "segment": "SMB",
+   "closedate": "2026-02-26T05:00:00Z",
+   "createdate": "2026-02-18T18:28:01Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "256156585667",
+  "properties": {
+   "dealname": "Horizon Properties - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "1542312872",
+   "amount": "30045.6",
+   "units__c": "468",
+   "segment": "SMB",
+   "closedate": "2026-02-24T05:00:00Z",
+   "createdate": "2026-01-06T21:08:22Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "285333240546",
+  "properties": {
+   "dealname": "10X Property Management - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "26451111",
+   "amount": "25474.5",
+   "units__c": "370",
+   "segment": "SMB",
+   "closedate": "2026-02-23T05:00:00Z",
+   "createdate": "2026-02-03T20:21:35Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "278205138646",
+  "properties": {
+   "dealname": "Open House Property Management - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "80250",
+   "units__c": "5000",
+   "segment": "MM + ENT",
+   "closedate": "2026-02-18T05:00:00Z",
+   "createdate": "2026-01-29T23:15:03Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "195222903542",
+  "properties": {
+   "dealname": "KENCO Residential - Manchester Ridge",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "686754956",
+   "amount": "21186",
+   "units__c": "330",
+   "segment": "SMB",
+   "closedate": "2026-02-13T05:00:00Z",
+   "createdate": "2025-10-22T15:14:20Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "287955646192",
+  "properties": {
+   "dealname": "CL Management LLC - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "6802.95",
+   "units__c": "93",
+   "segment": "SMB (<100)",
+   "closedate": "2026-02-12T05:00:00Z",
+   "createdate": "2026-02-05T19:39:00Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "195233058491",
+  "properties": {
+   "dealname": "Cobalt Property Services - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "686754956",
+   "amount": "54240",
+   "units__c": "800",
+   "segment": "SMB",
+   "closedate": "2026-02-04T05:00:00Z",
+   "createdate": "2025-10-21T18:37:32Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "164515070677",
+  "properties": {
+   "dealname": "Jones & Jones Communities - rest of units",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "686754956",
+   "amount": "141091.8",
+   "units__c": "2081",
+   "segment": "SMB",
+   "closedate": "2026-01-27T05:00:00Z",
+   "createdate": "2025-06-18T16:51:22Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "270386642648",
+  "properties": {
+   "dealname": "E & E Capital Management - Up/Cross-Sell",
+   "pipeline": "2313830082",
+   "dealstage": "3752297196",
+   "hubspot_owner_id": "686754956",
+   "amount": "21464.2",
+   "units__c": "1003",
+   "segment": "SMB",
+   "closedate": "2026-01-23T05:00:00Z",
+   "createdate": "2026-01-21T16:16:43Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "237894590167",
+  "properties": {
+   "dealname": "Renshaw Company Realtors (Memphis Portfolio) - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "686754956",
+   "amount": "135327.5",
+   "units__c": "1850",
+   "segment": "MM + ENT",
+   "closedate": "2026-01-15T05:00:00Z",
+   "createdate": "2025-12-10T21:33:18Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "239646543591",
+  "properties": {
+   "dealname": "1 Step Apartments - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "7119",
+   "units__c": "105",
+   "segment": "SMB",
+   "closedate": "2026-01-13T05:00:00Z",
+   "createdate": "2025-12-12T20:53:52Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ },
+ {
+  "id": "218444063430",
+  "properties": {
+   "dealname": "Legacy Invest Realty - New Logo",
+   "pipeline": "2313721535",
+   "dealstage": "3753890502",
+   "hubspot_owner_id": "663611618",
+   "amount": "19450",
+   "units__c": "250",
+   "segment": "SMB",
+   "closedate": "2026-01-13T05:00:00Z",
+   "createdate": "2025-11-13T14:02:01Z",
+   "hs_deal_stage_probability": "1.0"
+  }
+ }
+]
