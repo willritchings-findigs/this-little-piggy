@@ -46,7 +46,8 @@ with sync_playwright() as p:
     for k, exp in (("gross", exp_gross), ("wtd", exp_wtd), ("ytd", exp_ytd)):
         if tile(k) != compact(exp): fails.append(f"tile {k}: rendered {tile(k)} vs expected {compact(exp)}")
     if pg.inner_text("#scope-n").strip() != str(len(deals)): fails.append("scope count mismatch")
-    if pg.inner_text("#pk-nytd").strip() != f"{len(json.loads(re.search(r'const PG = (\[.*?\]);\nconst META', html, re.S).group(1))):,}": fails.append("pipeline-generation YTD count mismatch")
+    pg_count = len(json.loads(re.search(r"const PG = (\[.*?\]);\nconst META", html, re.S).group(1)))
+    if pg.inner_text("#pk-nytd").strip() != f"{pg_count:,}": fails.append("pipeline-generation YTD count mismatch")
     # filter smoke: uncheck every owner but the first, expect scope to drop, then reset restores
     pg.click("#f-owner summary")
     n_before = int(pg.inner_text("#scope-n"))
