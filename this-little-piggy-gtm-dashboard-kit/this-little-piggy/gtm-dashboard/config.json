@@ -1,0 +1,160 @@
+{
+  "_about": "Confirmed decisions governing the Findigs GTM executive dashboard. Notion 'Data Definitions' is the system of record; this file is the bundled fallback and must match it. The refresh skill stops on any mismatch.",
+  "version": "2026-09-22",
+  "portal_id": "243635806",
+  "timezone": "America/New_York",
+  "fiscal_year": {
+    "type": "calendar",
+    "note": "Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec"
+  },
+  "pipelines": {
+    "new_logo": {
+      "id": "2313721535",
+      "label": "New Logo",
+      "in_scope": true
+    },
+    "upsell_expansion": {
+      "id": "2313830082",
+      "label": "Upsell / Expansion",
+      "in_scope": true
+    },
+    "renewal": {
+      "id": "2559714036",
+      "label": "Renewal",
+      "in_scope": false,
+      "note": "Excluded by decision 2026-09-14"
+    }
+  },
+  "terminal_stages": {
+    "won": [
+      "3753890502",
+      "3752297196"
+    ],
+    "lost": [
+      "3753890503",
+      "3752297197"
+    ],
+    "rule": "Win/loss is derived from dealstage membership only. hs_is_closed_won / hs_is_closed_lost are unreliable on migrated records and are never used."
+  },
+  "fields": {
+    "bookings_amount": "amount",
+    "units": "units__c",
+    "owner": "hubspot_owner_id",
+    "close_date": "closedate",
+    "create_date": "createdate",
+    "stage_probability": "hs_deal_stage_probability",
+    "weighted_stored": "weighted_amount",
+    "source": "deal_source_drill_down",
+    "source_parent": "deal_source__c",
+    "record_source": "hs_object_source_label",
+    "raw_segment": "segment",
+    "company_fit_score": "company.swan_score",
+    "acv_comparison_field": "acv",
+    "not_used": {
+      "hs_forecast_amount": "mirrors amount in this portal",
+      "hs_projected_amount": "reference only; equals amount x hs_deal_stage_probability",
+      "hs_acv": "zero on every record",
+      "hs_deal_score": "superseded by company.swan_score on 2026-09-14",
+      "lead_source": "ungoverned 33-option field",
+      "sdr_owner": "not the deal owner"
+    }
+  },
+  "weighting_rule": {
+    "open_with_stored_value": "weighted_amount",
+    "open_without_stored_value": "amount * hs_deal_stage_probability",
+    "closed_won": "amount (100%)",
+    "closed_lost": "0",
+    "confirmed": "2026-09-14"
+  },
+  "segment_rule": {
+    "basis": "units__c",
+    "bands": [
+      {
+        "label": "SMB",
+        "min": 0,
+        "max": 2999
+      },
+      {
+        "label": "Mid-Market",
+        "min": 3000,
+        "max": 19999
+      },
+      {
+        "label": "Enterprise",
+        "min": 20000,
+        "max": null
+      }
+    ],
+    "note": "Raw deal 'segment' free text is displayed alongside but never used for grouping or filtering."
+  },
+  "migration": {
+    "record_source_value": "SALESFORCE",
+    "date_cutoff": "2026-07-14",
+    "rule": "createdate on SALESFORCE-sourced records is the original Salesforce created date. Included everywhere with a footnote; native-only toggle available in Pipeline Generation. Sales-cycle tile shows all-deal mean with the post-cutoff mean alongside."
+  },
+  "pipeline_generation": {
+    "pipelines": [
+      "new_logo"
+    ],
+    "population": "createdate >= fiscal year start, any dealstage",
+    "fit_score_bands": [
+      "Swan 5",
+      "Swan 4",
+      "Swan 3",
+      "No Swan score"
+    ],
+    "prior_period_comparison": "prior quarter at the same elapsed-day count"
+  },
+  "populations": {
+    "open": "pipeline in scope AND dealstage not in terminal_stages",
+    "won_fy": "dealstage in terminal_stages.won AND closedate >= FY start",
+    "created_fy": "pipeline = new_logo AND createdate >= FY start"
+  },
+  "pull_properties": [
+    "dealname",
+    "pipeline",
+    "dealstage",
+    "hubspot_owner_id",
+    "amount",
+    "acv",
+    "units__c",
+    "segment",
+    "closedate",
+    "createdate",
+    "hs_deal_stage_probability",
+    "weighted_amount",
+    "deal_source__c",
+    "deal_source_drill_down",
+    "hs_object_source_label",
+    "hs_deal_score"
+  ],
+  "tie_out_tolerance_usd": 0.01,
+  "distribution": {
+    "gdrive_folder_id": "1rFO4rDgvUZuf03NHeSdzDJT4MCEVy0Tb",
+    "gdrive_folder_path": "Revenue Operations / Reporting & Analytics",
+    "file_name_pattern": "findigs_gtm_executive_dashboard_{as_of}.html",
+    "slack_channel": "#gtm_leadership",
+    "slack_channel_id": "C0C1P09SPFF",
+    "schedule": "Claude Code Routine, Mondays 08:00 America/New_York"
+  },
+  "notion": {
+    "data_definitions_page": "3e3335d5-9add-8190-9a75-e385a6c3d75f",
+    "data_definitions_url": "https://app.notion.com/p/3e3335d59add81909a75e385a6c3d75f",
+    "metric_definitions_database": "feddcc8b-add0-42ca-a8b4-272fed4aae14",
+    "metric_definitions_data_source": "collection://75eddbb8-a6d4-41ff-b324-de338360c756",
+    "preflight_query": "SELECT \"Metric\", \"Formula\", \"Object & fields\", \"Scope / filters\", \"Exclusions\", \"Null handling\", \"Status\" FROM \"collection://75eddbb8-a6d4-41ff-b324-de338360c756\" WHERE \"Used by\" LIKE '%GTM executive dashboard%' OR \"Used by\" LIKE '%Pipeline Generation section%'",
+    "row_to_config_map": {
+      "Weighted deal value": "weighting_rule",
+      "Segment (derived)": "segment_rule",
+      "Migration cohort": "migration",
+      "Pipeline created by source": "fields.source",
+      "Pipeline created by Swan score": "fields.company_fit_score",
+      "Pipeline created by owner": "fields.owner",
+      "Gross open pipeline": "populations.open + pipelines + terminal_stages",
+      "Bookings YTD": "populations.won_fy + fields.bookings_amount + fiscal_year",
+      "Gross pipeline created (period)": "populations.created_fy + pipeline_generation",
+      "Tie-out tolerance": "tie_out_tolerance_usd"
+    },
+    "note": "Preflight compares each row's Formula / fields / scope / exclusions / null handling against the mapped config keys. Any row with Status other than Confirmed, or any semantic mismatch, stops the run."
+  }
+}
