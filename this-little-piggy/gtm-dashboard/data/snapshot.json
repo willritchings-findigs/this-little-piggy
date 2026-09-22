@@ -1,14 +1,8 @@
 {
  "portal": "243635806",
  "timezone": "America/New_York",
- "as_of": "2026-09-14",
- "pulled_at_et": "Sep 14, 2026 11:10 AM ET",
- "supplemental_pulled_at_et": "Sep 14, 2026 5:10 PM ET",
- "supplemental_fields": [
-  "weighted_amount",
-  "deal_source_drill_down",
-  "company.swan_score"
- ],
+ "as_of": "2026-09-22",
+ "pulled_at_et": "Sep 22, 2026 5:26 PM ET",
  "stages": [
   {
    "id": "3753890497",
@@ -138,44 +132,16 @@
   }
  ],
  "owners": {
-  "1053057926": {
-   "name": "Phil Aroian",
-   "active": true
-  },
-  "167857460": {
-   "name": "Spencer Wuthrich",
-   "active": true
-  },
-  "2111244871": {
-   "name": "Ben de Winter",
-   "active": true
-  },
-  "1032502194": {
-   "name": "Matt Lynch",
-   "active": true
-  },
-  "981129967": {
-   "name": "Grace Doering",
-   "active": true
-  },
-  "686754956": {
-   "name": "Clay Stapleford",
-   "active": true
-  },
-  "26451111": {
-   "name": "Ian McLaughlin",
-   "active": true
-  },
-  "663611618": {
-   "name": "Reese Ryan",
-   "active": true
-  },
-  "1542312872": {
-   "name": "Hayden Ashwill",
-   "active": false
-  }
+  "1053057926": { "name": "Phil Aroian", "active": true },
+  "167857460": { "name": "Spencer Wuthrich", "active": true },
+  "2111244871": { "name": "Ben de Winter", "active": true },
+  "1032502194": { "name": "Matt Lynch", "active": true },
+  "686754956": { "name": "Clay Stapleford", "active": true },
+  "26451111": { "name": "Ian McLaughlin", "active": true },
+  "663611618": { "name": "Reese Ryan", "active": true },
+  "1542312872": { "name": "Hayden Ashwill", "active": false }
  },
  "notes": [
-  "1 New Logo deal (Newport Pacific - New Deal, $1,163,432.40) was created between the base and supplemental pulls and is excluded from this snapshot."
+  "Discovery / Demo (New Logo, stage 3753890498) shows a minor probability split observed live: 1 open deal at 0.15 vs 17 at the modal 0.2; modal probability used, unchanged from the prior snapshot."
  ]
 }
