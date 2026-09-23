@@ -1,6 +1,6 @@
 {
   "_about": "Confirmed decisions governing the Findigs GTM executive dashboard. Notion 'Data Definitions' is the system of record; this file is the bundled fallback and must match it. The refresh skill stops on any mismatch.",
-  "version": "2026-09-22",
+  "version": "2026-09-23",
   "portal_id": "243635806",
   "timezone": "America/New_York",
   "fiscal_year": {
@@ -55,8 +55,7 @@
       "hs_projected_amount": "reference only; equals amount x hs_deal_stage_probability",
       "hs_acv": "zero on every record",
       "hs_deal_score": "superseded by company.swan_score on 2026-09-14",
-      "lead_source": "ungoverned 33-option field",
-      "sdr_owner": "not the deal owner"
+      "lead_source": "ungoverned 33-option field"
     }
   },
   "weighting_rule": {
@@ -110,6 +109,59 @@
     "won_fy": "dealstage in terminal_stages.won AND closedate >= FY start",
     "created_fy": "pipeline = new_logo AND createdate >= FY start"
   },
+  "sdr_section": {
+    "confirmed": "2026-09-23",
+    "population": "same population as pipeline_generation: pipeline = new_logo AND createdate >= FY start, any dealstage",
+    "fields": {
+      "sdr_owner": "sdr_owner",
+      "meeting_booked_date": "demo_booked__c",
+      "meeting_held": "demo_completed__c",
+      "channel_group": "deal_source_group",
+      "not_used": {
+        "sdr_owner_new": "verified 2026-09-23: on the New Logo pipeline this diverges heavily from sdr_owner on the same deals (e.g. the two largest sdr_owner assignees hold only 9 and 13 records under sdr_owner_new, vs 866 and 801 under sdr_owner) — a team-reassignment pattern, not one field being more complete. sdr_owner confirmed authoritative; sdr_owner_new never used.",
+        "demo_completed_date__c": "verified 2026-09-23: populated 0 times in Aug or Sep 2026 (vs demo_booked__c still populating) — appears abandoned since the Salesforce migration cutover. Not used for cohorting; meeting_held is a status flag only, no date.",
+        "attribution_source_drill_down": "verified 2026-09-23: a distinct, independently-set field from deal_source_drill_down (diverges on sampled deals, e.g. one deal tagged 'Outbound SDR' on deal_source_drill_down but 'Conferences Outbound' on attribution_source_drill_down). This section continues to use deal_source_drill_down / deal_source_group for consistency with Pipeline Generation.",
+        "MEETING_EVENT": "HubSpot engagement object considered and rejected 2026-09-23: 21,566 records portal-wide, dominated by an unrelated internal recurring sync ('Recurring Meeting Booked: Bridge | Findigs Monthly Sync', one series scheduled years into the future). Not sales demos; demo_booked__c / demo_completed__c are deal-level and purpose-built instead."
+      }
+    },
+    "opportunity_definition": {
+      "rule": "sdr_owner IS NOT NULL",
+      "timestamp_field": "createdate",
+      "confirmed": "2026-09-23",
+      "note": "Not a HubSpot-governed concept — this is a Findigs-specific definition scoped to this section only. Deliberately broader than 'reached a later pipeline stage'; every deal an SDR owns counts as an opportunity from its create date."
+    },
+    "meeting_definitions": {
+      "meeting_booked": "demo_booked__c IS NOT NULL",
+      "meeting_held": "demo_completed__c = 'Yes'",
+      "confirmed": "2026-09-23"
+    },
+    "channel_mapping": {
+      "basis": "deal_source_group",
+      "buckets": {
+        "Outbound": ["outbound"],
+        "Inbound": ["inbound", "referral"],
+        "Events": ["event"]
+      },
+      "blank_label": "Unassigned",
+      "confirmed": "2026-09-23",
+      "note": "deal_source_group is a governed HubSpot field, independently set from deal_source_drill_down (not a pure lookup of it). 'referral' folded into Inbound by proposal — accepted 2026-09-23; that bucket is mostly Zoominfo / SalesIntel list-provider deals, not literal customer referrals."
+    },
+    "rolling_window": {
+      "type": "trailing_30_calendar_days",
+      "rule": "as_of date minus 29 days through as_of date, inclusive, America/New_York — same convention as the rest of the dashboard's ET-anchored windows",
+      "cohort_basis": "cohort by trigger-event date (meeting_booked_date for metrics 1-2, createdate for metric 3), outcome evaluated as of the as_of date rather than requiring the outcome to also fall inside the window",
+      "confirmed": "2026-09-23"
+    },
+    "pipeline_goals": {
+      "status": "PLACEHOLDER — no quota file exists yet. Values below are illustrative zeros only, never real targets; the build treats goal = 0 as \"no goal configured\" and does not compute a percent-to-goal against it. Replace this block wholesale when a quota workbook is supplied.",
+      "confirmed": "2026-09-23",
+      "by_segment": {
+        "SMB": { "qtd": 0, "ytd": 0 },
+        "Mid-Market": { "qtd": 0, "ytd": 0 },
+        "Enterprise": { "qtd": 0, "ytd": 0 }
+      }
+    }
+  },
   "pull_properties": [
     "dealname",
     "pipeline",
@@ -126,7 +178,11 @@
     "deal_source__c",
     "deal_source_drill_down",
     "hs_object_source_label",
-    "hs_deal_score"
+    "hs_deal_score",
+    "sdr_owner",
+    "demo_booked__c",
+    "demo_completed__c",
+    "deal_source_group"
   ],
   "tie_out_tolerance_usd": 0.01,
   "distribution": {
@@ -144,7 +200,7 @@
     "data_definitions_url": "https://app.notion.com/p/3e3335d59add81909a75e385a6c3d75f",
     "metric_definitions_database": "feddcc8b-add0-42ca-a8b4-272fed4aae14",
     "metric_definitions_data_source": "collection://75eddbb8-a6d4-41ff-b324-de338360c756",
-    "preflight_query": "SELECT \"Metric\", \"Formula\", \"Object & fields\", \"Scope / filters\", \"Exclusions\", \"Null handling\", \"Status\" FROM \"collection://75eddbb8-a6d4-41ff-b324-de338360c756\" WHERE \"Used by\" LIKE '%GTM executive dashboard%' OR \"Used by\" LIKE '%Pipeline Generation section%'",
+    "preflight_query": "SELECT \"Metric\", \"Formula\", \"Object & fields\", \"Scope / filters\", \"Exclusions\", \"Null handling\", \"Status\" FROM \"collection://75eddbb8-a6d4-41ff-b324-de338360c756\" WHERE \"Used by\" LIKE '%GTM executive dashboard%' OR \"Used by\" LIKE '%Pipeline Generation section%' OR \"Used by\" LIKE '%SDR section%'",
     "row_to_config_map": {
       "Weighted deal value": "weighting_rule",
       "Segment (derived)": "segment_rule",
@@ -155,7 +211,15 @@
       "Gross open pipeline": "populations.open + pipelines + terminal_stages",
       "Bookings YTD": "populations.won_fy + fields.bookings_amount + fiscal_year",
       "Gross pipeline created (period)": "populations.created_fy + pipeline_generation",
-      "Tie-out tolerance": "tie_out_tolerance_usd"
+      "Tie-out tolerance": "tie_out_tolerance_usd",
+      "Meeting held (SDR)": "sdr_section.meeting_definitions",
+      "SDR opportunity (derived)": "sdr_section.opportunity_definition",
+      "SDR channel mix (derived)": "sdr_section.channel_mapping",
+      "Meeting booked to held conversion": "sdr_section.meeting_definitions + sdr_section.rolling_window",
+      "Meeting held to opportunity conversion": "sdr_section.opportunity_definition + sdr_section.rolling_window",
+      "Opportunities generated per SDR": "sdr_section.fields.sdr_owner + sdr_section.opportunity_definition + sdr_section.rolling_window",
+      "Pipeline generated vs goal by segment": "sdr_section.pipeline_goals + segment_rule",
+      "SDR-sourced opportunity stage progression": "sdr_section.opportunity_definition + sdr_section.channel_mapping"
     },
     "note": "Preflight compares each row's Formula / fields / scope / exclusions / null handling against the mapped config keys. Any row with Status other than Confirmed, or any semantic mismatch, stops the run."
   }

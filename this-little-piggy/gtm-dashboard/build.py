@@ -51,6 +51,12 @@ NL_ID = CFG["pipelines"]["new_logo"]["id"]
 STAGE = {s["id"]: s for s in SNAP["stages"]}
 OWNERS = SNAP["owners"]
 TOL = CFG["tie_out_tolerance_usd"]
+SDR_CFG = CFG["sdr_section"]
+CHANNEL_LOOKUP = {v.lower(): bucket for bucket, values in SDR_CFG["channel_mapping"]["buckets"].items() for v in values}
+BLANK_CHANNEL = SDR_CFG["channel_mapping"]["blank_label"]
+def channel_bucket(raw):
+    if not raw: return BLANK_CHANNEL
+    return CHANNEL_LOOKUP.get(raw.lower(), BLANK_CHANNEL)
 
 # ----------------------------------------------------------------------------- fiscal windows
 y, m, d = (int(x) for x in AS_OF.split("-"))
@@ -138,11 +144,18 @@ def derive_created(r):
     sw = SWAN.get(str(r["id"]))
     src = p.get(F["source"])
     if not src: fail(3, f"created deal {r['id']} has null {F['source']} — the no-null assumption used to infer 'Outbound SDR' no longer holds; pull the field for every deal")
+    sdr_owner_id = p.get("sdr_owner") or None
+    is_opp = sdr_owner_id is not None
+    meeting_booked = p.get("demo_booked__c") or None
+    meeting_held = (p.get("demo_completed__c") == "Yes")
+    chan_raw = (p.get("deal_source_group") or "").lower() or "null"
     return dict(id=str(r["id"]), name=p["dealname"], pipe="N", pipeLabel="New Logo", stageId=sid, stage=st["label"], owner=owner_name(p[F["owner"]]), ownerId=str(p[F["owner"]]),
                 amount=amt, units=int(units), seg=seg(units), close=et_date(p.get(F["close_date"])), created=et_date(p.get(F["create_date"])),
                 src=src, srcParent=parent, srcGroup=SRC_GROUP.get(parent[:2], "Unassigned"), recSrc=rs, migrated=(rs == CFG["migration"]["record_source_value"]),
                 hsScore=num(p.get("hs_deal_score")), swan=sw, band=("No Swan score" if sw is None else f"Swan {sw}"),
-                won=sid in WON_IDS, lost=sid in LOST_IDS, weighted=w, wtdFallback=fb, pastDue=False, migration=(rs == CFG["migration"]["record_source_value"]))
+                won=sid in WON_IDS, lost=sid in LOST_IDS, weighted=w, wtdFallback=fb, pastDue=False, migration=(rs == CFG["migration"]["record_source_value"]),
+                sdrOwnerId=sdr_owner_id, isOpp=is_opp, sdrOwner=(owner_name(sdr_owner_id) if is_opp else None), sdrOwnerReal=(is_opp and sdr_owner_id != "8309346"),
+                meetingBooked=meeting_booked, meetingHeld=meeting_held, chanRaw=chan_raw, channel=channel_bucket(p.get("deal_source_group")))
 
 pg = [derive_created(r) for r in CREATED_RAW]
 
@@ -163,6 +176,35 @@ q3 = [x for x in pg if inw(x["created"], WIN["qtd"])]; q3_mig = [x for x in q3 i
 zero_amt = [x for x in pg if x["amount"] == 0]; scored = [x for x in pg if x["swan"] is not None]
 null_parent = [x for x in pg if x["srcParent"] == "Unassigned"]; no_close = [x for x in pg if not x["close"]]
 mig_dates = sorted(x["created"] for x in pg_mig); nat_dates = sorted(x["created"] for x in pg_nat)
+
+# ----------------------------------------------------------------------------- SDR section aggregates
+win30 = {"start": iso(date(y, m, d) - timedelta(days=29)), "end": AS_OF}
+opps = [x for x in pg if x["isOpp"]]
+opp_total_amt = sum(x["amount"] for x in opps)
+sdr_by_owner = defaultdict(lambda: {"n": 0, "a": 0.0})
+for x in opps:
+    b = sdr_by_owner[x["sdrOwnerId"]]; b["n"] += 1; b["a"] += x["amount"]
+sdr_by_channel = defaultdict(lambda: {"n": 0, "a": 0.0})
+for x in opps:
+    b = sdr_by_channel[x["chanRaw"]]; b["n"] += 1; b["a"] += x["amount"]
+booked_30d = [x for x in pg if x["meetingBooked"] and win30["start"] <= x["meetingBooked"] <= win30["end"]]
+held_30d = [x for x in booked_30d if x["meetingHeld"]]
+held_to_opp_30d = [x for x in held_30d if x["isOpp"]]
+opp_30d = [x for x in opps if inw(x["created"], win30)]
+opp_30d_by_owner = defaultdict(int)
+for x in opp_30d:
+    if x["sdrOwnerReal"]: opp_30d_by_owner[x["sdrOwnerId"]] += 1
+booked_30d_by_seg = defaultdict(lambda: {"booked": 0, "held": 0})
+for x in booked_30d:
+    booked_30d_by_seg[x["seg"]]["booked"] += 1
+    if x["meetingHeld"]: booked_30d_by_seg[x["seg"]]["held"] += 1
+sdr_pipeline_qtd_by_seg = defaultdict(float); sdr_pipeline_ytd_by_seg = defaultdict(float)
+for x in opps:
+    if inw(x["created"], WIN["qtd"]): sdr_pipeline_qtd_by_seg[x["seg"]] += x["amount"]
+    if inw(x["created"], WIN["ytd"]): sdr_pipeline_ytd_by_seg[x["seg"]] += x["amount"]
+stage_by_channel = defaultdict(lambda: defaultdict(int))
+for x in opps:
+    stage_by_channel[x["stageId"]][x["channel"]] += 1
 
 # ----------------------------------------------------------------------------- tie-out (hard gate)
 tie = []
@@ -193,7 +235,28 @@ for k, v in CTL["created_by_drill_down"].items():
 for k, v in CTL["created_swan"].items():
     sub = [x for x in pg if (x["swan"] is None if k == "null" else x["swan"] == int(k))]
     pcheck(f"Swan score {k} count", len(sub), v["n"], fmt=str, money=False); pcheck(f"Swan score {k} Σ amount", sum(x["amount"] for x in sub), v["a"])
-failures = [t for t in tie + pg_tie if not t["ok"]]
+sdr_tie = []
+def scheck(label, ours, ctl, fmt=usd, money=True):
+    ok = (abs(ours - ctl) <= TOL) if money else (ours == ctl)
+    sdr_tie.append(dict(m=label, a=fmt(ours), b=fmt(ctl), d=("0.00 — reconciles" if ok and money else ("0 — reconciles" if ok else fmt(ours - ctl))), ok=ok))
+SDR_CTL = CTL["sdr"]
+scheck("SDR opportunity count (createdate FY)", len(opps), SDR_CTL["opp_count"], fmt=str, money=False)
+scheck("SDR opportunity Σ amount", opp_total_amt, SDR_CTL["opp_amount"])
+for oid, v in SDR_CTL["by_owner"].items():
+    b = sdr_by_owner.get(oid, {"n": 0, "a": 0.0})
+    scheck(f"SDR opportunities, owner {owner_name(oid)}, count", b["n"], v["n"], fmt=str, money=False)
+    scheck(f"SDR opportunities, owner {owner_name(oid)}, Σ amount", b["a"], v["a"])
+for ch, v in SDR_CTL["by_channel"].items():
+    b = sdr_by_channel.get(ch, {"n": 0, "a": 0.0})
+    scheck(f"SDR opportunities, channel {ch}, count", b["n"], v["n"], fmt=str, money=False)
+    scheck(f"SDR opportunities, channel {ch}, Σ amount", b["a"], v["a"])
+scheck("Meetings booked, trailing 30d", len(booked_30d), SDR_CTL["meeting_booked_30d"], fmt=str, money=False)
+scheck("Meetings held, trailing 30d cohort", len(held_30d), SDR_CTL["meeting_held_30d"], fmt=str, money=False)
+scheck("Opportunities created, trailing 30d", len(opp_30d), SDR_CTL["opp_30d_count"], fmt=str, money=False)
+for oid, n in SDR_CTL["opp_30d_by_owner"].items():
+    scheck(f"Opportunities created trailing 30d, owner {owner_name(oid)}", opp_30d_by_owner.get(oid, 0), n, fmt=str, money=False)
+
+failures = [t for t in tie + pg_tie + sdr_tie if not t["ok"]]
 if failures:
     for t in failures: print(f"  MISMATCH  {t['m']}: pulled {t['a']} vs control {t['b']} (delta {t['d']})", file=sys.stderr)
     fail(2, f"{len(failures)} tie-out check(s) did not reconcile. Nothing written.")
@@ -227,6 +290,10 @@ dq = [
     dict(id="DQ-9", sev="Low", text="Stage probabilities were read from deal records (observed values by stage), not from pipeline settings, which the connector does not expose.", n=f"{len([s for s in stages_meta if not s['closed']])} open stages", handling="Documented in methodology. Verify against Settings → Objects → Deals → Pipelines if probabilities change."),
     dict(id="DQ-10", sev="Low", text=f"A third deal pipeline, Renewal (<code>{CFG['pipelines']['renewal']['id']}</code>), exists in the portal.", n="1 pipeline", handling="Excluded by confirmed decision; not represented in any tile."),
     dict(id="DQ-11", sev="Low", text="Deal owners are resolved via the owners API each run; inactive owners are labeled. " + (f"Inactive owners in scope: {', '.join(sorted({x['owner'] for x in deals if '(inactive)' in x['owner']}))}." if any('(inactive)' in x['owner'] for x in deals) else "No inactive owners in scope."), n=f"{len({x['ownerId'] for x in deals})} owners", handling="Names resolved and applied."),
+    dict(id="DQ-12", sev="Medium", text="SDR section 'opportunity' (<code>sdr_owner IS NOT NULL</code>) is a Findigs-specific definition, not a HubSpot-governed concept; it is deliberately broader than 'reached a later pipeline stage'.", n=f"{len(opps)} of {len(pg)} pipeline-generation deals", handling="Documented in methodology. Confirmed 2026-09-23."),
+    dict(id="DQ-13", sev="Low", text=f"HubSpot's owner id 8309346 ('Unassigned') is used as an actual <code>sdr_owner</code> value on some deals, distinct from a true-null <code>sdr_owner</code>. It counts toward opportunity count/amount but is excluded from the per-SDR chart's real-person rows.", n=f"{sdr_by_owner.get('8309346', {'n': 0})['n']} deals", handling="Flagged via <code>sdrOwnerReal=false</code> on affected records; per-SDR chart filters on that flag, aggregate tiles do not."),
+    dict(id="DQ-14", sev="Low", text="Bare scalar COUNT(*) aggregates against HubSpot's reporting API undercounted on the narrow/recent 30-day SDR control window (49 vs 50 opportunities created; 55/26 vs 58/28 meetings booked/held). GROUP BY-shaped queries and direct record-level pulls agreed with each other at the higher, correct values and were used as the controls.", n="3 metrics affected", handling="Documented for future refreshes: always cross-validate trailing-30-day scalar aggregates against a GROUP BY query or record pull before trusting them as controls."),
+    dict(id="DQ-15", sev="Medium", text="SDR-section pipeline-generated-vs-goal by segment has no real goal yet — no quota file has been supplied.", n="3 segments", handling="Placeholder goal = 0 for every segment (config <code>sdr_section.pipeline_goals</code>); build treats goal = 0 as 'no goal configured' and suppresses percent-to-goal. Replace the config block once a quota workbook exists."),
 ]
 
 meta = dict(
@@ -249,6 +316,19 @@ meta = dict(
                         noClose=len(no_close), nullOwner=0, nullAmt=0, nullParentSrc=len(null_parent), nullParentSrcNames=[x["name"] for x in null_parent],
                         driftNote=" ".join(SNAP.get("notes", []))),
             controls=[{k: v for k, v in t.items() if k != "ok"} for t in pg_tie]),
+    sdr=dict(asOf=AS_OF, population=SDR_CFG["population"], qtd=WIN["qtd"], ytd=WIN["ytd"], win30=win30,
+             oppCount=len(opps), oppAmount=opp_total_amt,
+             byOwner={oid: dict(n=v["n"], a=v["a"], name=owner_name(oid)) for oid, v in sdr_by_owner.items()},
+             byChannelRaw={k: dict(n=v["n"], a=v["a"]) for k, v in sdr_by_channel.items()},
+             booked30d=len(booked_30d), held30d=len(held_30d), heldToOpp30d=len(held_to_opp_30d),
+             bookedBySeg=dict(booked_30d_by_seg),
+             opp30dCount=len(opp_30d), opp30dByOwner={oid: dict(n=n, name=owner_name(oid)) for oid, n in opp_30d_by_owner.items()},
+             pipelineBySegQtd={k: round(v, 2) for k, v in sdr_pipeline_qtd_by_seg.items()},
+             pipelineBySegYtd={k: round(v, 2) for k, v in sdr_pipeline_ytd_by_seg.items()},
+             stageByChannel={sid: dict(chans) for sid, chans in stage_by_channel.items()},
+             goals=SDR_CFG["pipeline_goals"]["by_segment"], goalsStatus=SDR_CFG["pipeline_goals"]["status"],
+             channelMapping=SDR_CFG["channel_mapping"], meetingDefs=SDR_CFG["meeting_definitions"], oppDef=SDR_CFG["opportunity_definition"],
+             controls=[{k: v for k, v in t.items() if k != "ok"} for t in sdr_tie]),
 )
 
 # ----------------------------------------------------------------------------- render
@@ -270,6 +350,7 @@ lines = [f"# Tie-out — as of {AS_OF} (pulled {SNAP['pulled_at_et']})", "",
          f"- Pipeline created QTD {usd(sum(x['amount'] for x in q3))} ({len(q3)}) · YTD {usd(pg_total)} ({len(pg)})", "",
          "## Tier 1–3 tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in tie] + \
         ["", "## Pipeline generation tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in pg_tie] + \
+        ["", "## SDR section tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in sdr_tie] + \
         ["", "## Data quality flags", "| ID | Severity | Count |", "|---|---|---|"] + [f"| {d['id']} | {d['sev']} | {d['n']} |" for d in dq] + \
         ["", f"Output: `output/{out_name}`"]
 with open(P("output", "tieout.md"), "w", encoding="utf-8") as f: f.write("\n".join(lines) + "\n")
@@ -278,7 +359,9 @@ if not args.no_run_log:
     os.makedirs(P("runs"), exist_ok=True)
     run = dict(as_of=AS_OF, pulled=SNAP["pulled_at_et"], built=datetime.now(ET).strftime("%Y-%m-%d %H:%M ET"), open_n=len(open_), won_n=len(won), created_n=len(pg),
                open_gross=round(og, 2), open_weighted=round(ow, 2), weighted_fallback_n=len(fb), won_amount=round(wa, 2), created_amount=round(pg_total, 2),
-               past_due_n=len(past_due), swan_coverage=round(len(scored) / len(pg), 3) if pg else None, dq_high=sum(1 for d in dq if d["sev"] == "High"), output=out_name)
+               past_due_n=len(past_due), swan_coverage=round(len(scored) / len(pg), 3) if pg else None, dq_high=sum(1 for d in dq if d["sev"] == "High"), output=out_name,
+               sdr_opp_n=len(opps), sdr_opp_amount=round(opp_total_amt, 2), sdr_booked_30d=len(booked_30d), sdr_held_30d=len(held_30d), sdr_opp_30d=len(opp_30d))
     with open(P("runs", "runs.jsonl"), "a", encoding="utf-8") as f: f.write(json.dumps(run) + "\n")
 
-print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {len(tie)+len(pg_tie)}/{len(tie)+len(pg_tie)} reconciled")
+n_tie_total = len(tie) + len(pg_tie) + len(sdr_tie)
+print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)} sdr_opp={len(opps)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {n_tie_total}/{n_tie_total} reconciled")
