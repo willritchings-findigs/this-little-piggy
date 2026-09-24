@@ -1,17 +1,17 @@
 {
   "open_count": 108,
-  "open_gross": 67798851.13,
-  "open_hs_projected_amount": 10979081.488,
-  "open_weighted_amount_stored": 4090912.02,
+  "open_gross": 67992321.13,
+  "open_hs_projected_amount": 11128247.488,
+  "open_weighted_amount_stored": 4210240.02,
   "won_count": 73,
   "won_amount": 7571305.12,
   "won_units": 131295,
   "won_acv": 3903881.24,
   "created_count": 655,
-  "created_amount": 151611804.27,
+  "created_amount": 151805274.27,
   "created_by_record_source": {
-    "SALESFORCE": { "n": 512, "a": 95352674.8 },
-    "CRM_UI": { "n": 142, "a": 56027209.47 },
+    "SALESFORCE": { "n": 512, "a": 95569634.8 },
+    "CRM_UI": { "n": 142, "a": 56003719.47 },
     "MOBILE_IOS": { "n": 1, "a": 231920 }
   },
   "created_by_drill_down": {
@@ -27,11 +27,11 @@
     "LinkedIn Ads": { "n": 3, "a": 150010.01 },
     "Meta Ads": { "n": 37, "a": 2720256.5 },
     "Outbound AE": { "n": 18, "a": 7174296.1 },
-    "Outbound SDR": { "n": 338, "a": 72751630.89 },
+    "Outbound SDR": { "n": 338, "a": 72968590.89 },
     "Referral": { "n": 1, "a": 187785 },
     "Referral Website": { "n": 3, "a": 265889.25 },
     "Rental History Questionnaire": { "n": 11, "a": 199999.15 },
-    "SalesIntel": { "n": 8, "a": 929562.5 },
+    "SalesIntel": { "n": 8, "a": 906072.5 },
     "Yahoo Organic": { "n": 1, "a": 56730.24 },
     "Zoominfo": { "n": 100, "a": 35354240.35 },
     "Bisnow": { "n": 1, "a": 428000 }
@@ -40,38 +40,38 @@
     "3": { "n": 116, "a": 24914186.83 },
     "4": { "n": 18, "a": 5725304.65 },
     "5": { "n": 2, "a": 534225 },
-    "null": { "n": 519, "a": 120438087.79 }
+    "null": { "n": 519, "a": 120631557.79 }
   },
   "sdr": {
     "opp_count": 654,
-    "opp_amount": 151566536.67,
+    "opp_amount": 151760006.67,
     "by_owner": {
-      "166642714": { "n": 207, "a": 14934742.86 },
+      "166642714": { "n": 207, "a": 14911252.86 },
       "167140681": { "n": 179, "a": 10944277.5 },
-      "1326690751": { "n": 86, "a": 23977919.46 },
+      "1326690751": { "n": 86, "a": 24194879.46 },
       "1167601196": { "n": 83, "a": 32947251.63 },
       "404749623": { "n": 59, "a": 67697637.67 },
       "8309346": { "n": 38, "a": 1028857.55 },
       "1229562943": { "n": 2, "a": 35850 }
     },
     "by_channel": {
-      "outbound": { "n": 405, "a": 84094789.99 },
+      "outbound": { "n": 405, "a": 84311749.99 },
       "inbound": { "n": 161, "a": 32851809.5 },
-      "referral": { "n": 71, "a": 32372767.83 },
+      "referral": { "n": 71, "a": 32349277.83 },
       "event": { "n": 15, "a": 1771661.35 },
       "null": { "n": 2, "a": 475508 }
     },
     "meeting_booked_30d": 58,
     "meeting_held_30d": 28,
-    "opp_30d_count": 50,
+    "opp_30d_count": 48,
     "opp_30d_by_owner": {
       "167140681": 14,
       "1326690751": 12,
-      "1167601196": 10,
-      "166642714": 10,
+      "1167601196": 9,
+      "166642714": 9,
       "404749623": 4
     },
-    "window_30d": { "start": "2026-08-25", "end": "2026-09-23" },
-    "_note": "meeting_booked_30d, meeting_held_30d, and opp_30d_count/opp_30d_by_owner were validated against direct record-level pulls after the bare scalar COUNT(*) aggregate undercounted on this narrow/recent date window (49 vs the correct 50 for opp_30d; 55 vs 58 and 26 vs 28 for the demo_booked__c-based counts). The GROUP BY-shaped queries and direct object pulls agreed with each other and are used here; see DQ note in build.py / tieout.md."
+    "window_30d": { "start": "2026-08-26", "end": "2026-09-24" },
+    "_note": "meeting_booked_30d/meeting_held_30d and opp_30d_count/opp_30d_by_owner were pulled as GROUP BY-shaped queries this run (not bare scalar COUNT(*)), per the scalar-aggregate undercount bug found and documented 2026-09-23. The booked/held total (58) was additionally cross-validated against a direct search_crm_objects record pull (total=58, 28 with demo_completed__c='Yes') and matched exactly."
   }
 }

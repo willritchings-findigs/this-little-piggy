@@ -1,8 +1,8 @@
 {
  "portal": "243635806",
  "timezone": "America/New_York",
- "as_of": "2026-09-23",
- "pulled_at_et": "Sep 23, 2026 12:49 PM ET",
+ "as_of": "2026-09-24",
+ "pulled_at_et": "Sep 24, 2026 9:16 AM ET",
  "stages": [
   {
    "id": "3753890497",
@@ -149,8 +149,9 @@
   "1229562943": { "name": "Emma Kyber", "active": true }
  },
  "notes": [
-  "Discovery / Demo (New Logo, stage 3753890498) shows a minor probability split observed live: a small number of open deals at 0.15 vs the modal 0.2; modal probability used, unchanged from prior snapshots.",
-  "SDR section added 2026-09-23: pull_properties extended with sdr_owner, demo_booked__c, demo_completed__c, deal_source_group. Owners map extended with 7 SDR owner IDs resolved via search_owners (166642714, 167140681, 1326690751, 1167601196, 404749623, 8309346, 1229562943); the sdr_owner/sdr_owner_new property enumeration metadata cached by HubSpot is stale and does not include several of these currently-active SDRs.",
-  "8309346 is HubSpot's 'Unassigned' placeholder owner (used as an actual sdr_owner value on some deals), distinct from a true-null sdr_owner. Both are excluded from the 'opportunity' population's per-owner chart's real-person rows but 8309346 does count toward opp_count/opp_amount per the confirmed opportunity_definition (sdr_owner IS NOT NULL)."
+  "Discovery / Demo (New Logo, stage 3753890498) shows a minor probability split observed live: a small number of deals at 0.15 vs the modal 0.2; modal probability used, unchanged from prior snapshots.",
+  "SDR section added 2026-09-23: pull_properties extended with sdr_owner, demo_booked__c, demo_completed__c, deal_source_group. Owners map extended with 7 SDR owner IDs resolved via search_owners; the sdr_owner/sdr_owner_new property enumeration metadata cached by HubSpot is stale and does not include several of these currently-active SDRs.",
+  "8309346 is HubSpot's 'Unassigned' placeholder owner (used as an actual sdr_owner value on some deals), distinct from a true-null sdr_owner. Both are excluded from the 'opportunity' population's per-owner chart's real-person rows but 8309346 does count toward opp_count/opp_amount per the confirmed opportunity_definition (sdr_owner IS NOT NULL).",
+  "2026-09-24 refresh: all 15 distinct owner IDs (hubspot_owner_id and sdr_owner) across today's pull already existed in this owners map; no new search_owners lookups were needed. Re-derived stage/probability map matched the prior snapshot exactly, including the Discovery/Demo 0.15/0.2 split noted above."
  ]
 }
