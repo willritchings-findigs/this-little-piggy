@@ -11,7 +11,7 @@ Exit codes: 0 = built and reconciled; 2 = tie-out failure (nothing written to ou
 
 Usage: python build.py [--as-of YYYY-MM-DD] [--no-run-log]
 """
-import argparse, json, os, sys
+import argparse, glob, json, os, re, sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta, date
 from zoneinfo import ZoneInfo
@@ -99,6 +99,62 @@ def stage_of(sid):
     return STAGE[sid]
 
 usd = lambda v: "${:,.2f}".format(v)
+
+# ----------------------------------------------------------------------------- historical KPI snapshots (week-over-week comparison)
+def _inwin(d, w):
+    return bool(d) and w.get("start") and w.get("end") and w["start"] <= d <= w["end"]
+
+def snap_tier1(deals, qtd, ytd):
+    won = [d for d in deals if d.get("won")]; open_ = [d for d in deals if not d.get("won")]
+    wonQ = [d for d in won if _inwin(d.get("close"), qtd)]; wonY = [d for d in won if _inwin(d.get("close"), ytd)]
+    openQ = [d for d in open_ if _inwin(d.get("close"), qtd)]; openY = [d for d in open_ if _inwin(d.get("close"), ytd)]
+    cyc = [ (date.fromisoformat(d["close"]) - date.fromisoformat(d["created"])).days for d in wonY if d.get("close") and d.get("created") ]
+    qtd_amt = sum(d["amount"] for d in wonQ); ytd_amt = sum(d["amount"] for d in wonY)
+    return dict(
+        qtd=round(qtd_amt, 2), ytd=round(ytd_amt, 2),
+        asp=round(ytd_amt / len(wonY), 2) if wonY else None,
+        cycle=round(sum(cyc) / len(cyc), 1) if cyc else None,
+        nl=round(sum(d["amount"] for d in wonY if d.get("pipe") == "N"), 2),
+        ue=round(sum(d["amount"] for d in wonY if d.get("pipe") == "U"), 2),
+        gross=round(sum(d["amount"] for d in open_), 2), wtd=round(sum(d["weighted"] for d in open_), 2),
+        fq=round(qtd_amt + sum(d["weighted"] for d in openQ), 2), fy=round(ytd_amt + sum(d["weighted"] for d in openY), 2),
+    )
+
+def snap_pg(pg, qtd, ytd):
+    cq = [d for d in pg if _inwin(d.get("created"), qtd)]; cy = [d for d in pg if _inwin(d.get("created"), ytd)]
+    return dict(cqtd=round(sum(d["amount"] for d in cq), 2), cytd=round(sum(d["amount"] for d in cy), 2), nqtd=len(cq), nytd=len(cy))
+
+def snap_sdr(pg, win30):
+    if not pg or "isOpp" not in pg[0] or not win30: return None
+    opps = [d for d in pg if d.get("isOpp")]
+    booked = [d for d in pg if _inwin(d.get("meetingBooked"), win30)]
+    held = [d for d in booked if d.get("meetingHeld")]
+    opp30 = [d for d in opps if _inwin(d.get("created"), win30)]
+    return dict(booked30=len(booked), held30=len(held), opp30=len(opp30), oppfy=round(sum(d["amount"] for d in opps), 2))
+
+def load_history(exclude_as_of):
+    hist = []
+    for fp in sorted(glob.glob(P("output", "findigs_gtm_executive_dashboard_*.html"))):
+        try:
+            txt = open(fp, encoding="utf-8").read()
+            m_deals = re.search(r"const DEALS = (\[.*?\]);\nconst PG", txt, re.S)
+            m_pg = re.search(r"const PG = (\[.*?\]);\nconst META", txt, re.S)
+            m_meta = re.search(r"const META = (\{.*\});", txt)
+            if not (m_deals and m_pg and m_meta): continue
+            deals_h, pg_h, meta_h = json.loads(m_deals.group(1)), json.loads(m_pg.group(1)), json.loads(m_meta.group(1))
+            as_of_h = meta_h["asOf"]
+            if as_of_h == exclude_as_of: continue
+            qtd_h, ytd_h = meta_h["windows"]["qtd"], meta_h["windows"]["ytd"]
+            pgm = meta_h.get("pg") or {}
+            sdrm = meta_h.get("sdr")
+            hist.append(dict(asOf=as_of_h, file=os.path.basename(fp),
+                              tier1=snap_tier1(deals_h, qtd_h, ytd_h),
+                              pg=snap_pg(pg_h, pgm.get("qtd", qtd_h), pgm.get("ytd", ytd_h)),
+                              sdr=snap_sdr(pg_h, sdrm.get("win30")) if sdrm else None))
+        except Exception as e:
+            print(f"  WARN: could not parse history from {fp}: {e}", file=sys.stderr)
+    hist.sort(key=lambda h: h["asOf"])
+    return hist
 
 # ----------------------------------------------------------------------------- derive Tier 1-3 deals
 def derive_deal(r, won):
@@ -331,9 +387,15 @@ meta = dict(
              controls=[{k: v for k, v in t.items() if k != "ok"} for t in sdr_tie]),
 )
 
+# ----------------------------------------------------------------------------- history (week-over-week KPI comparison)
+HISTORY = load_history(exclude_as_of=AS_OF)
+HISTORY.append(dict(asOf=AS_OF, file=CFG["distribution"]["file_name_pattern"].format(as_of=AS_OF),
+                     tier1=snap_tier1(deals, WIN["qtd"], WIN["ytd"]), pg=snap_pg(pg, WIN["qtd"], WIN["ytd"]), sdr=snap_sdr(pg, win30)))
+
 # ----------------------------------------------------------------------------- render
 with open(P("template.html"), encoding="utf-8") as f: tpl = f.read()
-payload = "const DEALS = " + json.dumps(deals, ensure_ascii=False, separators=(",", ":")) + ";\nconst PG = " + json.dumps(pg, ensure_ascii=False, separators=(",", ":")) + ";\nconst META = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";"
+payload = ("const DEALS = " + json.dumps(deals, ensure_ascii=False, separators=(",", ":")) + ";\nconst PG = " + json.dumps(pg, ensure_ascii=False, separators=(",", ":")) +
+           ";\nconst META = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";\nconst HISTORY = " + json.dumps(HISTORY, ensure_ascii=False, separators=(",", ":")) + ";")
 if "/*__DATA__*/" not in tpl: fail(3, "template.html is missing the /*__DATA__*/ placeholder")
 html = tpl.replace("/*__DATA__*/", payload)
 os.makedirs(P("output"), exist_ok=True)
