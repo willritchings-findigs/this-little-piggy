@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const GTM_CONFIG = join(ROOT, '..', 'gtm-dashboard', 'config.json');
-const read = (p) => readFileSync(p, 'utf8');
+// Normalize CRLF → LF so Windows checkouts (git core.autocrlf) produce identical output and hashes.
+const read = (p) => readFileSync(p, 'utf8').replace(/\r\n?/g, '\n');
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 // Fields this tool must never read (requirements + gtm-dashboard config.fields.not_used).
@@ -81,7 +82,7 @@ export function buildConfig() {
 
   const config = {
     generatedFrom: {
-      gtmDashboardConfigVersion: gtm.version, gtmDashboardConfigSha256: sha(gtmRaw),
+      gtmDashboardConfigVersion: gtm.version, gtmDashboardConfigSha256: sha(gtmRaw.trimEnd()),
       rosterVersion: roster.version, forecastVersion: forecast.version
     },
     portalId: gtm.portal_id,
