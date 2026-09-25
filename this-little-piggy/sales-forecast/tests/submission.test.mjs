@@ -85,7 +85,7 @@ test('submit: writes one immutable snapshot + rollup row with submission-time co
   const files = snapFiles(a);
   assert.equal(files.length, 1); assert.equal(files[0].name, r.fileName); assert.match(r.fileName, /^forecast_2026-10-02_ben-de-winter_2026-09-28T10-00-00\.000-04-00\.json$/);
   const snap = JSON.parse(files[0].body);
-  assert.equal(snap.schema_version, '1.0'); assert.deepEqual(snap.forecast, { commit: 100000, gut: 250000, best_case: 900000 });
+  assert.equal(snap.schema_version, '1.1'); assert.deepEqual(snap.forecast, { commit: 100000, gut: 250000, best_case: 900000 });
   assert.deepEqual(snap.forecast_period, { start: '2026-09-28', end: '2026-12-31' });
   assert.equal(snap.context_at_submission.closed_won_ytd.amount, 484825.04);
   assert.equal(snap.context_at_submission.gross_open_pipeline.amount, 6325852);
@@ -148,8 +148,8 @@ test('Best Case above in-period pipeline: submitted with a warning recorded in s
   assert.deepEqual(JSON.parse(snapFiles(a)[0].body).validation.warnings, ['best_case_exceeds_in_period_pipeline']);
 });
 
-test('permissions: everyone sees all rows + totals; leadership cannot submit; AEs and Phil submit only their own', () => {
-  const lead = app('brian.korchin@findigs.com');
+test('permissions: everyone sees all rows + totals; leadership cannot submit; AEs submit only their own; Phil (admin) for anyone', () => {
+  const lead = app('alexander.schaper@findigs.com');
   assert.throws(() => lead.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }), /Only AEs/);
   assert.throws(() => lead.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'ben-de-winter'), /Only AEs/);
   const v = lead.call('apiGetSubmission');
@@ -162,8 +162,12 @@ test('permissions: everyone sees all rows + totals; leadership cannot submit; AE
   assert.equal(ian.call('apiGetSubmission', 'ben-de-winter').editableSlug, 'ian-mclaughlin');   // AEs always act for themselves
   assert.throws(() => ian.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'ben-de-winter'), /only submit your own/);
   const phil = app('phil.aroian@findigs.com');
-  assert.equal(phil.call('apiGetSubmission').editableSlug, 'phil-aroian');
-  assert.throws(() => phil.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'matt-lynch'), /only submit your own/);
+  const pv = phil.call('apiGetSubmission');
+  assert.equal(pv.editableSlug, 'phil-aroian'); assert.equal(pv.onBehalf, false); assert.equal(pv.editableSlugs.length, 5);
+  assert.equal(phil.call('apiGetSubmission', 'matt-lynch').onBehalf, true);
+  const r = phil.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'matt-lynch');
+  assert.equal(r.result.onBehalf, true); assert.equal(r.result.aeName, 'Matt Lynch'); assert.equal(r.view.editableSlug, 'matt-lynch');
+  assert.equal(phil.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }).result.aeName, 'Phil Aroian');   // default: himself
 });
 
 test('admin submits on behalf of an AE: snapshot and row record the admin as submitter', () => {

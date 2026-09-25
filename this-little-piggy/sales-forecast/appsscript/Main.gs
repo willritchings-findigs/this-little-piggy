@@ -84,10 +84,11 @@ function apiGetBuilder(aeSlug) {
   var tags = readTags_(ae.email);
   var aes = v.canViewAll ? FORECAST_CONFIG.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; })
                          : [{ slug: ae.slug, name: ae.name }];
+  var own = !!(v.ae && v.ae.slug === ae.slug);
   return JSON.parse(JSON.stringify({
     viewer: viewerOut_(v),
-    ae: { slug: ae.slug, name: ae.name, ownerId: String(ae.hubspot_owner_id) },
-    readOnly: !(v.ae && v.ae.slug === ae.slug),
+    ae: { slug: ae.slug, name: ae.name, email: ae.email, ownerId: String(ae.hubspot_owner_id) },
+    readOnly: !(own || v.isAdmin), onBehalf: !own && v.isAdmin, editors: editorNames_(tags),
     aes: aes, deals: deals, tags: tags, tagsSavedAt: tagsSavedAt_(tags),
     pulledAt: ds.pulledAt, asOf: ds.asOf, period: ds.period,
     tieOutOk: ds.tieOut ? ds.tieOut.ok : null
@@ -95,16 +96,27 @@ function apiGetBuilder(aeSlug) {
 }
 
 /** Save tag changes for the viewer's own builder. Never writes to HubSpot. */
+/** Save tags for an AE: the AE themselves, or an admin on their behalf (P5-4). updated_by records who set each tag. */
 function apiSaveTags(aeSlug, changes) {
   var v = currentViewer_();
-  if (!v.ae || v.ae.slug !== aeSlug) throw new Error('Read-only: you can only edit your own forecast builder.');
+  var ae = rosterAeBySlug_(aeSlug);
+  if (!ae) throw new Error('Unknown AE: ' + aeSlug);
+  if (!(v.ae && v.ae.slug === aeSlug) && !v.isAdmin) throw new Error('Read-only: you can only edit your own forecast builder.');
   var ds = getDataset_(false);
-  var openIds = (ds.metrics.openDealsByOwner[String(v.ae.hubspot_owner_id)] || []).map(function (d) { return d.id; });
+  var openIds = (ds.metrics.openDealsByOwner[String(ae.hubspot_owner_id)] || []).map(function (d) { return d.id; });
   var chk = ForecastCore.validateTagChanges(changes, openIds);
   if (!chk.ok) throw new Error('Not saved: ' + chk.errors.join('; '));
-  var savedAt = writeTags_(v.ae.email, chk.clean, v.email);
-  var tags = readTags_(v.ae.email);
-  return JSON.parse(JSON.stringify({ savedAt: savedAt, tags: tags, tagsSavedAt: tagsSavedAt_(tags) }));
+  var savedAt = writeTags_(ae.email, chk.clean, v.email);
+  var tags = readTags_(ae.email);
+  return JSON.parse(JSON.stringify({ savedAt: savedAt, tags: tags, tagsSavedAt: tagsSavedAt_(tags), editors: editorNames_(tags) }));
+}
+
+/** {email: display name} for everyone who set one of these tags (roster names; unknown emails shown as-is). */
+function editorNames_(tags) {
+  var r = FORECAST_CONFIG.roster, byEmail = {}, out = {};
+  r.aes.concat(r.leadership, r.admins || []).forEach(function (p) { byEmail[p.email.toLowerCase()] = p.name; });
+  Object.keys(tags).forEach(function (id) { var e = String(tags[id].updatedBy || '').toLowerCase(); if (e) out[e] = byEmail[e] || e; });
+  return out;
 }
 
 /**
@@ -114,7 +126,8 @@ function apiSaveTags(aeSlug, changes) {
 function apiGetSubmission(actingSlug) {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
   var allowed = ForecastCore.submittableSlugs(v, cfg.roster);
-  var acting = v.ae ? v.ae.slug : (actingSlug || null);
+  // Admins (incl. Phil via admin: true) may act for any AE; a plain AE always acts for themselves.
+  var acting = v.isAdmin && actingSlug ? actingSlug : (v.ae ? v.ae.slug : (actingSlug || null));
   if (acting && allowed.indexOf(acting) < 0) throw new Error('You cannot submit for ' + acting + '.');
   var ds = getDataset_(false), m = ds.metrics;
   var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
@@ -144,9 +157,9 @@ function apiGetSubmission(actingSlug) {
  */
 function apiSubmitForecast(values, aeSlug) {
   var v = currentViewer_(), allowed = ForecastCore.submittableSlugs(v, FORECAST_CONFIG.roster);
-  if (v.ae && aeSlug && aeSlug !== v.ae.slug) throw new Error('You can only submit your own forecast.');
-  var slug = v.ae ? v.ae.slug : aeSlug;
+  if (v.ae && aeSlug && aeSlug !== v.ae.slug && !v.isAdmin) throw new Error('You can only submit your own forecast.');
+  var slug = aeSlug || (v.ae ? v.ae.slug : null);
   if (!slug || allowed.indexOf(slug) < 0) throw new Error(v.isAdmin ? 'Choose the AE you are submitting for.' : 'Only AEs on the forecast roster, or an admin on their behalf, can submit a forecast.');
   var res = writeSubmission_(v, values || {}, rosterAeBySlug_(slug));
-  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission(v.ae ? null : slug) }));
+  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission(slug) }));
 }

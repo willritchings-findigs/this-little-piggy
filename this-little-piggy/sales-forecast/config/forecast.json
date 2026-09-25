@@ -1,7 +1,7 @@
 {
   "_about": "Forecast motion settings. HubSpot definitions (pipelines, stage IDs, fields, weighting) are NOT here; they come from gtm-dashboard/config.json via scripts/build.mjs.",
   "version": "2026-09-25",
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "timezone": "America/New_York",
   "cutoff": {
     "weekday": "Friday",

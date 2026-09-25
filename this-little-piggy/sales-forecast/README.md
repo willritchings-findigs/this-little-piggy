@@ -27,9 +27,11 @@ Every submission is an immutable JSON snapshot in Drive, plus a row in a rollup 
 | Role | Who (config/roster.json) | Can |
 |---|---|---|
 | `ae` | Spencer Wuthrich, Ian McLaughlin, Ben de Winter, Matt Lynch | Submit and tag for themselves. See every row, builder, and trend (full transparency, decision P3-2) |
-| `ae_leader` | Phil Aroian | Same as `ae` |
-| `leadership` | Brian Korchin, Alexander Schaper, Asaf Raz | See everything. No edits |
-| `admin` | Will Ritchings | Leadership access, plus submit on behalf of any AE and run the editor functions below |
+| `ae_leader` + admin | Phil Aroian | Same as `ae`, plus everything an admin can do (`"admin": true` on his AE entry) |
+| `leadership` | Alexander Schaper, Asaf Raz | See everything. No edits |
+| `admin` | Will Ritchings, Brian Korchin | See everything, edit **any AE's builder tags**, submit on behalf of any AE, and run the editor functions below |
+
+When someone other than the AE sets a tag, the AE's builder says so ("3 tags were last set by Will Ritchings…") and marks each deal "set by …". The snapshot records who set each tag (`tag_updated_by`, schema 1.1). Tags are shared: whoever changes a deal's tag last wins, and it goes into the AE's next submission.
 
 Anyone with a Findigs Google account who is not on the roster gets "Access denied".
 
@@ -113,6 +115,7 @@ Settings that live in config:
 ## Weekly operations
 - **Friday before 12:00 ET:** each AE submits. They can resubmit until the cutoff; the last one before 12:00:00 ET is official. At exactly 12:00:00 and later, a submission counts toward **next** Friday.
 - **AE is out:** an admin opens Forecast submission, picks the AE under **Submit on behalf of**, and submits. The snapshot records the admin as submitter.
+- **Forecast call with screen share:** an admin opens Forecast builder, picks the AE, and tags deals while the AE walks through them. Then, in Forecast submission, the admin picks the same AE and submits their numbers, or the AE submits them. The snapshot freezes the tags with who set each one.
 - **Monday review:** open Forecast trend. The change table defaults to the most recent closed week. Click any AE point, or **Deal movement**, for the builder-tag drill-down. A red **Does not reconcile** means the submitted change is larger or smaller than the tag movement explains. Ask the AE; it is never adjusted.
 - **Missed week:** it shows as a gap marked "Not submitted". It cannot be back-filled. A late submission counts toward the next week, by design (decision Q1).
 - **Need fresher HubSpot data than the 30-minute refresh:** run `refreshDataTrigger` from the editor. Each submission already re-pulls that AE's figures.
@@ -139,7 +142,7 @@ The roster is `config/roster.json`. The app re-checks every owner against HubSpo
 - Once they leave HubSpot, the app flags their owner as inactive or without a seat. That is expected.
 - To stop them from submitting sooner, move them to `non_roster_owners` with a reason. Their trend history then drops out of Section 3 for the rest of the year.
 
-**Leadership and admins:** edit `leadership` or `admins` and ship the change. An email may appear in only one list.
+**Leadership and admins:** edit `leadership` or `admins` and ship the change. An email may appear in only one list. To make an AE an admin as well, add `"admin": true` to their AE entry (as with Phil) rather than listing them twice.
 
 **Non-roster owners:** `non_roster_owners` lists people who hold in-scope deals but do not forecast (currently Reese Ryan, Clay Stapleford, Hayden Ashwill). They appear in a read-only reconciliation row, so Section 1 totals tie to the company total. Add a `reason` so the Sources & methodology panel explains them.
 

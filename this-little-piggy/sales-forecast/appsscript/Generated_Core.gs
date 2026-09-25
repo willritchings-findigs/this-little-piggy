@@ -146,13 +146,14 @@ var ForecastCore = (function () {
   /**
    * Everyone on the roster sees everything, read-only (decision 2026-09-25: full transparency).
    * Edits: an AE (incl. ae_leader) edits their own builder and submits their own forecast; an admin can
-   * submit on behalf of any AE (decision 2026-09-25). canRefresh gates the expensive forced HubSpot refresh.
+   * submit on behalf of any AE and edit any AE's builder tags (P3-7, P5-4). An AE entry may carry admin: true
+   * (Phil Aroian). canRefresh gates the expensive forced HubSpot refresh.
    */
   function resolveViewer(email, roster) {
     var e = String(email || '').trim().toLowerCase();
     if (!e) return null;
     var ae = (roster.aes || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
-    if (ae) return { email: e, name: ae.name, role: ae.role, ae: ae, canViewAll: true, canRefresh: ae.role === 'ae_leader', isAdmin: false };
+    if (ae) return { email: e, name: ae.name, role: ae.role, ae: ae, canViewAll: true, canRefresh: ae.role === 'ae_leader' || ae.admin === true, isAdmin: ae.admin === true };
     var lead = (roster.leadership || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
     if (lead) return { email: e, name: lead.name, role: 'leadership', ae: null, canViewAll: true, canRefresh: true, isAdmin: false };
     var adm = (roster.admins || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
@@ -602,6 +603,7 @@ var ForecastCore = (function () {
         deals: a.openDeals.map(function (d) {
           return { deal_id: d.id, deal_name: d.name, pipeline: d.pipelineId, stage_id: d.stageId, stage: d.stage, amount: d.amount, units: d.units,
                    close_date: d.closeDate, tag: tagOf_(a.tags, d.id),
+                   tag_updated_by: (a.tags && a.tags[d.id] && a.tags[d.id].updatedBy) || null, tag_updated_at: (a.tags && a.tags[d.id] && a.tags[d.id].updatedAt) || null,
                    flags: d.flags.filter(function (f) { return ['past_due', 'missing_amount', 'missing_close_date'].indexOf(f) >= 0; }) };
         })
       }

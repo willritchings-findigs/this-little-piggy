@@ -3,7 +3,7 @@ var FORECAST_CONFIG = {
   "generatedFrom": {
     "gtmDashboardConfigVersion": "2026-09-22",
     "gtmDashboardConfigSha256": "13be4be5d5be5d2f51d4d42db9041c7d6b06986d24f7fb13ded7acf8005b00ba",
-    "rosterVersion": "2026-09-25",
+    "rosterVersion": "2026-09-25b",
     "forecastVersion": "2026-09-25"
   },
   "portalId": "243635806",
@@ -79,13 +79,13 @@ var FORECAST_CONFIG = {
   },
   "roster": {
     "_about": "Forecast roster. Owner IDs, emails and isActive verified live against HubSpot owners/users 2026-09-25. The app re-validates isActive and user seat on every data pull and flags any drift.",
-    "version": "2026-09-25",
+    "version": "2026-09-25b",
     "fiscal_year": 2026,
     "roles": {
       "ae": "Edits own row in Section 1 and own builder in Section 2. Reads every row, builder, and trend (decision 2026-09-25: full transparency).",
       "ae_leader": "Same as ae (edits own row and builder only).",
       "leadership": "Reads everything. No edits.",
-      "admin": "Leadership access plus submitting on behalf of any AE and editor-run admin functions (installTriggers, refreshDataTrigger, debugSampleAe, verifySnapshots, seedSyntheticSnapshots in test mode)."
+      "admin": "Leadership access plus editing any AE's builder tags, submitting on behalf of any AE, and editor-run admin functions (installTriggers, refreshDataTrigger, debugSampleAe, verifySnapshots, seedSyntheticSnapshots in test mode)."
     },
     "aes": [
       {
@@ -94,7 +94,8 @@ var FORECAST_CONFIG = {
         "email": "phil.aroian@findigs.com",
         "hubspot_owner_id": "1053057926",
         "role": "ae_leader",
-        "_note": "Decision 2026-09-25: edits own row, sees all rows."
+        "admin": true,
+        "_note": "Decision 2026-09-25: edits own row, sees all rows. Admin (decision P5-4): may also edit any AE's builder tags and submit on behalf of any AE."
       },
       {
         "name": "Spencer Wuthrich",
@@ -127,11 +128,6 @@ var FORECAST_CONFIG = {
     ],
     "leadership": [
       {
-        "name": "Brian Korchin",
-        "email": "brian.korchin@findigs.com",
-        "_note": "CRO per HubSpot user title"
-      },
-      {
         "name": "Alexander Schaper",
         "email": "alexander.schaper@findigs.com"
       },
@@ -140,12 +136,17 @@ var FORECAST_CONFIG = {
         "email": "asaf.raz@findigs.com"
       }
     ],
-    "_leadership_note": "Decision 2026-09-25: leadership = Brian Korchin, Alex Schaper, Asaf Raz, plus Phil Aroian (via ae_leader role above).",
+    "_leadership_note": "Decision 2026-09-25: leadership = Brian Korchin, Alex Schaper, Asaf Raz, plus Phil Aroian (via ae_leader role above). P5-4: Brian moved to admins; Phil carries admin: true on his AE entry.",
     "admins": [
       {
         "name": "Will Ritchings",
         "email": "will.ritchings@findigs.com",
         "_note": "Script owner and core owner of the tool (decisions 2026-09-25)."
+      },
+      {
+        "name": "Brian Korchin",
+        "email": "brian.korchin@findigs.com",
+        "_note": "CRO per HubSpot user title. Moved from leadership to admin (decision P5-4)."
       }
     ],
     "non_roster_owners": {
@@ -172,7 +173,7 @@ var FORECAST_CONFIG = {
   "forecast": {
     "_about": "Forecast motion settings. HubSpot definitions (pipelines, stage IDs, fields, weighting) are NOT here; they come from gtm-dashboard/config.json via scripts/build.mjs.",
     "version": "2026-09-25",
-    "schema_version": "1.0",
+    "schema_version": "1.1",
     "timezone": "America/New_York",
     "cutoff": {
       "weekday": "Friday",

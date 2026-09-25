@@ -92,7 +92,7 @@ test('AE: flagged deals are shown and badged (past due)', { skip }, async () => 
 });
 
 test('Leadership: read-only, can switch AE, sees the AE\'s saved tags', { skip }, async () => {
-  const { page, errors } = await open('brian.korchin@findigs.com');
+  const { page, errors } = await open('alexander.schaper@findigs.com');
   assert.equal(await page.$$eval('#b-ae option', (o) => o.length), 5);
   assert.equal(await page.inputValue('#b-ae'), 'ben-de-winter');   // non-AE leadership defaults to the first AE alphabetically
   await page.waitForFunction(() => /Read-only/.test(document.getElementById('b-save').textContent));
@@ -103,6 +103,30 @@ test('Leadership: read-only, can switch AE, sees the AE\'s saved tags', { skip }
   await page.selectOption('#b-ae', 'matt-lynch');
   await page.waitForFunction(() => /Showing 17 of 21/.test(document.getElementById('b-count').textContent));
   await page.screenshot({ path: join(SHOTS, 'phase2_builder_leadership.png'), fullPage: true });
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('Admin edits an AE\'s tags on their behalf; the AE sees who set them', { skip }, async () => {
+  let { page, errors } = await open('will.ritchings@findigs.com');
+  await page.waitForSelector('#b-onbehalf');
+  await page.selectOption('#b-ae', 'matt-lynch');
+  await page.waitForFunction(() => /Editing Matt Lynch/.test((document.getElementById('b-onbehalf') || {}).textContent || ''));
+  assert.match(await page.textContent('#b-onbehalf'), /Editing Matt Lynch's tags as Will Ritchings \(admin\)/);
+  assert.equal(await page.isDisabled('#b-table tbody select'), false);
+  const first = page.locator('#b-table tbody select').first();
+  await first.selectOption('commit');
+  assert.match(await page.textContent('#b-table tbody tr:first-child'), /set by Will Ritchings/);
+  await page.waitForFunction(() => /Saved/.test(document.getElementById('b-save').textContent));
+  assert.match(await page.textContent('#b-others'), /1 tag on Matt Lynch's builder was last set by Will Ritchings \(1\)/);
+  await page.screenshot({ path: join(SHOTS, 'builder_admin_on_behalf.png'), fullPage: true });
+  assert.deepEqual(errors, []);
+  await page.close();
+  ({ page, errors } = await open('matt.lynch@findigs.com'));
+  await page.waitForSelector('#b-others');
+  assert.match(await page.textContent('#b-others'), /1 tag on your builder was last set by Will Ritchings \(1\)/);
+  assert.equal(await page.$$eval('[data-set-by]', (m) => m.length), 1);
+  assert.equal(await page.$('#b-onbehalf'), null);
   assert.deepEqual(errors, []);
   await page.close();
 });

@@ -79,15 +79,16 @@ test('apiGetBuilder: AE gets own deals, editable; defaults to self; can view ano
   assert.equal(other.readOnly, true); assert.equal(other.deals.length, 32);
   assert.throws(() => call('apiSaveTags', 'phil-aroian', [{ dealId: other.deals[0].id, tag: 'commit' }]), /only edit your own/);
 });
-test('apiGetBuilder: leadership and ae_leader view any AE read-only; Phil edits only his own', () => {
+test('apiGetBuilder: leadership views any AE read-only; Phil (ae_leader + admin) edits any AE', () => {
   const lead = appAs('asaf.raz@findigs.com');
   const b = lead.call('apiGetBuilder', 'matt-lynch');
   assert.equal(b.readOnly, true); assert.equal(b.deals.length, 21); assert.equal(b.aes.length, 5);
   assert.equal(lead.call('apiGetBuilder', null).ae.slug, 'ben-de-winter');   // alphabetical default for non-AE leadership
   const phil = appAs('phil.aroian@findigs.com');
   assert.equal(phil.call('apiGetBuilder', null).readOnly, false);
-  assert.equal(phil.call('apiGetBuilder', 'ian-mclaughlin').readOnly, true);
-  assert.throws(() => phil.call('apiSaveTags', 'ian-mclaughlin', [{ dealId: 'x', tag: 'commit' }]), /only edit your own/);
+  const ianB = phil.call('apiGetBuilder', 'ian-mclaughlin');
+  assert.equal(ianB.readOnly, false); assert.equal(ianB.onBehalf, true);
+  assert.throws(() => phil.call('apiSaveTags', 'ian-mclaughlin', [{ dealId: 'x', tag: 'commit' }]), /not one of this AE's open deals/);
   assert.throws(() => lead.call('apiSaveTags', 'matt-lynch', []), /only edit your own/);
 });
 test('apiSaveTags: persists across sessions, updates in place, rejects foreign deals, never calls HubSpot writes', () => {
@@ -183,4 +184,35 @@ test('withScriptLock_ is re-entrant within one execution', () => {
   app.store.lockBusy = true;
   assert.throws(() => app.ctx.withScriptLock_(() => 1, 'busy!'), /busy!/);
   assert.equal(app.ctx.withScriptLock_(() => 1, null), undefined);
+});
+
+test('admin edits an AE\'s real tags: recorded as the admin, shown to the AE, frozen into the AE\'s snapshot', () => {
+  const app = appAs('will.ritchings@findigs.com', { now: '2026-09-28T10:00:00-04:00' });
+  const b = app.call('apiGetBuilder', 'ian-mclaughlin');
+  assert.equal(b.readOnly, false); assert.equal(b.onBehalf, true);
+  const [d1, d2] = b.deals;
+  const r = app.call('apiSaveTags', 'ian-mclaughlin', [{ dealId: d1.id, tag: 'commit' }]);
+  assert.equal(r.tags[d1.id].updatedBy, 'will.ritchings@findigs.com');
+  assert.deepEqual(r.editors, { 'will.ritchings@findigs.com': 'Will Ritchings' });
+  // Brian (admin) and Phil (ae_leader + admin) can too; Asaf (leadership) and another AE cannot
+  app.session.email = 'brian.korchin@findigs.com';
+  app.call('apiSaveTags', 'ian-mclaughlin', [{ dealId: d2.id, tag: 'gut' }]);
+  for (const who of ['asaf.raz@findigs.com', 'ben.dewinter@findigs.com']) {
+    app.session.email = who;
+    assert.throws(() => app.call('apiSaveTags', 'ian-mclaughlin', [{ dealId: d1.id, tag: 'none' }]), /only edit your own/);
+  }
+  // Ian sees who set them; his own later edit takes the tag back
+  app.session.email = 'ian.mclaughlin@findigs.com';
+  const ib = app.call('apiGetBuilder', null);
+  assert.equal(ib.readOnly, false); assert.equal(ib.onBehalf, false);
+  assert.equal(ib.tags[d1.id].updatedBy, 'will.ritchings@findigs.com'); assert.equal(ib.editors['brian.korchin@findigs.com'], 'Brian Korchin');
+  // Will submits on Ian's behalf during the call: the snapshot carries the tags and who set each one
+  app.session.email = 'will.ritchings@findigs.com';
+  app.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'ian-mclaughlin');
+  const f = app.store.drive.filesIn(app.store.drive.folder('1WGzeVVLMlfTHpU9S5GKVB45EDRx84I_P')).find((x) => x.name.startsWith('forecast_'));
+  const snap = JSON.parse(f.body), sd = (id) => snap.builder.deals.find((x) => x.deal_id === id);
+  assert.equal(snap.schema_version, '1.1'); assert.equal(snap.builder.saved, true);
+  assert.deepEqual([sd(d1.id).tag, sd(d1.id).tag_updated_by], ['commit', 'will.ritchings@findigs.com']);
+  assert.deepEqual([sd(d2.id).tag, sd(d2.id).tag_updated_by], ['gut', 'brian.korchin@findigs.com']);
+  assert.equal(sd(b.deals[2].id).tag_updated_by, null);
 });

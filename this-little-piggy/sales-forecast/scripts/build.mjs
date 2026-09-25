@@ -69,6 +69,7 @@ export function buildConfig() {
     if (!/^[a-z0-9\-]+$/.test(a.slug)) errors.push(`bad slug ${a.slug}`);
     if (!/^\d+$/.test(a.hubspot_owner_id)) errors.push(`bad owner id for ${a.name}`);
     if (!['ae', 'ae_leader'].includes(a.role)) errors.push(`bad role ${a.role} for ${a.name}`);
+    if ('admin' in a && typeof a.admin !== 'boolean') errors.push(`admin flag for ${a.name} must be true or false`);
     for (const [k, v] of [['email', a.email], ['slug', a.slug], ['owner', a.hubspot_owner_id]]) {
       if (seen[k].has(v)) errors.push(`duplicate ${k} ${v}`); seen[k].add(v);
     }

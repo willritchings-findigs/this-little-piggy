@@ -54,11 +54,39 @@ var Builder = (function () {
     renderNotes(); renderSummary(); renderTable(); renderSaveStatus();
   }
 
+  /** Tags on this AE's builder that someone other than the AE set: { count, byName: {name: n}, latest }. */
+  function othersEdits() {
+    var d = st.data, ae = String(d.ae.email || '').toLowerCase(), out = { count: 0, byName: {}, latest: null };
+    Object.keys(st.tags).forEach(function (id) {
+      var t = st.tags[id], by = String(t.updatedBy || '').toLowerCase();
+      if (!by || by === ae) return;
+      var name = (d.editors && d.editors[by]) || (by === String(d.viewer.email).toLowerCase() ? d.viewer.name : by);
+      out.count++; out.byName[name] = (out.byName[name] || 0) + 1;
+      if (t.updatedAt && (!out.latest || t.updatedAt > out.latest)) out.latest = t.updatedAt;
+    });
+    return out;
+  }
+  function editorLabel(t) {
+    var d = st.data, by = String((t && t.updatedBy) || '').toLowerCase();
+    if (!by || by === String(d.ae.email || '').toLowerCase()) return '';
+    return (d.editors && d.editors[by]) || (by === String(d.viewer.email).toLowerCase() ? d.viewer.name : by);
+  }
+
   function renderNotes() {
     var d = st.data, html = '';
-    if (d.readOnly) {
-      html += '<div class="note">' + A.icon('visibility') + ' Viewing <strong>' + A.esc(d.ae.name) + '</strong>\'s builder, read-only. Tags are set by the AE.' +
+    if (d.onBehalf) {
+      html += '<div class="note" id="b-onbehalf">' + A.icon('supervisor_account') + ' Editing <strong>' + A.esc(d.ae.name) + '</strong>\'s tags as ' + A.esc(d.viewer.name) + ' (admin). ' +
+        'Changes save to ' + A.esc(d.ae.name) + '\'s builder, show your name to them, and are included in their next submission.</div>';
+    } else if (d.readOnly) {
+      html += '<div class="note">' + A.icon('visibility') + ' Viewing <strong>' + A.esc(d.ae.name) + '</strong>\'s builder, read-only. Tags are set by the AE or an admin.' +
         (d.tagsSavedAt ? ' Last saved ' + A.esc(A.stamp(d.tagsSavedAt)) + '.' : ' No tags saved yet.') + '</div>';
+    }
+    var o = othersEdits();
+    if (o.count) {
+      html += '<div class="note" id="b-others">' + A.icon('edit_note') + ' ' + o.count + ' tag' + (o.count === 1 ? '' : 's') + ' on ' +
+        (d.readOnly || d.onBehalf ? A.esc(d.ae.name) + '\'s' : 'your') + ' builder ' + (o.count === 1 ? 'was' : 'were') + ' last set by ' +
+        Object.keys(o.byName).map(function (n) { return A.esc(n) + ' (' + o.byName[n] + ')'; }).join(', ') +
+        (o.latest ? ', most recently ' + A.esc(A.stamp(o.latest)) : '') + '. Marked "set by" in the table.</div>';
     }
     $('b-notes').innerHTML = html;
   }
@@ -112,11 +140,12 @@ var Builder = (function () {
     if (!d.deals.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No open deals for ' + A.esc(d.ae.name) + '.</td></tr>'; return; }
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No open deals close on or before ' + A.date(d.period.end) + '. Turn on "Show all open deals" to see the rest.</td></tr>'; return; }
     tbody.innerHTML = rows.map(function (dl) {
-      var t = tagOf(dl.id), flags = flagTags(dl);
+      var t = tagOf(dl.id), flags = flagTags(dl), by = editorLabel(st.tags[dl.id]);
       var opts = C.TAGS.map(function (x) { return '<option value="' + x + '"' + (x === t ? ' selected' : '') + '>' + C.TAG_LABELS[x] + '</option>'; }).join('');
       return '<tr data-deal="' + A.esc(dl.id) + '"' + (flags.length ? ' class="flagged"' : '') + '>' +
         '<td><div class="tag-cell"><span class="swatch" style="--swatch:' + SWATCH[t] + '"></span>' +
-          '<select data-deal="' + A.esc(dl.id) + '" aria-label="Forecast tag for ' + A.esc(dl.name) + '"' + (d.readOnly ? ' disabled' : '') + '>' + opts + '</select></div></td>' +
+          '<select data-deal="' + A.esc(dl.id) + '" aria-label="Forecast tag for ' + A.esc(dl.name) + '"' + (d.readOnly ? ' disabled' : '') + '>' + opts + '</select></div>' +
+          (by ? '<div class="set-by" data-set-by>set by ' + A.esc(by) + '</div>' : '') + '</td>' +
         '<td class="deal-name"><a href="' + A.esc(dl.url) + '" target="_blank" rel="noopener">' + A.esc(dl.name || '(no name)') + ' ' + A.icon('open_in_new') + '</a>' +
           (flags.length ? '<div class="deal-flags">' + flags.join('') + '</div>' : '') + '</td>' +
         '<td>' + A.esc(dl.stage) + '<div class="stage-pipe">' + A.esc(dl.pipeline) + '</div></td>' +
@@ -131,6 +160,9 @@ var Builder = (function () {
   function onTagChange(e) {
     var id = e.target.getAttribute('data-deal'), tag = e.target.value;
     st.tags[id] = { tag: tag, updatedAt: null, updatedBy: st.data.viewer.email };
+    var row = e.target.closest('tr'), mark = row && row.querySelector('[data-set-by]'), by = editorLabel(st.tags[id]);
+    if (mark && !by) mark.remove();
+    else if (by && row) { if (!mark) { mark = document.createElement('div'); mark.className = 'set-by'; mark.setAttribute('data-set-by', ''); e.target.closest('td').appendChild(mark); } mark.textContent = 'set by ' + by; }
     st.pending[id] = tag;
     var sw = e.target.parentNode.querySelector('.swatch'); if (sw) sw.style.setProperty('--swatch', SWATCH[tag]);
     renderSummary();
@@ -154,9 +186,10 @@ var Builder = (function () {
       if (!st.data || st.data.ae.slug !== slug) return;
       // Server state wins, except for changes made while this save was in flight.
       var merged = res.tags || {};
-      Object.keys(st.pending).forEach(function (id) { merged[id] = { tag: st.pending[id], updatedAt: null }; });
+      Object.keys(st.pending).forEach(function (id) { merged[id] = { tag: st.pending[id], updatedAt: null, updatedBy: st.data.viewer.email }; });
       st.tags = merged; st.lastSavedAt = res.tagsSavedAt || res.savedAt;
-      renderSaveStatus(); renderSummary();
+      if (res.editors) st.data.editors = res.editors;
+      renderSaveStatus(); renderSummary(); renderNotes();
     }).catch(function (err) {
       st.inflight = null;
       changes.forEach(function (c) { if (!(c.dealId in st.pending)) st.pending[c.dealId] = c.tag; });

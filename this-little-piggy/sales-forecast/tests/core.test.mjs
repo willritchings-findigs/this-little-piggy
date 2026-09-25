@@ -109,10 +109,15 @@ test('resolveViewer: roles, case-insensitivity, unknown and blank rejected', () 
   assert.equal(C.resolveViewer('stranger@findigs.com', ROSTER), null);
   assert.equal(C.resolveViewer('', ROSTER), null);
 });
-test('real roster: Phil is ae_leader, leadership list matches decision', () => {
+test('real roster: Phil is ae_leader + admin; Brian and Will are admins; leadership list matches decision', () => {
   const r = CFG.roster;
-  assert.equal(C.resolveViewer('phil.aroian@findigs.com', r).role, 'ae_leader');
-  assert.deepEqual(r.leadership.map((l) => l.email).sort(), ['alexander.schaper@findigs.com', 'asaf.raz@findigs.com', 'brian.korchin@findigs.com']);
+  const phil = C.resolveViewer('phil.aroian@findigs.com', r);
+  assert.equal(phil.role, 'ae_leader'); assert.equal(phil.isAdmin, true);
+  assert.equal(C.submittableSlugs(phil, r).length, 5);
+  assert.equal(C.resolveViewer('brian.korchin@findigs.com', r).role, 'admin');
+  assert.equal(C.resolveViewer('ben.dewinter@findigs.com', r).isAdmin, false);
+  assert.deepEqual(r.leadership.map((l) => l.email).sort(), ['alexander.schaper@findigs.com', 'asaf.raz@findigs.com']);
+  assert.deepEqual(r.admins.map((l) => l.email).sort(), ['brian.korchin@findigs.com', 'will.ritchings@findigs.com']);
   assert.ok(!r.aes.some((a) => a.name === 'Reese Ryan'));
 });
 
