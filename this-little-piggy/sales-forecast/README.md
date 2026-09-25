@@ -34,12 +34,12 @@ npm run verify:phase1 # re-runs the 2026-09-25 tie-out from verification/
 4. Run `debugSampleAe` from the editor and authorize the requested scopes. The log shows Ben de Winter's figures, the Search-vs-Objects tie-out, and flags. A `build_log` row is appended to **Sales Forecast Rollup 2026** in the 2026 folder, which is created on first run.
 5. Optional: run `installTriggers` to refresh data every 30 minutes.
 
-**Pass criteria (gate for Phase 3, which writes to the production Drive folder):**
-- [ ] `debugSampleAe` completes. The tie-out shows `ok: true`: Search API vs Objects list API within $0.01 and counts exact
-- [ ] Company Closed Won YTD and Gross Open match HubSpot reports for the same day
-- [ ] Stage map passes: no drift error, 14 in-scope stages
-- [ ] Clay Stapleford shows `ownerStatus: no_user_seat` and Hayden Ashwill shows `inactive`. This confirms the owners-API mapping
-- [ ] **Sales Forecast Rollup 2026** exists in the 2026 folder with tabs `submissions`, `builder_state`, `build_log`, `meta`, and one `build_log` row
-- [ ] `_system/data_cache.json` exists in the 2026 folder
+**Pass criteria (gate for Phase 3, which writes to the production Drive folder).** All passed on 2026-09-25; see `verification/2026-09-25/live_run_apps_script.md`.
+- [x] `debugSampleAe` completes. The tie-out shows `ok: true`: Search API vs Objects list API within $0.01 and counts exact
+- [x] Company Closed Won YTD and Gross Open match HubSpot reports for the same day
+- [x] Stage map passes: no drift error, 14 in-scope stages
+- [x] Clay Stapleford shows `ownerStatus: no_user_seat` and Hayden Ashwill shows `inactive`. This confirms the owners-API mapping
+- [x] **Sales Forecast Rollup 2026** exists in the 2026 folder with tabs `submissions`, `builder_state`, `build_log`, `meta`, and one `build_log` row
+- [x] `_system/data_cache.json` exists in the 2026 folder
 
 `.clasp.json` holds the script ID and is git-ignored.
