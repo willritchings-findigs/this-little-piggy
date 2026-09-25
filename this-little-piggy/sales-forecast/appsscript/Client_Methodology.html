@@ -17,6 +17,7 @@ var Methodology = (function () {
       .catch(function (e) { loaded = false; body.innerHTML = '<div class="note error">' + A.icon('error') + ' ' + A.esc(e.message) + '</div>'; });
   }
 
+  function hm(t) { var p = String(t).split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + (h >= 12 ? ' PM' : ' AM'); }
   var code = function (s) { return '<code>' + A.esc(s) + '</code>'; };
   function sec(title, html) { return '<section class="meth-sec"><h4>' + A.esc(title) + '</h4>' + html + '</section>'; }
   function dl(pairs) { return '<dl class="meth-dl">' + pairs.map(function (p) { return '<dt>' + A.esc(p[0]) + '</dt><dd>' + p[1] + '</dd>'; }).join('') + '</dl>'; }
@@ -70,7 +71,7 @@ var Methodology = (function () {
 
     var c = m.cutoff;
     h += sec('Cutoff and official submissions', dl([
-      ['Weekly cutoff', A.esc(c.weekday) + ' ' + A.esc(c.time_et) + ' ET (America/New_York, DST aware)'],
+      ['Weekly cutoff', A.esc(c.weekday) + ' ' + A.esc(hm(c.time_et)) + ' ET (America/New_York, DST aware)' + (c.time_note ? '<div class="muted">' + A.esc(c.time_note) + '</div>' : '')],
       ['Late submissions', A.esc(c.late_rule_note)],
       ['Resubmissions', 'Allowed until the cutoff. The last submission before the cutoff is official; earlier ones are kept and marked superseded.'],
       ['Holidays', A.esc(c.holiday_note)]
@@ -85,7 +86,7 @@ var Methodology = (function () {
     ]));
 
     h += sec('Forecast trend rules', '<ul>' + [
-      'Plots official submissions only: one point per AE per Friday. The open week appears after its Friday 12:00 ET cutoff; until then it is shown only in Forecast submission.',
+      'Plots official submissions only: one point per AE per Friday. The open week appears after its Friday ' + hm(CFG.cutoff.time_et) + ' ET cutoff; until then it is shown only in Forecast submission.',
       'A week with no official submission is a gap marked "Not submitted". It is never plotted as zero and the prior value is never carried forward.',
       'Team = sum of the AEs who submitted that week; partial weeks are labeled with coverage. Team week-over-week change is shown only when every AE submitted both weeks.',
       'Change table: Team Δ uses only AEs who submitted both weeks (like for like). Changes beyond ±' + Math.round(CFG.section3.delta_threshold_pct * 100) + '% are highlighted; a change from $0 is always highlighted.',

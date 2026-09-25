@@ -170,7 +170,7 @@ test('Sources & methodology: collapsed by default; opening lists sources, Renewa
   await page.waitForSelector('#meth-body .meth-sec');
   const t = await page.textContent('#meth-body');
   for (const re of [/HubSpot portal 243635806/, /2559714036/, /Excluded/, /amount × pipeline stage probability/, /107 open deals stage-weighted/,
-                    /Friday 12:00 ET/, /Commit ≤ Gut ≤ Best Case/, /Test mode/, /is_official/, /Known data quality caveats/, /Clay Stapleford/,
+                    /Friday 5:00 PM ET/, /Commit ≤ Gut ≤ Best Case/, /Test mode/, /is_official/, /Known data quality caveats/, /Clay Stapleford/,
                     /never plotted as zero/, /Chart\.js 4\.4\.4/, /Data pulled/]) assert.match(t, re);
   await page.locator('#methodology').screenshot({ path: join(SHOTS, 'phase4_methodology.png') });
   assert.deepEqual(errors, []);

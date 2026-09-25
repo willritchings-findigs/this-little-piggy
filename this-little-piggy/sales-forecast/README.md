@@ -1,7 +1,7 @@
 # Sales forecast (weekly AE forecast tool)
 
 Google Apps Script web app for the Friday AE forecast and the Monday Revenue Leadership review.
-- **Forecast submission:** each AE submits incremental closed-won USD (Commit ≤ Gut ≤ Best Case) through Dec 31, every Friday before 12:00 ET.
+- **Forecast submission:** each AE submits incremental closed-won USD (Commit ≤ Gut ≤ Best Case) through Dec 31, every Friday before 5:00 PM ET.
 - **Forecast builder:** tag open deals to build those numbers.
 - **Forecast trend:** week-over-week movement, with a deal-level drill-down.
 
@@ -113,7 +113,7 @@ Settings that live in config:
 | Pipelines, stage IDs, fields, tie-out tolerance | `../gtm-dashboard/config.json` (shared with the GTM dashboard; changing it changes both tools) |
 
 ## Weekly operations
-- **Friday before 12:00 ET:** each AE submits. They can resubmit until the cutoff; the last one before 12:00:00 ET is official. At exactly 12:00:00 and later, a submission counts toward **next** Friday.
+- **Friday before 5:00 PM ET:** each AE submits, and the 2:00–3:00 PM ET Weekly Pipeline / Forecast call happens before the cutoff, so changes made on the call count for that week (decision P5-5). AEs can resubmit until the cutoff; the last one before 4:59:59 PM ET is official. At exactly 5:00:00 PM and later, a submission counts toward **next** Friday.
 - **AE is out:** an admin opens Forecast submission, picks the AE under **Submit on behalf of**, and submits. The snapshot records the admin as submitter.
 - **Forecast call with screen share:** an admin opens Forecast builder, picks the AE, and tags deals while the AE walks through them. Then, in Forecast submission, the admin picks the same AE and submits their numbers, or the AE submits them. The snapshot freezes the tags with who set each one.
 - **Monday review:** open Forecast trend. The change table defaults to the most recent closed week. Click any AE point, or **Deal movement**, for the builder-tag drill-down. A red **Does not reconcile** means the submitted change is larger or smaller than the tag movement explains. Ask the AE; it is never adjusted.
@@ -148,7 +148,7 @@ The roster is `config/roster.json`. The app re-checks every owner against HubSpo
 
 ## Year rollover
 Forecast weeks belong to the year of their Friday.
-- Submissions after the **last Friday cutoff of the year** (Dec 25, 2026, 12:00 ET) count toward the week of Jan 1, 2027, which is FY2027.
+- Submissions after the **last Friday cutoff of the year** (Dec 25, 2026, 5:00 PM ET) count toward the week of Jan 1, 2027, which is FY2027.
 - They are **blocked** until FY2027 has a Drive folder.
 - On **Jan 1**, the data refresh and the builder also move to FY2027 and **fail** without the folder.
 - From Dec 1, admins see a yellow **Year rollover** banner, and `npm test` prints a warning, until the folder is configured.

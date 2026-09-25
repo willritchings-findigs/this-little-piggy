@@ -515,7 +515,7 @@ var ForecastCore = (function () {
   var DOW = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
 
   /**
-   * Forecast week for a submission time: the first weekly cutoff (Friday 12:00 ET) strictly after the
+   * Forecast week for a submission time: the first weekly cutoff (configured; Friday 5:00 PM ET) strictly after the
    * submission. Submitting at or after the cutoff therefore lands in the NEXT week (decision 2026-09-25).
    * No holiday overrides (decision 2026-09-25).
    */

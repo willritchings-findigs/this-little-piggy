@@ -208,7 +208,7 @@ test('apiGetMethodology: lists fields, pipelines incl. Renewal exclusion, stages
   assert.equal(m.weighting.method, 'stage_probability'); assert.equal(m.weighting.stageWeightedCount, 107); assert.equal(m.weighting.weightedTotal, 11304048.49);
   assert.ok(m.pulledAt); assert.equal(m.tieOut.ok, true); assert.equal(m.refreshMinutes, 30);
   assert.match(m.definitions.nesting_rule, /Commit ≤ Gut ≤ Best Case/);
-  assert.equal(m.cutoff.time_et, '12:00');
+  assert.equal(m.cutoff.time_et, '17:00');
   assert.equal(m.storage.productionFolderId, '1WGzeVVLMlfTHpU9S5GKVB45EDRx84I_P');
   assert.ok(m.flags.length > 0 && m.nonRoster.length === 3);
   assert.equal(JSON.stringify(m).includes('@findigs.com'), true);                     // viewer only
@@ -230,9 +230,9 @@ test('apiGetTrend: the open week is hidden until its cutoff passes, and counted 
   app.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 });
   let t = app.call('apiGetTrend');
   assert.equal(t.rows.length, 0); assert.equal(t.openWeekRows, 1);
-  app.setNow('2026-09-25T11:59:59-04:00');
+  app.setNow('2026-09-25T16:59:59-04:00');
   assert.equal(app.call('apiGetTrend').rows.length, 0);
-  app.setNow('2026-09-25T12:00:00-04:00');                                               // cutoff passed → week of Sep 25 closes
+  app.setNow('2026-09-25T17:00:00-04:00');                                               // cutoff passed → week of Sep 25 closes
   t = app.call('apiGetTrend');
   assert.deepEqual(t.rows.map((r) => r.forecast_week), ['2026-09-25']); assert.equal(t.openWeekRows, 0); assert.equal(t.reportWeek, '2026-09-25');
 });

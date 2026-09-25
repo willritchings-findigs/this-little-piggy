@@ -4,7 +4,7 @@ var FORECAST_CONFIG = {
     "gtmDashboardConfigVersion": "2026-09-22",
     "gtmDashboardConfigSha256": "13be4be5d5be5d2f51d4d42db9041c7d6b06986d24f7fb13ded7acf8005b00ba",
     "rosterVersion": "2026-09-25b",
-    "forecastVersion": "2026-09-25"
+    "forecastVersion": "2026-09-25b"
   },
   "portalId": "243635806",
   "timezone": "America/New_York",
@@ -172,14 +172,15 @@ var FORECAST_CONFIG = {
   },
   "forecast": {
     "_about": "Forecast motion settings. HubSpot definitions (pipelines, stage IDs, fields, weighting) are NOT here; they come from gtm-dashboard/config.json via scripts/build.mjs.",
-    "version": "2026-09-25",
+    "version": "2026-09-25b",
     "schema_version": "1.1",
     "timezone": "America/New_York",
     "cutoff": {
       "weekday": "Friday",
-      "time_et": "12:00",
+      "time_et": "17:00",
+      "time_note": "Decision P5-5 (2026-09-25): moved from 12:00 to 17:00 ET so the Friday 2:00-3:00 PM ET Weekly Pipeline / Forecast call happens before the cutoff and changes made on the call count for that week.",
       "late_rule": "next_week",
-      "late_rule_note": "Decision 2026-09-25: a submission after Friday 12:00 ET counts toward the following Friday's forecast week.",
+      "late_rule_note": "Decision 2026-09-25: a submission at or after the Friday cutoff (5:00 PM ET) counts toward the following Friday's forecast week.",
       "holiday_overrides": {},
       "holiday_note": "Decision 2026-09-25: no holiday adjustments. A missed holiday week renders as a gap."
     },

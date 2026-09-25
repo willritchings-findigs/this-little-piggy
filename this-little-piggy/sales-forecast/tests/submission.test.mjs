@@ -21,6 +21,15 @@ test('forecast week: Mon–Fri 11:59:59.999 ET → that Friday; Fri 12:00:00 ET 
   assert.equal(wk('2026-10-02T11:00:00-04:00').cutoffAt, '2026-10-02T12:00:00.000-04:00');
   assert.equal(wk('2026-10-02T11:00:00-04:00').previousWeek, '2026-09-25');
 });
+test('configured cutoff is Friday 5:00 PM ET: the 2:00 PM Friday call is before it', () => {
+  const cfg = { weekday: 'Friday', time_et: '17:00' };
+  assert.equal(C.forecastWeekFor(Date.parse('2026-10-02T14:30:00-04:00'), cfg).forecastWeek, '2026-10-02');
+  assert.equal(C.forecastWeekFor(Date.parse('2026-10-02T16:59:59.999-04:00'), cfg).forecastWeek, '2026-10-02');
+  assert.equal(C.forecastWeekFor(Date.parse('2026-10-02T17:00:00-04:00'), cfg).forecastWeek, '2026-10-09');
+  assert.equal(C.forecastWeekFor(Date.parse('2026-11-06T21:59:59Z'), cfg).forecastWeek, '2026-11-06');        // 4:59:59 PM EST
+  assert.equal(C.forecastWeekFor(Date.parse('2026-11-06T22:00:00Z'), cfg).forecastWeek, '2026-11-13');
+  assert.equal(C.forecastWeekFor(Date.parse('2026-10-02T12:00:00-04:00'), cfg).cutoffAt, '2026-10-02T17:00:00.000-04:00');
+});
 test('forecast week: DST (Nov 6 cutoff is 12:00 EST) and a UTC timestamp that is still Friday morning in ET', () => {
   assert.equal(wk('2026-11-06T16:59:59Z').forecastWeek, '2026-11-06');   // 11:59:59 EST
   assert.equal(wk('2026-11-06T17:00:00Z').forecastWeek, '2026-11-13');   // 12:00 EST
@@ -120,9 +129,9 @@ test('resubmission before the cutoff: new file, earlier row un-officialed; only 
 });
 
 test('submission after the cutoff counts toward next week and leaves this week intact', () => {
-  const a = app('ben.dewinter@findigs.com', { now: '2026-10-02T11:30:00-04:00' });
+  const a = app('ben.dewinter@findigs.com', { now: '2026-10-02T16:59:59-04:00' });            // configured cutoff: Fri 5:00 PM ET (P5-5)
   a.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 });
-  a.setNow('2026-10-02T12:00:00-04:00');
+  a.setNow('2026-10-02T17:00:00-04:00');
   const late = a.call('apiSubmitForecast', { commit: 5, gut: 6, best_case: 7 }).result;
   assert.equal(late.forecastWeek, '2026-10-09'); assert.equal(late.resubmissionSeq, 1);
   const rows = a.store.sheets.submissions.rows, io = rows[0].indexOf('is_official');
