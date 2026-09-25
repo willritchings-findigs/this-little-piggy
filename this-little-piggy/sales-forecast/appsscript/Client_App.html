@@ -72,6 +72,7 @@ var App = (function () {
   }
 
   function setHeader(viewer, pulledAt, tieOutOk) {
+    if (viewer.rollover) banner('warn', '<strong>Year rollover (admins).</strong> ' + esc(viewer.rollover.message), 'rollover-banner');
     document.getElementById('viewer').textContent = viewer.name + ' · ' + ({ ae: 'AE', ae_leader: 'AE and leadership', leadership: 'Leadership', admin: 'Admin' }[viewer.role] || viewer.role);
     var s = document.getElementById('data-status');
     s.innerHTML = 'HubSpot data pulled ' + esc(stamp(pulledAt)) +

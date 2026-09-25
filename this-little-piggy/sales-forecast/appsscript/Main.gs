@@ -67,7 +67,9 @@ function apiGetData(forceRefresh) {
 }
 
 function viewerOut_(v) {
-  return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, canRefresh: !!v.canRefresh, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null };
+  var cfg = FORECAST_CONFIG.forecast;
+  return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, canRefresh: !!v.canRefresh, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null,
+           rollover: v.isAdmin ? ForecastCore.rolloverStatus(todayEt_(), cfg.drive.folders_by_fiscal_year, cfg.cutoff) : null };
 }
 
 /**

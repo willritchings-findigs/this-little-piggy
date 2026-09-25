@@ -799,6 +799,27 @@ var ForecastCore = (function () {
     return weeks.length ? weeks.sort().pop() : nowWeek;
   }
 
+  /** Last cutoff weekday (Friday) on or before Dec 31 of a year: the final forecast week of that FY. */
+  function lastWeekOfYear(year, cutoff) {
+    var wd = DOW[(cutoff && cutoff.weekday) || 'Friday'], dec31 = year + '-12-31';
+    var dow = new Date(Date.UTC(year, 11, 31)).getUTCDay();
+    return addDays(dec31, -((dow - wd + 7) % 7));
+  }
+
+  /**
+   * Year-rollover readiness. From December 1, if next year's Drive folder is not configured, returns a warning:
+   * submissions for next year's first week start at the cutoff of this year's last forecast week (they are blocked
+   * without the folder), and from Jan 1 the data refresh itself needs the folder. Returns null when nothing is due.
+   */
+  function rolloverStatus(todayIso, foldersByFy, cutoff) {
+    var y = fiscalYearOf(todayIso), next = y + 1;
+    if (todayIso.slice(5) < '12-01' || (foldersByFy && foldersByFy[String(next)])) return null;
+    var lastWeek = lastWeekOfYear(y, cutoff);
+    return { nextFiscalYear: next, blocksSubmissionsAt: etIso(etToUtcMs(lastWeek, (cutoff && cutoff.time_et) || '12:00')),
+             blocksAppAt: next + '-01-01', message: 'No Drive folder is configured for FY' + next + '. Submissions for the week of ' + addDays(lastWeek, 7) +
+             ' are blocked from ' + lastWeek + ' ' + ((cutoff && cutoff.time_et) || '12:00') + ' ET, and data refresh stops on ' + next + '-01-01. Add it to config/forecast.json drive.folders_by_fiscal_year, then npm run build and clasp push.' };
+  }
+
   var LEVEL_MEMBERS = { commit: ['commit'], gut: ['commit', 'gut'], best_case: ['commit', 'gut', 'best_case'] };
 
   /**
@@ -906,7 +927,7 @@ var ForecastCore = (function () {
 
   return {
     weekAxis: weekAxis, trendSeries: trendSeries, changeTable: changeTable, defaultReportWeek: defaultReportWeek,
-    movementDrilldown: movementDrilldown, syntheticHistory: syntheticHistory,
+    movementDrilldown: movementDrilldown, syntheticHistory: syntheticHistory, lastWeekOfYear: lastWeekOfYear, rolloverStatus: rolloverStatus,
     DOW: DOW, forecastWeekFor: forecastWeekFor, forecastPeriodFor: forecastPeriodFor, parseUsd: parseUsd,
     validateForecast: validateForecast, snapshotFileName: snapshotFileName, buildSnapshot: buildSnapshot,
     officialAssignments: officialAssignments, submissionStatus: submissionStatus, sectionOneRow: sectionOneRow, sectionOneTeam: sectionOneTeam,

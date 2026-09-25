@@ -97,7 +97,7 @@ var Methodology = (function () {
     var flags = m.flags;
     h += sec('Known data quality caveats', (flags.length ? '<ul>' + flags.map(function (f) {
       return '<li><span class="tag ' + (f.severity === 'high' ? 'coral' : f.severity === 'medium' ? 'sun' : 'neutral') + '">' + A.esc(f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + '</span> ' + A.esc(f.message) +
-        (f.amount ? ' (' + A.usd0(f.amount) + ')' : '') + '</li>';
+        (f.amount ? ' (' + A.esc(f.amountBasis || 'amount') + ': ' + A.usd0(f.amount) + ')' : '') + '</li>';
     }).join('') + '</ul>' : '<p>No data quality flags on the latest pull.</p>') +
       (m.nonRoster.length ? '<p><strong>Owners not on the AE roster</strong> (in company totals, not in any AE row):</p><ul>' +
         m.nonRoster.map(function (o) { return '<li>' + A.esc(o.name) + ': ' + A.esc(o.reason) + (o.status ? ' <span class="muted">(' + A.esc(o.status) + ')</span>' : '') + '</li>'; }).join('') + '</ul>' : '') +

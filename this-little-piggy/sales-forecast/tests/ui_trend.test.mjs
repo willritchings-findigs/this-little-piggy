@@ -176,3 +176,23 @@ test('Sources & methodology: collapsed by default; opening lists sources, Renewa
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+test('year selector: hidden with one configured year; with two, switching loads that year', { skip }, async () => {
+  let { page, errors } = await open(seeded);
+  assert.equal(await page.isHidden('#t-fy'), true);
+  await page.close();
+  const folders = seeded.app.ctx.FORECAST_CONFIG.forecast.drive.folders_by_fiscal_year;
+  folders['2025'] = 'FY2025-FOLDER';
+  try {
+    ({ page, errors } = await open(seeded));
+    assert.equal(await page.isVisible('#t-fy'), true);
+    assert.deepEqual(await page.$$eval('#t-fy option', (o) => o.map((x) => x.value)), ['2026', '2025']);
+    await page.selectOption('#t-fy', '2025');
+    await page.waitForFunction(() => /No official submissions yet/.test(document.getElementById('t-notes').textContent));
+    await page.selectOption('#t-fy', '2026');
+    await page.waitForSelector('#t-grid canvas');
+    assert.equal(await page.$$eval('#t-grid canvas', (c) => c.length), 5);
+    assert.deepEqual(errors, []);
+    await page.close();
+  } finally { delete folders['2025']; }
+});

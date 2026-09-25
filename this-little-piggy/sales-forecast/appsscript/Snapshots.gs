@@ -91,11 +91,15 @@ function writeSubmission_(v, rawValues, targetAe) {
     var file = folder.createFile(name, body, 'application/json');
     var sh = getRollup_(fy).getSheetByName('submissions');
     var existing = readSubmissions_(fy).filter(function (r) { return r.ae_slug === ae.slug && r.forecast_week === week.forecastWeek; });
-    sh.appendRow(submissionRow_(snapshot, row.metrics, true, existing.length + 1, file.getId(), name, sha, onBehalf));
-    // Supersede earlier submissions for the same AE and week: the only in-place edit this app makes.
+    // Official = latest submitted_at for this AE and week, decided under the lock. Usually that is this row, but if
+    // two submissions for the same AE overlapped (the earlier one's HubSpot pull finished last), the later one stays official.
+    var asg = ForecastCore.officialAssignments(existing.concat([{ ae_slug: ae.slug, forecast_week: week.forecastWeek, submitted_at: submittedAt }]));
+    var isOfficial = asg[asg.length - 1].official;
+    sh.appendRow(submissionRow_(snapshot, row.metrics, isOfficial, existing.length + 1, file.getId(), name, sha, onBehalf));
+    // Supersede earlier submissions: is_official is the only in-place edit this app makes.
     var col = colIndex_('is_official') + 1;
-    existing.forEach(function (r) { if (r.is_official) sh.getRange(r._row, col).setValue(false); });
-    return { submissionId: snapshot.submission_id, forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, submittedAt: submittedAt,
+    existing.forEach(function (r, i) { if (r.is_official !== asg[i].official) sh.getRange(r._row, col).setValue(asg[i].official); });
+    return { official: isOfficial, submissionId: snapshot.submission_id, forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, submittedAt: submittedAt,
              fileName: name, fileId: file.getId(), sha256: sha, resubmissionSeq: existing.length + 1, warnings: warnings, values: chk.values,
              aeName: ae.name, onBehalf: onBehalf, submittedBy: v.email };
   }, 'Another submission is being saved. Nothing was saved; please submit again in a few seconds.');

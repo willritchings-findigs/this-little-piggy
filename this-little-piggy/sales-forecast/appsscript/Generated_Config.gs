@@ -82,10 +82,10 @@ var FORECAST_CONFIG = {
     "version": "2026-09-25",
     "fiscal_year": 2026,
     "roles": {
-      "ae": "Edits own row in Section 1, own builder in Section 2. Reads own data only.",
-      "ae_leader": "Edits own row and own builder. Reads all rows and all builders (read-only).",
-      "leadership": "Reads all rows, builders, and trends. No edits.",
-      "admin": "Leadership read access plus admin functions (refresh, tie-out log, verifySnapshots, rebuildRollup)."
+      "ae": "Edits own row in Section 1 and own builder in Section 2. Reads every row, builder, and trend (decision 2026-09-25: full transparency).",
+      "ae_leader": "Same as ae (edits own row and builder only).",
+      "leadership": "Reads everything. No edits.",
+      "admin": "Leadership access plus submitting on behalf of any AE and editor-run admin functions (installTriggers, refreshDataTrigger, debugSampleAe, verifySnapshots, seedSyntheticSnapshots in test mode)."
     },
     "aes": [
       {

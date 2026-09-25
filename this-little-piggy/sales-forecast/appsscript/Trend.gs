@@ -5,14 +5,24 @@
  */
 
 /**
- * Rollup rows for closed forecast weeks only (current FY, plus the prior FY when the prior week crosses New Year).
- * Decision P4-8: the open week is hidden until its cutoff passes (Section 1 shows it live), so a partly
- * submitted week never reads as a collapse in the trend.
+ * Rollup rows for one fiscal year's closed forecast weeks. Default year = the year of the last closed week
+ * (so the first days of January still show the year just ended). Any configured year can be selected.
+ * Decision P4-8: the open week is hidden until its cutoff passes (Section 1 shows it live).
  */
-function apiGetTrend() {
+function apiGetTrend(fiscalYear) {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
   var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
-  var all = submissionsForWeek_(week);
+  var openFy = ForecastCore.fiscalYearOf(week.forecastWeek), closedFy = ForecastCore.fiscalYearOf(week.previousWeek);
+  var years = Object.keys(cfg.forecast.drive.folders_by_fiscal_year).map(Number).filter(function (y) { return y <= openFy; }).sort().reverse();
+  var fy = fiscalYear ? Number(fiscalYear) : closedFy;
+  if (years.indexOf(fy) < 0) {
+    if (fiscalYear) throw new Error('No Drive folder is configured for FY' + fy + '.');
+    return JSON.parse(JSON.stringify({ viewer: viewerOut_(v), testMode: isTestMode_(), fiscalYear: fy, years: years,
+      aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+      week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt }, throughWeek: null,
+      reportWeek: null, threshold: cfg.forecast.section3.delta_threshold_pct, rows: [], syntheticRows: 0, openWeekRows: 0 }));
+  }
+  var all = readSubmissions_(fy);
   var openWeekRows = all.filter(function (r) { return r.forecast_week >= week.forecastWeek; }).length;
   var rows = all.filter(function (r) { return r.forecast_week < week.forecastWeek; }).map(function (r) {
     return { ae_slug: r.ae_slug, forecast_week: r.forecast_week, submitted_at: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case,
@@ -20,13 +30,16 @@ function apiGetTrend() {
              builder_saved: r.builder_saved === true || String(r.builder_saved).toUpperCase() === 'TRUE',
              synthetic: String(r.submission_id).indexOf('synthetic-') === 0 };
   });
+  // The axis runs through the last closed week (or the year's last Friday for a past year), so missed final weeks show as gaps.
+  var throughWeek = fy === closedFy ? week.previousWeek : ForecastCore.lastWeekOfYear(fy, cfg.forecast.cutoff);
+  if (fy > closedFy) throughWeek = null;
   return JSON.parse(JSON.stringify({
-    viewer: viewerOut_(v), testMode: isTestMode_(),
+    viewer: viewerOut_(v), testMode: isTestMode_(), fiscalYear: fy, years: years,
     aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
-    week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt },
+    week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt }, throughWeek: throughWeek,
     reportWeek: ForecastCore.defaultReportWeek(rows, week.forecastWeek),
     threshold: cfg.forecast.section3.delta_threshold_pct,
-    rows: rows, syntheticRows: rows.filter(function (r) { return r.synthetic; }).length, openWeekRows: openWeekRows
+    rows: rows, syntheticRows: rows.filter(function (r) { return r.synthetic; }).length, openWeekRows: fy === openFy ? openWeekRows : 0
   }));
 }
 
@@ -82,7 +95,7 @@ function apiGetMethodology() {
     storage: { productionFolderId: folderId, testFolderId: cfg.forecast.drive.test_folder_id, snapshotPattern: 'forecast_{week}_{ae_slug}_{submitted_at}.json',
                rollup: 'Sales Forecast Rollup ' + fy, immutable: 'Snapshots are never overwritten or deleted; SHA-256 per file (verifySnapshots).' },
     population: { open: m.counts.open, wonYtd: m.counts.wonYtd, company: m.company, team: m.team },
-    flags: m.flags.map(function (f) { return { code: f.code, severity: f.severity, message: f.message, count: f.count, amount: f.amount }; }),
+    flags: m.flags.map(function (f) { return { code: f.code, severity: f.severity, message: f.message, count: f.count, amount: f.amount, amountBasis: f.amountBasis || null }; }),
     nonRoster: m.nonRoster.owners.map(function (o) { return { name: o.name, reason: o.reason, status: o.ownerStatus }; }),
     config: cfg.generatedFrom
   }));

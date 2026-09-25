@@ -79,6 +79,9 @@ export function buildConfig() {
   }
   for (const n of roster.non_roster_owners.owners) if (seen.owner.has(n.hubspot_owner_id)) errors.push(`${n.name} is both roster and non-roster`);
   if (!forecast.drive.folders_by_fiscal_year[String(roster.fiscal_year)]) errors.push(`no Drive folder configured for FY${roster.fiscal_year}`);
+  // Year rollover reminder (not an error): from Dec 1, next year's folder must be configured before the last Friday cutoff.
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }), ny = Number(today.slice(0, 4)) + 1;
+  if (today.slice(5) >= '12-01' && !forecast.drive.folders_by_fiscal_year[String(ny)]) console.warn(`WARNING: no Drive folder configured for FY${ny}. See README "Year rollover".`);
 
   const config = {
     generatedFrom: {

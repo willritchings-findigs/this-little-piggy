@@ -61,10 +61,14 @@ var Trend = (function () {
   function aeName(slug) { var a = S.data.aes.filter(function (x) { return x.slug === slug; })[0]; return a ? a.name : slug; }
 
   // ------------------------------------------------------------------ load + controls
-  function init() {
+  function init() { load(null); }
+  function load(fy) {
     $('t-notes').innerHTML = '<div class="note">Loading forecast history…</div>';
-    A.rpc('apiGetTrend').then(function (d) {
-      S.data = d; S.week = d.reportWeek;
+    A.rpc('apiGetTrend', fy).then(function (d) {
+      S.data = d; S.week = d.reportWeek; $('t-drill').hidden = true;
+      var ys = $('t-fy');
+      ys.innerHTML = d.years.map(function (y) { return '<option value="' + y + '"' + (y === d.fiscalYear ? ' selected' : '') + '>' + y + '</option>'; }).join('');
+      ys.closest('label').hidden = d.years.length < 2;
       if (d.testMode) A.banner('warn', '<strong>Test mode.</strong> Submissions, tags, and the rollup Sheet are written to the test folder, not the production 2026 folder.', 'testmode-banner');
       bind(); render();
     }).catch(function (e) {
@@ -75,6 +79,7 @@ var Trend = (function () {
 
   function bind() {
     if (S.bound) return; S.bound = true;
+    $('t-fy').addEventListener('change', function (e) { load(Number(e.target.value)); });
     var sel = $('t-ae');
     sel.innerHTML = '<option value="all">All AEs</option>' + S.data.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '">' + A.esc(a.name) + '</option>'; }).join('');
     sel.addEventListener('change', function () { S.ae = sel.value; render(); });
@@ -110,9 +115,9 @@ var Trend = (function () {
   }
 
   function series() {
-    var d = S.data, closed = d.week.previousWeek;
+    var d = S.data;
     var hasOfficial = d.rows.some(function (r) { return r.is_official; });
-    return C.trendSeries(d.rows, d.aes, { mode: S.view, throughWeek: hasOfficial ? closed : null });
+    return C.trendSeries(d.rows, d.aes, { mode: S.view, throughWeek: hasOfficial ? d.throughWeek : null });
   }
 
   // ------------------------------------------------------------------ render

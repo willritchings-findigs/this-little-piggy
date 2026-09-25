@@ -177,7 +177,8 @@ var Submission = (function () {
       st.submitting = false;
       var r = res.result;
       A.banner('info', '<strong>Forecast submitted</strong>' + (r.onBehalf ? ' for ' + A.esc(r.aeName) + ' (on their behalf)' : '') + ' for the week ending ' + A.esc(A.date(r.forecastWeek)) + ' at ' + A.esc(A.stamp(r.submittedAt)) +
-        (r.resubmissionSeq > 1 ? ' (submission ' + r.resubmissionSeq + ' this week; it replaces your earlier one as the official number)' : '') +
+        (r.official === false ? ' <strong>A later submission for this AE and week was saved at almost the same moment and remains the official number.</strong> This one is kept as superseded.'
+          : r.resubmissionSeq > 1 ? ' (submission ' + r.resubmissionSeq + ' this week; it replaces your earlier one as the official number)' : '') +
         '. Snapshot saved as <code>' + A.esc(r.fileName) + '</code>.' +
         (r.warnings.length ? ' Warnings recorded: ' + r.warnings.map(function (w) { return A.esc(w.message); }).join(' ') : ''), 'submit-result');
       setView(res.view);
