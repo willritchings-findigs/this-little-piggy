@@ -1,0 +1,24 @@
+{
+  "_about": "Forecast roster. PROPOSED in Phase 0 — not yet approved. Owner IDs, emails and isActive verified live against HubSpot owners/users 2026-09-25. The app re-validates isActive on every data pull and flags any drift.",
+  "version": "2026-09-25-proposed",
+  "fiscal_year": 2026,
+  "aes": [
+    { "name": "Phil Aroian",      "slug": "phil-aroian",      "email": "phil.aroian@findigs.com",      "hubspot_owner_id": "1053057926", "role": "ae_leader", "_note": "OPEN QUESTION: also runs the Friday forecast call. ae_leader = edits own row, views all rows." },
+    { "name": "Spencer Wuthrich", "slug": "spencer-wuthrich", "email": "spencer.wuthrich@findigs.com", "hubspot_owner_id": "167857460",  "role": "ae" },
+    { "name": "Ian McLaughlin",   "slug": "ian-mclaughlin",   "email": "ian.mclaughlin@findigs.com",   "hubspot_owner_id": "26451111",   "role": "ae" },
+    { "name": "Ben de Winter",    "slug": "ben-de-winter",    "email": "ben.dewinter@findigs.com",     "hubspot_owner_id": "2111244871", "role": "ae" },
+    { "name": "Matt Lynch",       "slug": "matt-lynch",       "email": "matt.lynch@findigs.com",       "hubspot_owner_id": "1032502194", "role": "ae" }
+  ],
+  "leadership": [
+    { "name": "Brian Korchin",  "email": "brian.korchin@findigs.com",  "_note": "CRO per HubSpot user title" },
+    { "name": "Will Ritchings", "email": "will.ritchings@findigs.com" }
+  ],
+  "non_roster_owners": {
+    "_about": "Owners holding in-scope open or closed-won-YTD deals who do not submit forecasts. Shown read-only in a reconciliation row so Section 1 column totals tie to company totals.",
+    "owners": [
+      { "name": "Reese Ryan",      "hubspot_owner_id": "663611618",  "reason": "Excluded pending role confirmation" },
+      { "name": "Clay Stapleford", "hubspot_owner_id": "686754956",  "reason": "Owner record isActive=true but no HubSpot user seat; accounts flagged for reassignment (Notion, 2026-09-14)" },
+      { "name": "Hayden Ashwill",  "hubspot_owner_id": "1542312872", "reason": "Inactive owner; closed-won YTD only, no open deals" }
+    ]
+  }
+}
