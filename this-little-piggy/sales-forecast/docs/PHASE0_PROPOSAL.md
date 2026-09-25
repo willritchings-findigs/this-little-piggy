@@ -1,6 +1,22 @@
 # Sales Forecast Tool: Phase 0 Discovery & Architecture Proposal
 
-**Status:** Proposal, awaiting approval. No application code has been written.
+**Status:** Approved 2026-09-25 with the decisions below. Phase 1 (data layer) is in review.
+
+## Decisions (2026-09-25)
+| # | Decision | Where it lives |
+|---|---|---|
+| Q1 | Submission after Friday 12:00 ET counts toward the next Friday's week | `config/forecast.json` cutoff.late_rule |
+| Q2 | Phil Aroian: edits own row, sees all rows (`ae_leader`) | `config/roster.json` |
+| Q3 | Team Total = roster AEs; read-only non-roster row so columns tie to company totals | `ForecastCore.computeMetrics` |
+| Q4 | Headline pipeline = all open stages and dates; in-period sub-line; Best Case warning uses in-period | `config/forecast.json` section1 |
+| Q5 | Proceed with Clay's deals in the non-roster row | `config/roster.json` non_roster_owners |
+| Q6 | Leadership: Brian Korchin, Alex Schaper, Asaf Raz, plus Phil Aroian | `config/roster.json` |
+| Q7 | 2026 folder is in a Shared Drive; Will Ritchings' account owns the script | Deployment |
+| Q8 | No holiday cutoff adjustments; missed weeks show as gaps | `config/forecast.json` holiday_overrides = {} |
+| Q9 | Commit = "High Confidence" (was 99%) | `config/forecast.json` definitions.commit |
+| — | Year rollover as proposed; Will creates the 2027 folder | `config/forecast.json` drive.folders_by_fiscal_year |
+
+---
 **Data as of:** 2026-09-25, live HubSpot pulls via MCP (portal 243635806)
 **Author:** RevOps (Claude Code session)
 

@@ -1,0 +1,406 @@
+/**
+ * Findigs Sales Forecast — pure business logic.
+ *
+ * One file, two runtimes: loaded by Node for tests (module.exports) and copied verbatim into the
+ * Apps Script project as Generated_Core.gs by scripts/build.mjs (global `ForecastCore`).
+ * No I/O, no Apps Script services, no Date.now() — every "now" is passed in.
+ *
+ * HubSpot definitions mirror gtm-dashboard/config.json (via FORECAST_CONFIG.hubspot). Differences
+ * from gtm-dashboard/build.py, both deliberate:
+ *   - a null amount / units / close date is surfaced as blank + flag, never a hard stop and never imputed;
+ *   - "" is treated as null (HubSpot returns empty strings on some cleared fields; the reporting API
+ *     counts them as null, so we must too or the tie-out drifts).
+ */
+var ForecastCore = (function () {
+  'use strict';
+
+  // ------------------------------------------------------------------ numbers
+  function num(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    var s = String(v).trim();
+    if (s === '') return null;
+    var n = Number(s);
+    return isFinite(n) ? n : null;
+  }
+  function round2(x) { return x === null ? null : Math.round((x + (x >= 0 ? 1e-9 : -1e-9)) * 100) / 100; }
+  function blank(v) { return v === null || v === undefined || String(v).trim() === ''; }
+
+  // ------------------------------------------------------------------ America/New_York time
+  // US DST rules (Energy Policy Act 2005, in force since 2007): EDT from the second Sunday of March
+  // 02:00 local to the first Sunday of November 02:00 local. Implemented by hand so results are
+  // identical in Node and Apps Script regardless of Intl support.
+  function nthSunday_(year, monthIdx, n) {
+    var firstDow = new Date(Date.UTC(year, monthIdx, 1)).getUTCDay();
+    return 1 + ((7 - firstDow) % 7) + 7 * (n - 1);
+  }
+  function etOffsetMinutes(utcMs) {
+    var y = new Date(utcMs).getUTCFullYear();
+    var start = Date.UTC(y, 2, nthSunday_(y, 2, 2), 7);  // 02:00 EST = 07:00 UTC
+    var end = Date.UTC(y, 10, nthSunday_(y, 10, 1), 6);  // 02:00 EDT = 06:00 UTC
+    return (utcMs >= start && utcMs < end) ? -240 : -300;
+  }
+  function toMs_(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v === 'number') return v;
+    if (v instanceof Date) return v.getTime();
+    var s = String(v).trim();
+    if (/^\d+$/.test(s)) return Number(s);           // epoch ms (HubSpot sometimes returns these)
+    var ms = Date.parse(s);
+    return isNaN(ms) ? null : ms;
+  }
+  function pad_(n, w) { var s = String(n); while (s.length < (w || 2)) s = '0' + s; return s; }
+  function etParts(v) {
+    var ms = toMs_(v); if (ms === null) return null;
+    var off = etOffsetMinutes(ms);
+    var d = new Date(ms + off * 60000);
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), hh: d.getUTCHours(),
+             mi: d.getUTCMinutes(), ss: d.getUTCSeconds(), ms: d.getUTCMilliseconds(), offsetMin: off,
+             dow: d.getUTCDay() };
+  }
+  /** UTC timestamp → 'YYYY-MM-DD' in America/New_York, or null. */
+  function etDate(v) {
+    var p = etParts(v); if (!p) return null;
+    return p.y + '-' + pad_(p.m) + '-' + pad_(p.d);
+  }
+  /** UTC ms → ISO 8601 with ET offset, e.g. 2026-10-02T10:41:07.312-04:00 */
+  function etIso(v) {
+    var p = etParts(v); if (!p) return null;
+    var o = -p.offsetMin, sign = p.offsetMin <= 0 ? '-' : '+';
+    return p.y + '-' + pad_(p.m) + '-' + pad_(p.d) + 'T' + pad_(p.hh) + ':' + pad_(p.mi) + ':' + pad_(p.ss) + '.' +
+           pad_(p.ms, 3) + sign + pad_(Math.floor(Math.abs(o) / 60)) + ':' + pad_(Math.abs(o) % 60);
+  }
+  /** 'YYYY-MM-DD' + 'HH:MM' ET → UTC ms. Not valid inside the 02:00 DST gap (never used there). */
+  function etToUtcMs(dateStr, timeStr) {
+    var a = dateStr.split('-').map(Number), t = (timeStr || '00:00').split(':').map(Number);
+    var guess = Date.UTC(a[0], a[1] - 1, a[2], t[0], t[1] || 0, t[2] || 0) + 300 * 60000; // assume EST
+    var off = etOffsetMinutes(guess);
+    return Date.UTC(a[0], a[1] - 1, a[2], t[0], t[1] || 0, t[2] || 0) - off * 60000;
+  }
+  function addDays(dateStr, n) {
+    var a = dateStr.split('-').map(Number);
+    var d = new Date(Date.UTC(a[0], a[1] - 1, a[2] + n));
+    return d.getUTCFullYear() + '-' + pad_(d.getUTCMonth() + 1) + '-' + pad_(d.getUTCDate());
+  }
+
+  // ------------------------------------------------------------------ fiscal / forecast period
+  function fiscalYearOf(dateStr) { return Number(dateStr.slice(0, 4)); }
+  function periodFor(asOfDate) {
+    var y = fiscalYearOf(asOfDate);
+    return { fyStart: y + '-01-01', fyEnd: y + '-12-31', start: asOfDate, end: y + '-12-31', fiscalYear: y };
+  }
+
+  // ------------------------------------------------------------------ stage map (pipelines API)
+  /**
+   * pipelinesResponse: GET /crm/v3/pipelines/deals body ({results:[{id,label,stages:[{id,label,displayOrder,metadata:{isClosed,probability}}]}]}).
+   * hs: FORECAST_CONFIG.hubspot. Config terminal stage IDs are the authority (shared with gtm-dashboard);
+   * the pipelines API must agree with them or the pull stops (same trip-wire as build.py exit 3).
+   */
+  function buildStageMap(pipelinesResponse, hs) {
+    var errors = [], stages = {}, byPipe = {};
+    (pipelinesResponse.results || []).forEach(function (p) { byPipe[String(p.id)] = p; });
+    var apiWon = [], apiLost = [];
+    hs.inScopePipelineIds.forEach(function (pid) {
+      var p = byPipe[pid];
+      if (!p) { errors.push('In-scope pipeline ' + pid + ' not returned by pipelines API'); return; }
+      (p.stages || []).forEach(function (s) {
+        var md = s.metadata || {};
+        var isClosed = String(md.isClosed) === 'true';
+        var prob = num(md.probability);
+        var won = isClosed && prob === 1, lost = isClosed && prob === 0;
+        if (isClosed && !won && !lost) errors.push('Stage ' + s.id + ' (' + s.label + ') is closed with probability ' + md.probability + ' — cannot classify as won or lost');
+        if (won) apiWon.push(String(s.id));
+        if (lost) apiLost.push(String(s.id));
+        stages[String(s.id)] = { id: String(s.id), label: s.label, pipelineId: pid, pipelineLabel: p.label,
+                                 order: num(s.displayOrder), probability: prob, isClosed: isClosed, won: won, lost: lost };
+      });
+    });
+    function sameSet(a, b) { return a.length === b.length && a.slice().sort().join() === b.slice().sort().join(); }
+    if (!sameSet(apiWon, hs.wonStageIds)) errors.push('Won stage drift: pipelines API ' + JSON.stringify(apiWon.sort()) + ' vs config ' + JSON.stringify(hs.wonStageIds.slice().sort()));
+    if (!sameSet(apiLost, hs.lostStageIds)) errors.push('Lost stage drift: pipelines API ' + JSON.stringify(apiLost.sort()) + ' vs config ' + JSON.stringify(hs.lostStageIds.slice().sort()));
+    var terminal = hs.wonStageIds.concat(hs.lostStageIds);
+    var openIds = Object.keys(stages).filter(function (id) { return terminal.indexOf(id) < 0; });
+    return { ok: errors.length === 0, errors: errors, stages: stages, wonIds: hs.wonStageIds.slice(),
+             lostIds: hs.lostStageIds.slice(), openIds: openIds };
+  }
+
+  // ------------------------------------------------------------------ owners (owners API v3)
+  /** v3 owners → {id: {id,name,email,isActive,hasUserSeat}}. v3 expresses isActive as !archived. */
+  function normalizeOwners(v3Results) {
+    var out = {};
+    (v3Results || []).forEach(function (o) {
+      var id = String(o.id);
+      var name = [o.firstName, o.lastName].filter(function (x) { return !blank(x); }).join(' ') || o.email || ('Owner ' + id);
+      var rec = { id: id, name: name, email: (o.email || '').toLowerCase(), isActive: o.archived !== true,
+                  hasUserSeat: o.userId !== null && o.userId !== undefined };
+      // An owner can appear in both the active and archived lists; active wins.
+      if (!out[id] || (rec.isActive && !out[id].isActive)) out[id] = rec;
+    });
+    return out;
+  }
+
+  // ------------------------------------------------------------------ viewer / roster
+  function resolveViewer(email, roster) {
+    var e = String(email || '').trim().toLowerCase();
+    if (!e) return null;
+    var ae = (roster.aes || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
+    if (ae) return { email: e, name: ae.name, role: ae.role, ae: ae, canViewAll: ae.role === 'ae_leader', isAdmin: false };
+    var lead = (roster.leadership || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
+    if (lead) return { email: e, name: lead.name, role: 'leadership', ae: null, canViewAll: true, isAdmin: false };
+    var adm = (roster.admins || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
+    if (adm) return { email: e, name: adm.name, role: 'admin', ae: null, canViewAll: true, isAdmin: true };
+    return null;
+  }
+
+  // ------------------------------------------------------------------ deals
+  var HS_RECORD_URL = 'https://app.hubspot.com/contacts/{portal}/record/0-3/{id}';
+  function dealUrl(portalId, id) { return HS_RECORD_URL.replace('{portal}', portalId).replace('{id}', id); }
+
+  function deriveOpenDeal(raw, ctx) {
+    var p = raw.properties || {}, f = ctx.hs.fields;
+    var id = String(raw.id), sid = String(p.dealstage);
+    var st = ctx.stageMap.stages[sid] || null;
+    var amount = num(p[f.bookings_amount]), units = num(p[f.units]);
+    var close = etDate(p[f.close_date]);
+    var probDeal = num(p[f.stage_probability]);
+    var probStage = st ? st.probability : null;
+    var prob = probDeal !== null ? probDeal : probStage;
+    var stored = num(p[f.weighted_stored]);
+    var weighted = null, method = 'none';
+    if (stored !== null) { weighted = stored; method = 'stored'; }
+    else if (amount !== null && prob !== null) { weighted = amount * prob; method = 'fallback'; }
+    var flags = [];
+    if (amount === null) flags.push('missing_amount');
+    if (close === null) flags.push('missing_close_date');
+    if (units === null) flags.push('missing_units');
+    if (close !== null && close < ctx.asOf) flags.push('past_due');
+    if (!st) flags.push('unknown_stage');
+    if (probDeal === null) flags.push('prob_from_stage');
+    if (probDeal !== null && probStage !== null && Math.abs(probDeal - probStage) > 1e-9) flags.push('prob_deviates_from_stage');
+    if (method === 'stored' && amount !== null && prob !== null && Math.abs(stored - amount * prob) > 0.01) flags.push('weighted_stored_differs_from_calc');
+    if (method === 'fallback') flags.push('weighted_fallback');
+    if (method === 'none') flags.push('weighted_unavailable');
+    return {
+      id: id, name: p.dealname || '', url: dealUrl(ctx.portalId, id),
+      pipelineId: String(p.pipeline), pipeline: st ? st.pipelineLabel : String(p.pipeline),
+      stageId: sid, stage: st ? st.label : sid, stageOrder: st ? st.order : null,
+      ownerId: blank(p[f.owner]) ? '' : String(p[f.owner]),
+      amount: amount, units: units, closeDate: close,
+      probability: prob, weighted: weighted, weightedMethod: method,
+      inPeriod: close !== null && close <= ctx.periodEnd,
+      flags: flags
+    };
+  }
+
+  function deriveWonDeal(raw, ctx) {
+    var p = raw.properties || {}, f = ctx.hs.fields, id = String(raw.id);
+    var close = etDate(p[f.close_date]);
+    var amount = num(p[f.bookings_amount]);
+    return { id: id, name: p.dealname || '', url: dealUrl(ctx.portalId, id), pipelineId: String(p.pipeline),
+             stageId: String(p.dealstage), ownerId: blank(p[f.owner]) ? '' : String(p[f.owner]),
+             amount: amount, units: num(p[f.units]), closeDate: close,
+             flags: amount === null ? ['missing_amount'] : [] };
+  }
+
+  /**
+   * Split any set of raw deal records (search results OR a full objects-list dump) into the two
+   * populations. Used identically by the primary and independent tie-out paths.
+   */
+  function classifyDeals(rawDeals, ctx) {
+    var hs = ctx.hs, inScope = hs.inScopePipelineIds, won = hs.wonStageIds, lost = hs.lostStageIds;
+    var open = [], wonYtd = [], outOfScope = 0, seen = {};
+    (rawDeals || []).forEach(function (r) {
+      var id = String(r.id); if (seen[id]) return; seen[id] = true;
+      var p = r.properties || {}, pipe = String(p.pipeline), sid = String(p.dealstage);
+      if (inScope.indexOf(pipe) < 0) { outOfScope++; return; }
+      if (won.indexOf(sid) >= 0) {
+        var d = deriveWonDeal(r, ctx);
+        if (d.closeDate !== null && d.closeDate >= ctx.fyStart && d.closeDate <= ctx.asOf) wonYtd.push(d);
+      } else if (lost.indexOf(sid) < 0) {
+        open.push(deriveOpenDeal(r, ctx));
+      }
+    });
+    return { open: open, wonYtd: wonYtd, outOfScope: outOfScope };
+  }
+
+  // ------------------------------------------------------------------ aggregation
+  function emptyMetrics_() {
+    return {
+      closedWonYtd: { amount: 0, count: 0, nullAmountCount: 0 },
+      grossOpen: { amount: 0, count: 0, nullAmountCount: 0 },
+      grossOpenInPeriod: { amount: 0, count: 0, nullAmountCount: 0, noCloseDateCount: 0 },
+      weightedOpen: { amount: 0, storedCount: 0, storedAmount: 0, fallbackCount: 0, fallbackAmount: 0, unavailableCount: 0 },
+      dq: { pastDue: 0, pastDueAmount: 0, missingAmount: 0, missingCloseDate: 0, missingUnits: 0, probDeviates: 0 }
+    };
+  }
+  function addOpen_(m, d) {
+    m.grossOpen.count++;
+    if (d.amount === null) m.grossOpen.nullAmountCount++; else m.grossOpen.amount += d.amount;
+    if (d.closeDate === null) m.grossOpenInPeriod.noCloseDateCount++;
+    if (d.inPeriod) {
+      m.grossOpenInPeriod.count++;
+      if (d.amount === null) m.grossOpenInPeriod.nullAmountCount++; else m.grossOpenInPeriod.amount += d.amount;
+    }
+    var w = m.weightedOpen;
+    if (d.weightedMethod === 'stored') { w.storedCount++; w.storedAmount += d.weighted; w.amount += d.weighted; }
+    else if (d.weightedMethod === 'fallback') { w.fallbackCount++; w.fallbackAmount += d.weighted; w.amount += d.weighted; }
+    else w.unavailableCount++;
+    if (d.flags.indexOf('past_due') >= 0) { m.dq.pastDue++; m.dq.pastDueAmount += d.amount || 0; }
+    if (d.flags.indexOf('missing_amount') >= 0) m.dq.missingAmount++;
+    if (d.flags.indexOf('missing_close_date') >= 0) m.dq.missingCloseDate++;
+    if (d.flags.indexOf('missing_units') >= 0) m.dq.missingUnits++;
+    if (d.flags.indexOf('prob_deviates_from_stage') >= 0) m.dq.probDeviates++;
+  }
+  function addWon_(m, d) {
+    m.closedWonYtd.count++;
+    if (d.amount === null) m.closedWonYtd.nullAmountCount++; else m.closedWonYtd.amount += d.amount;
+  }
+  function mergeInto_(t, m) {
+    Object.keys(m).forEach(function (k) { Object.keys(m[k]).forEach(function (j) { t[k][j] += m[k][j]; }); });
+  }
+  function roundMetrics_(m) {
+    var money = { amount: 1, storedAmount: 1, fallbackAmount: 1, pastDueAmount: 1 };
+    Object.keys(m).forEach(function (k) { Object.keys(m[k]).forEach(function (j) { if (money[j]) m[k][j] = round2(m[k][j]); }); });
+    return m;
+  }
+
+  /**
+   * input: { openRaw, wonRaw, stageMap, owners, roster, hs, portalId, asOf }
+   * openRaw / wonRaw are raw HubSpot records (the won pull may over-fetch across the FY boundary;
+   * ET filtering happens here).
+   */
+  function computeMetrics(input) {
+    var per = periodFor(input.asOf);
+    var ctx = { hs: input.hs, stageMap: input.stageMap, portalId: input.portalId, asOf: input.asOf,
+                fyStart: per.fyStart, periodEnd: per.end };
+    var cls = classifyDeals((input.openRaw || []).concat(input.wonRaw || []), ctx);
+    var owners = input.owners || {}, roster = input.roster;
+    var rosterByOwner = {};
+    roster.aes.forEach(function (a) { rosterByOwner[String(a.hubspot_owner_id)] = a; });
+    var nonRosterNotes = {};
+    ((roster.non_roster_owners || {}).owners || []).forEach(function (o) { nonRosterNotes[String(o.hubspot_owner_id)] = o.reason; });
+
+    var byOwner = {}, openByOwner = {}, wonByOwner = {};
+    function bucket(oid) { if (!byOwner[oid]) byOwner[oid] = emptyMetrics_(); return byOwner[oid]; }
+    cls.open.forEach(function (d) { addOpen_(bucket(d.ownerId), d); (openByOwner[d.ownerId] = openByOwner[d.ownerId] || []).push(d); });
+    cls.wonYtd.forEach(function (d) { addWon_(bucket(d.ownerId), d); (wonByOwner[d.ownerId] = wonByOwner[d.ownerId] || []).push(d); });
+
+    var flags = [];
+    function flag(code, severity, message, extra) { var f = { code: code, severity: severity, message: message }; for (var k in (extra || {})) f[k] = extra[k]; flags.push(f); }
+
+    var rows = roster.aes.map(function (a) {
+      var oid = String(a.hubspot_owner_id), o = owners[oid];
+      var m = byOwner[oid] ? byOwner[oid] : emptyMetrics_();
+      var ownerStatus = !o ? 'unknown' : (!o.isActive ? 'inactive' : (!o.hasUserSeat ? 'no_user_seat' : 'active'));
+      if (ownerStatus === 'unknown') flag('ROSTER_OWNER_UNKNOWN', 'high', a.name + ': owner ID ' + oid + ' not returned by the owners API', { ownerId: oid });
+      if (ownerStatus === 'inactive') flag('ROSTER_OWNER_INACTIVE', 'high', a.name + ' is on the roster but inactive in HubSpot', { ownerId: oid });
+      if (ownerStatus === 'no_user_seat') flag('ROSTER_OWNER_NO_SEAT', 'high', a.name + ' has no HubSpot user seat', { ownerId: oid });
+      return { key: a.slug, name: a.name, email: a.email, role: a.role, ownerId: oid, ownerStatus: ownerStatus,
+               metrics: roundMetrics_(JSON.parse(JSON.stringify(m))) };
+    });
+
+    var team = emptyMetrics_();
+    roster.aes.forEach(function (a) { if (byOwner[String(a.hubspot_owner_id)]) mergeInto_(team, byOwner[String(a.hubspot_owner_id)]); });
+
+    var nonRoster = { total: emptyMetrics_(), owners: [] };
+    Object.keys(byOwner).sort().forEach(function (oid) {
+      if (rosterByOwner[oid]) return;
+      var o = owners[oid], m = byOwner[oid];
+      var name = oid === '' ? 'Unassigned (no owner)' : (o ? o.name : 'Unknown owner ' + oid);
+      var status = oid === '' ? 'unassigned' : (!o ? 'unknown' : (!o.isActive ? 'inactive' : (!o.hasUserSeat ? 'no_user_seat' : 'active')));
+      mergeInto_(nonRoster.total, m);
+      nonRoster.owners.push({ ownerId: oid, name: name, ownerStatus: status, reason: nonRosterNotes[oid] || 'Not on forecast roster',
+                              metrics: roundMetrics_(JSON.parse(JSON.stringify(m))) });
+      if (m.grossOpen.count > 0) {
+        var sev = (status === 'active') ? 'medium' : 'high';
+        flag('NON_ROSTER_OPEN_DEALS', sev, name + ' holds ' + m.grossOpen.count + ' open deal(s) outside the forecast roster (' + status.replace(/_/g, ' ') + ')',
+             { ownerId: oid, count: m.grossOpen.count, amount: round2(m.grossOpen.amount), dealIds: (openByOwner[oid] || []).map(function (d) { return d.id; }) });
+      }
+      if (m.closedWonYtd.count > 0 && status !== 'active') {
+        flag('NON_ACTIVE_OWNER_WON_YTD', 'medium', name + ' (' + status.replace(/_/g, ' ') + ') holds closed-won YTD counted in company total but in no AE row',
+             { ownerId: oid, count: m.closedWonYtd.count, amount: round2(m.closedWonYtd.amount) });
+      }
+    });
+
+    var company = emptyMetrics_(); mergeInto_(company, team); mergeInto_(company, nonRoster.total);
+
+    function dealFlag(code, sev, label, test) {
+      var ds = cls.open.filter(test);
+      if (ds.length) flag(code, sev, ds.length + ' open deal(s) ' + label, { count: ds.length,
+        amount: round2(ds.reduce(function (s, d) { return s + (d.amount || 0); }, 0)), amountBasis: 'gross amount of flagged deals', dealIds: ds.map(function (d) { return d.id; }) });
+    }
+    dealFlag('WEIGHTED_FALLBACK', 'medium', 'use amount × hs_deal_stage_probability because weighted_amount is null', function (d) { return d.weightedMethod === 'fallback'; });
+    dealFlag('WEIGHTED_STORED_DIVERGES', 'medium', 'carry a stored weighted_amount that is not amount × hs_deal_stage_probability (stored value used, per weighting rule)', function (d) { return d.flags.indexOf('weighted_stored_differs_from_calc') >= 0; });
+    dealFlag('WEIGHTED_UNAVAILABLE', 'high', 'have no weighted value (no weighted_amount and no amount/probability)', function (d) { return d.weightedMethod === 'none'; });
+    dealFlag('PAST_DUE', 'medium', 'have a close date before today', function (d) { return d.flags.indexOf('past_due') >= 0; });
+    dealFlag('MISSING_AMOUNT', 'high', 'have no amount (shown blank, excluded from $ sums, counted)', function (d) { return d.flags.indexOf('missing_amount') >= 0; });
+    dealFlag('MISSING_CLOSE_DATE', 'high', 'have no close date (shown blank, excluded from in-period)', function (d) { return d.flags.indexOf('missing_close_date') >= 0; });
+    dealFlag('MISSING_UNITS', 'low', 'have no units__c', function (d) { return d.flags.indexOf('missing_units') >= 0; });
+    dealFlag('PROB_DEVIATES', 'low', 'carry a deal probability that differs from the stage default', function (d) { return d.flags.indexOf('prob_deviates_from_stage') >= 0; });
+    dealFlag('UNKNOWN_STAGE', 'high', 'sit in a stage not returned by the pipelines API', function (d) { return d.flags.indexOf('unknown_stage') >= 0; });
+    var wonNull = cls.wonYtd.filter(function (d) { return d.amount === null; });
+    if (wonNull.length) flag('WON_MISSING_AMOUNT', 'high', wonNull.length + ' closed-won YTD deal(s) have no amount', { count: wonNull.length, dealIds: wonNull.map(function (d) { return d.id; }) });
+
+    return {
+      asOf: input.asOf, period: per, rows: rows,
+      team: roundMetrics_(team), nonRoster: { total: roundMetrics_(nonRoster.total), owners: nonRoster.owners },
+      company: roundMetrics_(company),
+      openDealsByOwner: openByOwner, wonYtdByOwner: wonByOwner,
+      counts: { open: cls.open.length, wonYtd: cls.wonYtd.length, outOfScopeIgnored: cls.outOfScope },
+      flags: flags
+    };
+  }
+
+  // ------------------------------------------------------------------ tie-out
+  /** Company + per-owner Closed Won YTD and Gross Open Pipeline from classified deals. */
+  function summarizeForTieOut(open, wonYtd) {
+    var s = { company: { cwYtd: { amount: 0, count: 0 }, grossOpen: { amount: 0, count: 0 } }, byOwner: {} };
+    function o(id) { if (!s.byOwner[id]) s.byOwner[id] = { cwYtd: { amount: 0, count: 0 }, grossOpen: { amount: 0, count: 0 } }; return s.byOwner[id]; }
+    open.forEach(function (d) { var a = d.amount || 0; s.company.grossOpen.amount += a; s.company.grossOpen.count++; o(d.ownerId).grossOpen.amount += a; o(d.ownerId).grossOpen.count++; });
+    wonYtd.forEach(function (d) { var a = d.amount || 0; s.company.cwYtd.amount += a; s.company.cwYtd.count++; o(d.ownerId).cwYtd.amount += a; o(d.ownerId).cwYtd.count++; });
+    return s;
+  }
+
+  /** Compare two summaries. Money within tolerance, counts exact. Missing side counts as 0. */
+  function tieOut(primary, independent, toleranceUsd, labels) {
+    var rows = [], lb = labels || {};
+    function cmp(scope, measure, p, i) {
+      var pa = p ? p.amount : 0, ia = i ? i.amount : 0, pc = p ? p.count : 0, ic = i ? i.count : 0;
+      var da = round2(pa - ia);
+      rows.push({ scope: scope, measure: measure, primaryAmount: round2(pa), independentAmount: round2(ia), deltaAmount: da,
+                  primaryCount: pc, independentCount: ic, deltaCount: pc - ic,
+                  ok: Math.abs(pa - ia) <= toleranceUsd + 1e-9 && pc === ic });
+    }
+    cmp('Company', 'Closed Won YTD', primary.company.cwYtd, independent.company.cwYtd);
+    cmp('Company', 'Gross Open Pipeline', primary.company.grossOpen, independent.company.grossOpen);
+    var ids = {}; Object.keys(primary.byOwner).concat(Object.keys(independent.byOwner)).forEach(function (k) { ids[k] = 1; });
+    Object.keys(ids).sort().forEach(function (id) {
+      var p = primary.byOwner[id], i = independent.byOwner[id], name = lb[id] || (id === '' ? 'Unassigned' : id);
+      cmp(name, 'Closed Won YTD', p && p.cwYtd, i && i.cwYtd);
+      cmp(name, 'Gross Open Pipeline', p && p.grossOpen, i && i.grossOpen);
+    });
+    var mism = rows.filter(function (r) { return !r.ok; });
+    return { ok: mism.length === 0, toleranceUsd: toleranceUsd, rows: rows, mismatches: mism };
+  }
+
+  /** List deal IDs present in one population but not the other — the usual cause of a tie-out miss. */
+  function diffDealSets(aDeals, bDeals) {
+    var a = {}, b = {};
+    aDeals.forEach(function (d) { a[d.id] = d; }); bDeals.forEach(function (d) { b[d.id] = d; });
+    return {
+      onlyPrimary: Object.keys(a).filter(function (k) { return !b[k]; }).map(function (k) { return a[k]; }),
+      onlyIndependent: Object.keys(b).filter(function (k) { return !a[k]; }).map(function (k) { return b[k]; }),
+      amountDiffers: Object.keys(a).filter(function (k) { return b[k] && (a[k].amount || 0) !== (b[k].amount || 0); })
+    };
+  }
+
+  return {
+    num: num, round2: round2, etOffsetMinutes: etOffsetMinutes, etParts: etParts, etDate: etDate, etIso: etIso,
+    etToUtcMs: etToUtcMs, addDays: addDays, fiscalYearOf: fiscalYearOf, periodFor: periodFor,
+    buildStageMap: buildStageMap, normalizeOwners: normalizeOwners, resolveViewer: resolveViewer, dealUrl: dealUrl,
+    deriveOpenDeal: deriveOpenDeal, deriveWonDeal: deriveWonDeal, classifyDeals: classifyDeals,
+    computeMetrics: computeMetrics, summarizeForTieOut: summarizeForTieOut, tieOut: tieOut, diffDealSets: diffDealSets
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = ForecastCore;

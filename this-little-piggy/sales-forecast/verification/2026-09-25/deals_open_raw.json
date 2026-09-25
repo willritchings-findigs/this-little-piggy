@@ -1,0 +1,1446 @@
+{
+ "results": [
+  {
+   "id": 163860215545,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Evernest - Up/Cross-Sell",
+    "amount": "87354.8",
+    "closedate": "2026-09-30T04:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3752297193",
+    "units__c": "1256",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 172839505604,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Stevens Realty LLC - DA, Termwise, Trigo",
+    "amount": "109725",
+    "closedate": "2025-07-30T04:00:00Z",
+    "hubspot_owner_id": "663611618",
+    "dealstage": "3752297194",
+    "units__c": "1500",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 188214333116,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Arqline (RKW/Quarterra) - New Logo with Pilot Period",
+    "amount": "62450",
+    "closedate": "2026-11-30T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "3122.5",
+    "dealstage": "3753890497",
+    "units__c": "1000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 212000249556,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Mission Rock Residential - New Logo with Pilot Period",
+    "amount": "156125",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "7806.25",
+    "dealstage": "3753890497",
+    "units__c": "2500",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 215677910756,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Beam Living - New Logo with Pilot Period",
+    "amount": "142750",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "21412.5",
+    "dealstage": "3753890499",
+    "units__c": "2500",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 218483726060,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Brookfield Properties - New Logo with Pilot Period",
+    "amount": "1920200",
+    "closedate": "2026-10-30T04:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "1344140",
+    "dealstage": "3753890501",
+    "units__c": "40000",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 256835628741,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Clarion Partners - New Logo",
+    "amount": "182875",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "9143.75",
+    "dealstage": "3753890497",
+    "units__c": "2500",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 257147569878,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "BH Management - New Logo",
+    "amount": "114200",
+    "closedate": "2027-03-31T04:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "11420",
+    "dealstage": "3753890498",
+    "units__c": "2000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 259864028858,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Group Fox Management - New Logo with Pilot Period",
+    "amount": "51448.75",
+    "closedate": "2026-10-31T17:59:39.696Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "30869.25",
+    "dealstage": "3753890501",
+    "units__c": "790",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 276211850970,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "SPM, Inc. - New Logo",
+    "amount": "1420792.45",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "71039.6225",
+    "dealstage": "3753890497",
+    "units__c": "19423",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 285315183336,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Progress Residential - New Logo",
+    "amount": "73150",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "3657.5",
+    "dealstage": "3753890497",
+    "units__c": "1000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 288918190833,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Pritzker Realty Group - New Logo with Pilot Period",
+    "amount": "73150",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "3657.5",
+    "dealstage": "3753890497",
+    "units__c": "1000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 289002018504,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "MAXX Properties - New Logo",
+    "amount": "680295",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "34014.75",
+    "dealstage": "3753890497",
+    "units__c": "9300",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 311544846059,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Fowler Property Management - Texas - New Logo with Pilot Period",
+    "amount": "169500",
+    "closedate": "2026-12-31T20:34:11.169Z",
+    "hubspot_owner_id": "2111244871",
+    "weighted_amount": "33900",
+    "dealstage": "3753890499",
+    "units__c": "2500",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 315862217446,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Monarch Investment - New Logo",
+    "amount": "5179678.35",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "258983.9175",
+    "dealstage": "3753890497",
+    "units__c": "70809",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 316787066613,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "BTR Haus - New Logo",
+    "amount": "45267.6",
+    "closedate": "2026-09-30T16:58:34.745Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "9053.52",
+    "dealstage": "3753890497",
+    "units__c": "634",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 317576449758,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "American Avenue (SFR3) - Up/Cross-Sell - flat fee",
+    "amount": "856000",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3752297194",
+    "units__c": "10000",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 318097932021,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Bridge Homes SFR - Upsell/Cross-sell",
+    "amount": "182899.05",
+    "closedate": "2026-12-31T14:07:35.065Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3752297192",
+    "units__c": "3810",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 320349810424,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Capital Property Management - New Logo with Pilot Period",
+    "amount": "28360.25",
+    "closedate": "2026-10-14T18:29:24.298Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "25524.225",
+    "dealstage": "3753890501",
+    "units__c": "425",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 320974784238,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Balfour Residential - New Logo with Pilot Period",
+    "amount": "248710",
+    "closedate": "2026-12-31T19:00:07.794Z",
+    "hubspot_owner_id": "686754956",
+    "weighted_amount": "223839",
+    "dealstage": "3753890501",
+    "units__c": "3400",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 324803133162,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Advantage Property Management TN - New Logo with Pilot Period",
+    "amount": "82996.05",
+    "closedate": "2026-09-30T04:00:00Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "62247.0375",
+    "dealstage": "3753890501",
+    "units__c": "1329",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 324826445506,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Radco - New Logo",
+    "amount": "599006.25",
+    "closedate": "2026-12-31T19:05:42.923Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "269552.8125",
+    "dealstage": "3753890499",
+    "units__c": "11575",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 324835523286,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Thrive Communities - New Logo",
+    "amount": "1682450",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "84122.5",
+    "dealstage": "3753890497",
+    "units__c": "23000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 326163798757,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Culver Investment Partners - New Logo",
+    "amount": "219450",
+    "closedate": "2026-12-31T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "10972.5",
+    "dealstage": "3753890497",
+    "units__c": "3000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 326936691445,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Clear Investment Group - Pilot",
+    "amount": "271200",
+    "closedate": "2026-12-31T18:55:09.381Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "149160",
+    "dealstage": "3753890500",
+    "units__c": "4000",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 327318932156,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "LynCo Properties - Up/Cross-Sell",
+    "amount": "275332.4",
+    "closedate": "2026-08-31T17:58:40.889Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "13766.62",
+    "dealstage": "3752297192",
+    "units__c": "6433",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 329290158791,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Sentinel - New Logo",
+    "amount": "2121350",
+    "closedate": "2026-11-20T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "212135",
+    "dealstage": "3753890497",
+    "units__c": "29000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 329526101706,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Banner Property Management - New Logo",
+    "amount": "271200",
+    "closedate": "2026-11-27T18:49:04.541Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "27120",
+    "dealstage": "3753890498",
+    "units__c": "4000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 329870546638,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Goodman Real Estate (GRE) - New Logo",
+    "amount": "731500",
+    "closedate": "2027-01-15T05:00:00Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "36575",
+    "dealstage": "3753890497",
+    "units__c": "10000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 329950040773,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Essex Property Trust Inc - New Logo",
+    "amount": "4608450",
+    "closedate": "2026-12-18T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "230422.5",
+    "dealstage": "3753890497",
+    "units__c": "63000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 329975380706,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Invitation Homes - New Logo",
+    "amount": "292600",
+    "closedate": "2026-12-18T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "14630",
+    "dealstage": "3753890497",
+    "units__c": "4000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 330384939741,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "The RMR Group - New Logo",
+    "amount": "1828750",
+    "closedate": "2027-01-16T05:00:00Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "91437.5",
+    "dealstage": "3753890497",
+    "units__c": "25000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 331601358552,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Alta - New Logo",
+    "amount": "29260",
+    "closedate": "2026-10-27T18:28:58.258Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "19019",
+    "dealstage": "3753890500",
+    "units__c": "400",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 335112942268,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Bartsch Management - New Logo",
+    "amount": "146300",
+    "closedate": "2026-10-07T04:00:00Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "7315",
+    "dealstage": "3753890497",
+    "units__c": "2000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 335179400903,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Crest Capital Management - New Deal",
+    "amount": "141240",
+    "closedate": "2026-12-31T18:02:28.738Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "5649.6",
+    "dealstage": "3753890498",
+    "units__c": "2200",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 336126213861,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "HomeRiver Group LLC - New Deal",
+    "amount": "256312.08",
+    "closedate": "2026-09-30T15:19:21.699Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "128156.04",
+    "dealstage": "3752297193",
+    "units__c": "19962",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 336126931684,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Vesteco Real Estate Management Services - New Deal with Pilot Period",
+    "amount": "312975",
+    "closedate": "2026-12-31T14:12:58.172Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "281677.5",
+    "dealstage": "3753890501",
+    "units__c": "4500",
+    "hs_deal_stage_probability": "0.8000000000000000444089209850062616169452667236328125"
+   }
+  },
+  {
+   "id": 337716929216,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "United Apartments - New Deal",
+    "amount": "59920",
+    "closedate": "2026-10-31T23:49:44.152Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "700",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 337718366910,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "THE REMM GROUP - New Deal",
+    "amount": "770400",
+    "closedate": "2027-02-26T18:48:52.715Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "77040",
+    "dealstage": "3753890498",
+    "units__c": "12000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 337719990995,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Hartford Rentals - New Deal",
+    "amount": "119840",
+    "closedate": "2026-12-31T23:44:25.856Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "1400",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 338121610997,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "4 Lakes Properties - New Deal",
+    "amount": "48150",
+    "closedate": "2026-10-31T19:10:48.465Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "9630",
+    "dealstage": "3753890499",
+    "units__c": "750",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 338122321617,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Green Residential - New Deal",
+    "amount": "121712.5",
+    "closedate": "2026-10-31T21:39:41.475Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "12171.25",
+    "dealstage": "3753890498",
+    "units__c": "1750",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 338123039459,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Sheng Raamco Management Inc - New Deal",
+    "amount": "474652",
+    "closedate": "2026-10-31T23:27:44.499Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890498",
+    "units__c": "5545",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 338124477132,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Sudberry Properties - New Deal",
+    "amount": "142577.5",
+    "closedate": "2026-12-31T19:16:09.555Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "7128.875",
+    "dealstage": "3753890498",
+    "units__c": "2050",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 339205031653,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Meadow Wood Property Company - New Deal",
+    "amount": "291040",
+    "closedate": "2026-09-10T18:18:02.316Z",
+    "hubspot_owner_id": "686754956",
+    "dealstage": "3753890497",
+    "units__c": "3400",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 339205769967,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Valor Residential - New Deal",
+    "amount": "684800",
+    "closedate": "2026-10-31T20:42:24.760Z",
+    "hubspot_owner_id": "2111244871",
+    "weighted_amount": "",
+    "dealstage": "3753890497",
+    "units__c": "8000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 339239986908,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Land & Company Apartments - New Deal",
+    "amount": "616320",
+    "closedate": "2027-02-26T17:19:24.238Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890498",
+    "units__c": "7200",
+    "hs_deal_stage_probability": "0.15"
+   }
+  },
+  {
+   "id": 339240610533,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "HARRELL Group - New Deal",
+    "amount": "88140",
+    "closedate": "2026-09-15T14:48:39.728Z",
+    "hubspot_owner_id": "663611618",
+    "weighted_amount": "57291",
+    "dealstage": "3753890499",
+    "units__c": "1300",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 339688049387,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Connecticut Management - New Deal",
+    "amount": "69550",
+    "closedate": "2026-12-31T15:22:19.870Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "6955",
+    "dealstage": "3753890498",
+    "units__c": "1000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 340221913805,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Waterton",
+    "amount": "1284000",
+    "closedate": "2026-11-01T22:28:03.945Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "15000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340226681562,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Farran Realty Partners - New Deal",
+    "amount": "31225",
+    "closedate": "2026-10-31T17:52:12.579Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "4683.75",
+    "dealstage": "3753890498",
+    "units__c": "500",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 340260805356,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Investors Management & Marketing - New Deal",
+    "amount": "684800",
+    "closedate": "2026-08-31T17:50:26.192Z",
+    "hubspot_owner_id": "686754956",
+    "dealstage": "3753890497",
+    "units__c": "8000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340263615184,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "White Oak Partners - New Deal",
+    "amount": "616320",
+    "closedate": "2026-09-14T18:00:54.031Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "7200",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340265092801,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Fairlawn Capital",
+    "amount": "513600",
+    "closedate": "2026-11-01T14:14:30.640Z",
+    "hubspot_owner_id": "1032502194",
+    "weighted_amount": "51360",
+    "dealstage": "3753890497",
+    "units__c": "6000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340266562284,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Mutual Property Management - New Deal",
+    "amount": "39300",
+    "closedate": "2026-09-30T14:18:48.527Z",
+    "hubspot_owner_id": "1053057926",
+    "weighted_amount": "38907",
+    "dealstage": "3752297195",
+    "units__c": "2000",
+    "hs_deal_stage_probability": "0.90000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 340489457349,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "The Oaks Community Association - New Deal",
+    "amount": "17890.4",
+    "closedate": "2026-09-30T19:48:54.245Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "209",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340491462353,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Cagan Management Group, Inc. - New Deal (Chicago)",
+    "amount": "486850",
+    "closedate": "2027-02-05T18:06:15.833Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890499",
+    "units__c": "7000",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 340491487984,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Indigo Living - New Deal",
+    "amount": "684800",
+    "closedate": "2026-11-27T22:48:31.805Z",
+    "hubspot_owner_id": "686754956",
+    "dealstage": "3753890497",
+    "units__c": "8000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340491564746,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Rainbow Property Management Inc - New Deal",
+    "amount": "188320",
+    "closedate": "2026-09-30T14:57:42.109Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "2200",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 340872867521,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Caras Property Management - New Deal",
+    "amount": "128400",
+    "closedate": "2026-09-30T13:45:22.512Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "1500",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 341765315264,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Atlantic Residential - New Deal",
+    "amount": "599200",
+    "closedate": "2026-11-25T22:45:43.098Z",
+    "hubspot_owner_id": "686754956",
+    "dealstage": "3753890497",
+    "units__c": "7000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342171949800,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Nexus Properties - New Deal",
+    "amount": "222560",
+    "closedate": "2026-12-31T18:59:29.256Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "2600",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342174692033,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Rockwell Properties",
+    "amount": "29960",
+    "closedate": "2026-10-01T17:22:41.674Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "400",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342323527389,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Keeley Properties - New Deal",
+    "amount": "153010",
+    "closedate": "2026-12-31T15:48:56.148Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "7650.5",
+    "dealstage": "3753890498",
+    "units__c": "2200",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 342326416072,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Beitel Group - New Deal",
+    "amount": "770400",
+    "closedate": "2026-10-31T19:17:40.987Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "9000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342327364288,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Invitation Homes - New Deal",
+    "amount": "7062000",
+    "closedate": "2027-02-26T15:47:44.776Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "110000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342339674866,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Bozzuto Associates Inc - New Deal",
+    "amount": "446000",
+    "closedate": "2027-03-31T14:35:18.355Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "5000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342340999899,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "MAXX Properties - New Deal",
+    "amount": "778960",
+    "closedate": "2027-02-12T15:52:07.601Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "9100",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342655679190,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "American Homes 4 Rent - New Deal",
+    "amount": "5221600",
+    "closedate": "2027-05-01T01:01:11.325Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "61000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 342947057356,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Belco Equities",
+    "amount": "256800",
+    "closedate": "2026-10-01T19:11:41.244Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "3000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 343127533286,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Boundless Management - New Deal",
+    "amount": "18404",
+    "closedate": "2026-08-31T20:46:47.666Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "215",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 343185976003,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Beven & Brock - New Deal",
+    "amount": "128820",
+    "closedate": "2026-12-31T18:52:46.891Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890498",
+    "units__c": "1900",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 343186690777,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Peak Property Management - New Deal",
+    "amount": "99510",
+    "closedate": "2026-09-30T19:52:05.148Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "4975.5",
+    "dealstage": "3753890498",
+    "units__c": "1500",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 343331959530,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Dorman Real Estate - New Logo",
+    "amount": "104910",
+    "closedate": "2026-09-30T18:26:19.661Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "62946",
+    "dealstage": "3753890500",
+    "units__c": "1500",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 343587765972,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Cowboy Properties - New Deal",
+    "amount": "23283.2",
+    "closedate": "2026-08-31T14:07:03.354Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3752297191",
+    "units__c": "272",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 343708663516,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Redwood Living",
+    "amount": "856000",
+    "closedate": "2026-11-01T14:57:56.631Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "10000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 344149654216,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "EKO Communities",
+    "amount": "428000",
+    "closedate": "2026-10-01T20:35:04.074Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "5000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 344150841029,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "CVG properties",
+    "amount": "299600",
+    "closedate": "2026-12-01T19:25:50.477Z",
+    "hubspot_owner_id": "2111244871",
+    "weighted_amount": "14980",
+    "dealstage": "3753890499",
+    "units__c": "3500",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 344318477049,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "KGP Management - New Deal",
+    "amount": "76807.5",
+    "closedate": "2026-09-30T17:51:24.524Z",
+    "hubspot_owner_id": "26451111",
+    "weighted_amount": "46084.5",
+    "dealstage": "3753890500",
+    "units__c": "1050",
+    "hs_deal_stage_probability": "0.59999999999999997779553950749686919152736663818359375"
+   }
+  },
+  {
+   "id": 344363329252,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Eagle Rock Properties - New Deal",
+    "amount": "856000",
+    "closedate": "2026-10-31T17:40:35.916Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "10000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 345155802838,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Bay Management Corporation",
+    "amount": "288900",
+    "closedate": "2026-10-01T20:37:08.158Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "4500",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 345391421172,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Grubb Properties - New Deal",
+    "amount": "385200",
+    "closedate": "2026-12-01T19:26:09.691Z",
+    "hubspot_owner_id": "2111244871",
+    "weighted_amount": "38520",
+    "dealstage": "3753890498",
+    "units__c": "6000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 345469471421,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Pennrose Management Company - New Deal",
+    "amount": "1284000",
+    "closedate": "2027-02-28T16:18:11.687Z",
+    "hubspot_owner_id": "2111244871",
+    "weighted_amount": "25680",
+    "dealstage": "3753890498",
+    "units__c": "20000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 345475976920,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "CMC Asset Management - New Deal",
+    "amount": "64200",
+    "closedate": "2026-09-30T18:29:05.510Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "1000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 345478878920,
+   "properties": {
+    "pipeline": "2313830082",
+    "dealname": "Maymont Homes - Pet Verification",
+    "amount": "1356000",
+    "closedate": "2026-09-30T22:04:19.050Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3752297191",
+    "units__c": "20000",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 345479550674,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "OmniKey Realty - New Deal",
+    "amount": "89880",
+    "closedate": "2026-10-31T15:16:20.116Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "1400",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 345480279739,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Northland - New Deal",
+    "amount": "1797600",
+    "closedate": "2026-09-30T17:16:02.579Z",
+    "hubspot_owner_id": "167857460",
+    "dealstage": "3753890497",
+    "units__c": "28000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 345650837220,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "F&F Properties - New Deal",
+    "amount": "104910",
+    "closedate": "2026-09-30T13:40:13.436Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890498",
+    "units__c": "1500",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 345715806910,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Ell\u00efron Residential - New Deal",
+    "amount": "132380.4",
+    "closedate": "2026-09-30T18:34:44.793Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "2062",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 346153148127,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "FirstKey Homes, LLC - New Deal",
+    "amount": "2942500",
+    "closedate": "2027-01-31T23:54:23.243Z",
+    "hubspot_owner_id": "1053057926",
+    "dealstage": "3753890497",
+    "units__c": "55000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 346800821970,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Gates Hudson",
+    "amount": "1284000",
+    "closedate": "2026-11-01T15:54:04.488Z",
+    "hubspot_owner_id": "167857460",
+    "dealstage": "3753890497",
+    "units__c": "20000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 346827228921,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Regency Multifamily - New Deal",
+    "amount": "285690",
+    "closedate": "2026-09-30T14:06:32.158Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "4450",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 347391668938,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Hayman Company - New Deal",
+    "amount": "834600",
+    "closedate": "2026-10-31T16:02:02.395Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "13000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 347392557770,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Real Estate Growth Advisors - New Deal",
+    "amount": "74940",
+    "closedate": "2026-12-31T18:52:39.288Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890498",
+    "units__c": "1200",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 347393103578,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "AO Realty - New Deal",
+    "amount": "385200",
+    "closedate": "2026-10-31T15:27:47.261Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "6000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 347393125101,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Grubb Ventures - New Deal",
+    "amount": "128400",
+    "closedate": "2026-09-30T18:35:31.785Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "2000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 347995517659,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Ackermann Group - New Deal",
+    "amount": "315928.2",
+    "closedate": "2026-12-31T18:53:33.950Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890498",
+    "units__c": "4921",
+    "hs_deal_stage_probability": "0.200000000000000011102230246251565404236316680908203125"
+   }
+  },
+  {
+   "id": 348238139113,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Newport Pacific - New Deal",
+    "amount": "1163432.4",
+    "closedate": "2026-10-31T17:20:51.890Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "18122",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 348519560890,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "RHO Residential",
+    "amount": "770400",
+    "closedate": "2026-11-01T18:13:26.781Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "12000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 348760690422,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "T & R Properties - New Deal",
+    "amount": "288900",
+    "closedate": "2026-10-31T18:22:42.573Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "4500",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 348860146385,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Lindy Property Management",
+    "amount": "513600",
+    "closedate": "2026-11-01T18:32:57.498Z",
+    "hubspot_owner_id": "2111244871",
+    "dealstage": "3753890497",
+    "units__c": "8000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 349207596778,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Paper City Property Management - New Deal",
+    "amount": "25680",
+    "closedate": "2026-09-30T17:00:24.625Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "400",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 349725507292,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "First Pointe Management Group - New Deal",
+    "amount": "526440",
+    "closedate": "2026-10-31T21:24:47.316Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "8200",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 349820955332,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Weiner Companies - New Deal",
+    "amount": "50850",
+    "closedate": "2026-10-31T19:07:29.182Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890499",
+    "units__c": "750",
+    "hs_deal_stage_probability": "0.40000000000000002220446049250313080847263336181640625"
+   }
+  },
+  {
+   "id": 350246640342,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Zaremba Management - New Deal",
+    "amount": "333840",
+    "closedate": "2026-10-31T14:35:21.246Z",
+    "hubspot_owner_id": "1032502194",
+    "dealstage": "3753890497",
+    "units__c": "5200",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 350251119324,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Thompson Thrift - New Deal",
+    "amount": "1797600",
+    "closedate": "2026-11-30T21:48:08.220Z",
+    "hubspot_owner_id": "167857460",
+    "dealstage": "3753890497",
+    "units__c": "28000",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  },
+  {
+   "id": 350501236446,
+   "properties": {
+    "pipeline": "2313721535",
+    "dealname": "Star Management - New Deal",
+    "amount": "141240",
+    "closedate": "2026-09-30T17:43:06.498Z",
+    "hubspot_owner_id": "26451111",
+    "dealstage": "3753890497",
+    "units__c": "2200",
+    "hs_deal_stage_probability": "0.1000000000000000055511151231257827021181583404541015625"
+   }
+  }
+ ],
+ "total": 107
+}

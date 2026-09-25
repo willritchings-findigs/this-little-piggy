@@ -1,0 +1,84 @@
+{
+ "_source": "HubSpot reporting API via MCP query_crm_data, pulled 2026-09-25 immediately before the record-level pulls. Independent of the Search API path.",
+ "queries": {
+  "open": "SELECT hubspot_owner_id, COUNT(*), SUM(amount), SUM(weighted_amount) FROM DEAL WHERE pipeline IN ('2313721535','2313830082') AND dealstage NOT IN ('3753890502','3752297196','3753890503','3752297197') GROUP BY hubspot_owner_id",
+  "won_ytd": "SELECT hubspot_owner_id, COUNT(*), SUM(amount) FROM DEAL WHERE dealstage IN ('3753890502','3752297196') AND closedate BETWEEN '2026-01-01' AND '2026-09-25' GROUP BY hubspot_owner_id",
+  "weighted_null": "SELECT hubspot_owner_id, COUNT(*) FROM DEAL WHERE <open filter> AND weighted_amount IS NULL GROUP BY hubspot_owner_id"
+ },
+ "open_by_owner": {
+  "1053057926": {
+   "n": 32,
+   "a": 41741263.58,
+   "w": 2862500.7625
+  },
+  "26451111": {
+   "n": 32,
+   "a": 3142411.2,
+   "w": 432878.7575
+  },
+  "1032502194": {
+   "n": 21,
+   "a": 10820904.35,
+   "w": 511956.75
+  },
+  "2111244871": {
+   "n": 12,
+   "a": 6325852,
+   "w": 113080
+  },
+  "686754956": {
+   "n": 5,
+   "a": 2508550,
+   "w": 223839
+  },
+  "167857460": {
+   "n": 3,
+   "a": 4879200,
+   "w": 0
+  },
+  "663611618": {
+   "n": 2,
+   "a": 197865,
+   "w": 57291
+  }
+ },
+ "won_ytd_by_owner": {
+  "663611618": {
+   "n": 16,
+   "a": 302132.8
+  },
+  "1053057926": {
+   "n": 14,
+   "a": 5240539.03
+  },
+  "26451111": {
+   "n": 14,
+   "a": 355506.94
+  },
+  "686754956": {
+   "n": 14,
+   "a": 654238.85
+  },
+  "1032502194": {
+   "n": 6,
+   "a": 420389.86
+  },
+  "2111244871": {
+   "n": 5,
+   "a": 484825.04
+  },
+  "1542312872": {
+   "n": 4,
+   "a": 113672.6
+  }
+ },
+ "weighted_null_by_owner": {
+  "26451111": 17,
+  "1032502194": 14,
+  "1053057926": 11,
+  "2111244871": 8,
+  "686754956": 4,
+  "167857460": 3,
+  "663611618": 1
+ }
+}

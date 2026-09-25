@@ -1,0 +1,143 @@
+{
+ "_source": "RECONSTRUCTED \u2014 the MCP connector does not expose GET /crm/v3/pipelines/deals. Stage IDs/labels/order from gtm-dashboard/data/snapshot.json; probabilities = modal deal-record hs_deal_stage_probability re-observed live 2026-09-25 (identical). The deployed app reads the real pipelines API.",
+ "results": [
+  {
+   "id": "2313721535",
+   "label": "New Logo",
+   "stages": [
+    {
+     "id": "3753890497",
+     "label": "Intro & Challenge",
+     "displayOrder": 0,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.1"
+     }
+    },
+    {
+     "id": "3753890498",
+     "label": "Discovery / Demo",
+     "displayOrder": 1,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.2"
+     }
+    },
+    {
+     "id": "3753890499",
+     "label": "Business Case & Stakeholder Alignment",
+     "displayOrder": 2,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.4"
+     }
+    },
+    {
+     "id": "3753890500",
+     "label": "Negotiation & Execution",
+     "displayOrder": 3,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.6"
+     }
+    },
+    {
+     "id": "3753890501",
+     "label": "Trial",
+     "displayOrder": 4,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.8"
+     }
+    },
+    {
+     "id": "3753890502",
+     "label": "Closed Won",
+     "displayOrder": 5,
+     "metadata": {
+      "isClosed": "true",
+      "probability": "1.0"
+     }
+    },
+    {
+     "id": "3753890503",
+     "label": "Closed Lost",
+     "displayOrder": 6,
+     "metadata": {
+      "isClosed": "true",
+      "probability": "0.0"
+     }
+    }
+   ]
+  },
+  {
+   "id": "2313830082",
+   "label": "Upsell / Expansion",
+   "stages": [
+    {
+     "id": "3752297191",
+     "label": "Intro & Challenge",
+     "displayOrder": 0,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.2"
+     }
+    },
+    {
+     "id": "3752297192",
+     "label": "Discovery / Demo",
+     "displayOrder": 1,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.4"
+     }
+    },
+    {
+     "id": "3752297193",
+     "label": "Business case & Stakeholder alignment",
+     "displayOrder": 2,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.6"
+     }
+    },
+    {
+     "id": "3752297194",
+     "label": "Negotiation & Execution",
+     "displayOrder": 3,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.8"
+     }
+    },
+    {
+     "id": "3752297195",
+     "label": "Implementation / Contract signed",
+     "displayOrder": 4,
+     "metadata": {
+      "isClosed": "false",
+      "probability": "0.9"
+     }
+    },
+    {
+     "id": "3752297196",
+     "label": "Closed Won",
+     "displayOrder": 5,
+     "metadata": {
+      "isClosed": "true",
+      "probability": "1.0"
+     }
+    },
+    {
+     "id": "3752297197",
+     "label": "Closed Lost",
+     "displayOrder": 6,
+     "metadata": {
+      "isClosed": "true",
+      "probability": "0.0"
+     }
+    }
+   ]
+  }
+ ]
+}

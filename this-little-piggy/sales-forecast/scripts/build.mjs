@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+/**
+ * Generates the Apps Script config + core from their single sources of truth:
+ *   gtm-dashboard/config.json   → HubSpot definitions (pipelines, stage IDs, fields, weighting, tolerance)
+ *   sales-forecast/config/*.json → roster + forecast motion settings
+ *   sales-forecast/core/forecast_core.js → business logic
+ * Writes appsscript/Generated_Config.gs and appsscript/Generated_Core.gs.
+ *
+ *   node scripts/build.mjs          write generated files
+ *   node scripts/build.mjs --check  exit 1 if generated files are stale or config is invalid (CI / pre-push)
+ */
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(HERE, '..');
+const GTM_CONFIG = join(ROOT, '..', 'gtm-dashboard', 'config.json');
+const read = (p) => readFileSync(p, 'utf8');
+const sha = (s) => createHash('sha256').update(s).digest('hex');
+
+// Fields this tool must never read (requirements + gtm-dashboard config.fields.not_used).
+const FORBIDDEN_FIELDS = ['hs_acv', 'acv__c', 'acv', 'hs_forecast_amount', 'hs_is_closed_won', 'hs_is_closed_lost'];
+
+export function buildConfig() {
+  const gtmRaw = read(GTM_CONFIG);
+  const gtm = JSON.parse(gtmRaw);
+  const roster = JSON.parse(read(join(ROOT, 'config', 'roster.json')));
+  const forecast = JSON.parse(read(join(ROOT, 'config', 'forecast.json')));
+  const errors = [];
+
+  const pipes = Object.values(gtm.pipelines);
+  const f = gtm.fields;
+  const hubspot = {
+    portalId: gtm.portal_id,
+    inScopePipelineIds: pipes.filter((p) => p.in_scope).map((p) => p.id),
+    excludedPipelineIds: pipes.filter((p) => !p.in_scope).map((p) => p.id),
+    pipelines: Object.fromEntries(pipes.map((p) => [p.id, { label: p.label, inScope: p.in_scope }])),
+    wonStageIds: gtm.terminal_stages.won,
+    lostStageIds: gtm.terminal_stages.lost,
+    stageRule: gtm.terminal_stages.rule,
+    fields: {
+      bookings_amount: f.bookings_amount, units: f.units, owner: f.owner, close_date: f.close_date,
+      stage_probability: f.stage_probability, weighted_stored: f.weighted_stored
+    },
+    weightingRule: gtm.weighting_rule,
+    tieOutToleranceUsd: gtm.tie_out_tolerance_usd,
+    notUsed: f.not_used
+  };
+  hubspot.pullProperties = ['dealname', 'pipeline', 'dealstage', ...Object.values(hubspot.fields)];
+
+  // --- guards: requirements that must hold regardless of what gtm-dashboard config says
+  if (hubspot.fields.bookings_amount !== 'amount') errors.push(`bookings_amount must be "amount", got "${hubspot.fields.bookings_amount}"`);
+  if (hubspot.fields.weighted_stored !== 'weighted_amount') errors.push('weighted_stored must be "weighted_amount"');
+  for (const p of hubspot.pullProperties) if (FORBIDDEN_FIELDS.includes(p)) errors.push(`forbidden field in pull list: ${p}`);
+  if (!hubspot.excludedPipelineIds.includes('2559714036')) errors.push('Renewal pipeline 2559714036 must be excluded');
+  if (hubspot.inScopePipelineIds.includes('2559714036')) errors.push('Renewal pipeline 2559714036 is in scope');
+  if (hubspot.tieOutToleranceUsd !== 0.01) errors.push('tie-out tolerance must be 0.01');
+  if (gtm.timezone !== forecast.timezone) errors.push(`timezone mismatch gtm=${gtm.timezone} forecast=${forecast.timezone}`);
+
+  // --- roster validation
+  const seen = { email: new Set(), slug: new Set(), owner: new Set() };
+  for (const a of roster.aes) {
+    if (!/^[a-z0-9.\-]+@findigs\.com$/.test(a.email)) errors.push(`bad AE email ${a.email}`);
+    if (!/^[a-z0-9\-]+$/.test(a.slug)) errors.push(`bad slug ${a.slug}`);
+    if (!/^\d+$/.test(a.hubspot_owner_id)) errors.push(`bad owner id for ${a.name}`);
+    if (!['ae', 'ae_leader'].includes(a.role)) errors.push(`bad role ${a.role} for ${a.name}`);
+    for (const [k, v] of [['email', a.email], ['slug', a.slug], ['owner', a.hubspot_owner_id]]) {
+      if (seen[k].has(v)) errors.push(`duplicate ${k} ${v}`); seen[k].add(v);
+    }
+  }
+  for (const l of [...roster.leadership, ...(roster.admins || [])]) {
+    if (seen.email.has(l.email)) errors.push(`${l.email} appears in more than one role list`);
+    seen.email.add(l.email);
+  }
+  for (const n of roster.non_roster_owners.owners) if (seen.owner.has(n.hubspot_owner_id)) errors.push(`${n.name} is both roster and non-roster`);
+  if (!forecast.drive.folders_by_fiscal_year[String(roster.fiscal_year)]) errors.push(`no Drive folder configured for FY${roster.fiscal_year}`);
+
+  const config = {
+    generatedFrom: {
+      gtmDashboardConfigVersion: gtm.version, gtmDashboardConfigSha256: sha(gtmRaw),
+      rosterVersion: roster.version, forecastVersion: forecast.version
+    },
+    portalId: gtm.portal_id,
+    timezone: gtm.timezone,
+    hubspot, roster, forecast
+  };
+  return { config, errors };
+}
+
+const header = (src) => `// GENERATED by sales-forecast/scripts/build.mjs from ${src}. DO NOT EDIT — edit the source and rebuild.\n`;
+
+export function renderFiles() {
+  const { config, errors } = buildConfig();
+  const coreSrc = read(join(ROOT, 'core', 'forecast_core.js'));
+  return {
+    errors,
+    files: {
+      [join(ROOT, 'appsscript', 'Generated_Config.gs')]:
+        header('gtm-dashboard/config.json + sales-forecast/config/*.json') + 'var FORECAST_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n',
+      [join(ROOT, 'appsscript', 'Generated_Core.gs')]: header('sales-forecast/core/forecast_core.js') + coreSrc
+    }
+  };
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const check = process.argv.includes('--check');
+  const { errors, files } = renderFiles();
+  if (errors.length) { console.error('CONFIG INVALID:\n  ' + errors.join('\n  ')); process.exit(1); }
+  let stale = 0;
+  for (const [p, content] of Object.entries(files)) {
+    const cur = existsSync(p) ? read(p) : null;
+    if (check) { if (cur !== content) { console.error(`STALE: ${p} — run node scripts/build.mjs`); stale++; } }
+    else if (cur !== content) { writeFileSync(p, content); console.log(`wrote ${p}`); }
+    else console.log(`unchanged ${p}`);
+  }
+  if (stale) process.exit(1);
+  if (check) console.log('generated files up to date; config valid');
+}
