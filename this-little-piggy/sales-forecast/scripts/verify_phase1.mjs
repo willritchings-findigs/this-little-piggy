@@ -43,14 +43,25 @@ const primOpen = Object.values(m.openDealsByOwner).flat(), primWon = Object.valu
 const labels = Object.fromEntries(Object.values(owners).map((o) => [o.id, o.name]));
 const tie = Core.tieOut(Core.summarizeForTieOut(primOpen, primWon), indep, hs.tieOutToleranceUsd, labels);
 
-// Secondary checks: stored-weighted sums and null-weighted counts vs reporting API.
+// Weighted checks.
+// (a) Stage-weighted open pipeline (the method in use): primary Σ(amount × stage prob) per deal vs an independent
+//     Σ over reporting-API SUM(amount) GROUP BY owner, stage × the same stage probability.
+// (b) Reference: the raw HubSpot weighted_amount field (not used in totals) still reconciles, so the comparison is honest.
+const indepWeighted = {};
+for (const r of ctl.open_by_owner_stage) indepWeighted[r.owner] = (indepWeighted[r.owner] || 0) + r.a * stageMap.stages[r.stage].probability;
+const alt = Core.computeMetrics({ openRaw: openPull.results, wonRaw: wonPull.results, stageMap, owners, roster: cfg.roster,
+  hs: { ...hs, weightingMethod: 'stored_first' }, portalId: cfg.portalId, asOf });
+const altByOwner = {};
+for (const [id, ds] of Object.entries(alt.openDealsByOwner)) altByOwner[id] = ds.reduce((s, d) => s + (d.weighted || 0), 0);
 const wChecks = Object.entries(ctl.open_by_owner).map(([id, r]) => {
   const ds = m.openDealsByOwner[id] || [];
-  const stored = ds.filter((d) => d.weightedMethod === 'stored').reduce((s, d) => s + d.weighted, 0);
-  const nulls = ds.filter((d) => d.weightedMethod !== 'stored').length;
+  const stageW = ds.reduce((s, d) => s + (d.weighted || 0), 0);
+  const hsStored = ds.filter((d) => d.hubspotWeightedAmount !== null).reduce((s, d) => s + d.hubspotWeightedAmount, 0);
+  const nulls = ds.filter((d) => d.hubspotWeightedAmount === null).length;
   const ctlNull = ctl.weighted_null_by_owner[id] || 0;
-  return { owner: labels[id] || id, stored: Core.round2(stored), ctlStored: Core.round2(r.w), nulls, ctlNull,
-           ok: Math.abs(stored - r.w) <= hs.tieOutToleranceUsd && nulls === ctlNull };
+  return { owner: labels[id] || id, stageW: Core.round2(stageW), indepStageW: Core.round2(indepWeighted[id] || 0),
+           storedFirst: Core.round2(altByOwner[id] || 0), hsStored: Core.round2(hsStored), ctlStored: Core.round2(r.w), nulls, ctlNull,
+           ok: Math.abs(stageW - (indepWeighted[id] || 0)) <= hs.tieOutToleranceUsd && Math.abs(hsStored - r.w) <= hs.tieOutToleranceUsd && nulls === ctlNull };
 });
 
 // Won-pull boundary: deals fetched but excluded by the ET window.
@@ -78,10 +89,14 @@ L.push('Independent: HubSpot reporting API aggregates (`controls_reporting_api.j
 L.push(`**Result: ${tie.ok ? 'RECONCILED' : tie.mismatches.length + ' MISMATCH(ES)'}** · weighted checks ${wChecks.every((w) => w.ok) ? 'reconciled' : 'MISMATCH'}`, '');
 L.push('## Closed Won YTD and Gross Open Pipeline', '', '| Scope | Measure | Primary | Independent | Δ $ | n (P / I) | |', '|---|---|---|---|---|---|---|');
 for (const r of tie.rows) L.push(`| ${r.scope} | ${r.measure} | ${usd(r.primaryAmount)} | ${usd(r.independentAmount)} | ${r.deltaAmount.toFixed(2)} | ${r.primaryCount} / ${r.independentCount} | ${r.ok ? '✅' : '❌'} |`);
-L.push('', '## Stored weighted_amount and null counts (open deals)', '', '| Owner | Σ stored (primary) | Σ stored (reporting API) | null or "" (primary) | IS NULL (reporting API) | |', '|---|---|---|---|---|---|');
-for (const w of wChecks) L.push(`| ${w.owner} | ${usd(w.stored)} | ${usd(w.ctlStored)} | ${w.nulls} | ${w.ctlNull} | ${w.ok ? '✅' : '❌'} |`);
-L.push('', '## Section 1 figures (roster AEs, team, non-roster, company)', '', '| Row | Closed Won YTD (n) | Gross Open (n) | In-period ≤ 12/31 (n) | Weighted Open | stored / fallback n | Past due |', '|---|---|---|---|---|---|---|');
-const fmtRow = (name, x) => `| ${name} | ${usd(x.closedWonYtd.amount)} (${x.closedWonYtd.count}) | ${usd(x.grossOpen.amount)} (${x.grossOpen.count}) | ${usd(x.grossOpenInPeriod.amount)} (${x.grossOpenInPeriod.count}) | ${usd(x.weightedOpen.amount)} | ${x.weightedOpen.storedCount} / ${x.weightedOpen.fallbackCount} | ${x.dq.pastDue} |`;
+L.push('', '## Weighted open pipeline (method: amount × pipeline stage probability)', '',
+  'Stage-weighted is checked against an independent reporting-API SUM(amount) by owner × stage. HubSpot `weighted_amount` is pulled for reference only and must still reconcile to prove the comparison uses the real field. "Old rule" = gtm-dashboard stored-first rule, shown for impact only.', '',
+  '| Owner | Stage-weighted (primary) | Stage-weighted (independent) | Old rule (stored-first) | HubSpot weighted_amount Σ (primary / reporting API) | blank (primary / API) | |', '|---|---|---|---|---|---|---|');
+for (const w of wChecks) L.push(`| ${w.owner} | ${usd(w.stageW)} | ${usd(w.indepStageW)} | ${usd(w.storedFirst)} | ${usd(w.hsStored)} / ${usd(w.ctlStored)} | ${w.nulls} / ${w.ctlNull} | ${w.ok ? '✅' : '❌'} |`);
+const sum = (k) => Core.round2(wChecks.reduce((s, w) => s + w[k], 0));
+L.push(`| **Company** | **${usd(sum('stageW'))}** | **${usd(sum('indepStageW'))}** | ${usd(sum('storedFirst'))} | ${usd(sum('hsStored'))} / ${usd(sum('ctlStored'))} | ${sum('nulls')} / ${sum('ctlNull')} | |`);
+L.push('', '## Section 1 figures (roster AEs, team, non-roster, company)', '', '| Row | Closed Won YTD (n) | Gross Open (n) | In-period ≤ 12/31 (n) | Weighted Open (stage) | weighted n / blank n | Past due |', '|---|---|---|---|---|---|---|');
+const fmtRow = (name, x) => `| ${name} | ${usd(x.closedWonYtd.amount)} (${x.closedWonYtd.count}) | ${usd(x.grossOpen.amount)} (${x.grossOpen.count}) | ${usd(x.grossOpenInPeriod.amount)} (${x.grossOpenInPeriod.count}) | ${usd(x.weightedOpen.amount)} | ${x.weightedOpen.stageCount} / ${x.weightedOpen.unavailableCount} | ${x.dq.pastDue} |`;
 for (const r of m.rows) L.push(fmtRow(r.name + (r.role === 'ae_leader' ? ' (AE + leader)' : ''), r.metrics));
 L.push(fmtRow('**Team Total (roster)**', m.team));
 for (const o of m.nonRoster.owners) L.push(fmtRow(`↳ ${o.name} — ${o.reason}`, o.metrics));

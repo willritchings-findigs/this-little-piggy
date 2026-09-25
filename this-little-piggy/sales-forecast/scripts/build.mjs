@@ -44,7 +44,8 @@ export function buildConfig() {
       bookings_amount: f.bookings_amount, units: f.units, owner: f.owner, close_date: f.close_date,
       stage_probability: f.stage_probability, weighted_stored: f.weighted_stored
     },
-    weightingRule: gtm.weighting_rule,
+    weightingMethod: forecast.weighting.method,
+    gtmDashboardWeightingRule: gtm.weighting_rule,
     tieOutToleranceUsd: gtm.tie_out_tolerance_usd,
     notUsed: f.not_used
   };
@@ -56,6 +57,7 @@ export function buildConfig() {
   for (const p of hubspot.pullProperties) if (FORBIDDEN_FIELDS.includes(p)) errors.push(`forbidden field in pull list: ${p}`);
   if (!hubspot.excludedPipelineIds.includes('2559714036')) errors.push('Renewal pipeline 2559714036 must be excluded');
   if (hubspot.inScopePipelineIds.includes('2559714036')) errors.push('Renewal pipeline 2559714036 is in scope');
+  if (!['stage_probability', 'stored_first'].includes(hubspot.weightingMethod)) errors.push(`unknown weighting method ${hubspot.weightingMethod}`);
   if (hubspot.tieOutToleranceUsd !== 0.01) errors.push('tie-out tolerance must be 0.01');
   if (gtm.timezone !== forecast.timezone) errors.push(`timezone mismatch gtm=${gtm.timezone} forecast=${forecast.timezone}`);
 

@@ -25,12 +25,15 @@
     "noCloseDateCount": 0
    },
    "weightedOpen": {
-    "amount": 579300.4,
-    "storedCount": 4,
-    "storedAmount": 113080,
-    "fallbackCount": 8,
-    "fallbackAmount": 466220.4,
-    "unavailableCount": 0
+    "amount": 987700.4,
+    "stageCount": 12,
+    "storedCount": 0,
+    "storedAmount": 0,
+    "fallbackCount": 0,
+    "fallbackAmount": 0,
+    "unavailableCount": 0,
+    "hubspotStoredCount": 4,
+    "hubspotStoredAmount": 113080
    },
    "dq": {
     "pastDue": 0,
@@ -57,12 +60,12 @@
    "units": 3000,
    "closeDate": "2026-10-01",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 25680,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "344149654216",
@@ -78,12 +81,12 @@
    "units": 5000,
    "closeDate": "2026-10-01",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 42800,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "345155802838",
@@ -99,12 +102,12 @@
    "units": 4500,
    "closeDate": "2026-10-01",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 28890,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "338123039459",
@@ -120,12 +123,12 @@
    "units": 5545,
    "closeDate": "2026-10-31",
    "probability": 0.2,
+   "dealProbability": 0.2,
    "weighted": 94930.40000000001,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "339205769967",
@@ -141,12 +144,12 @@
    "units": 8000,
    "closeDate": "2026-10-31",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 68480,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "342326416072",
@@ -162,12 +165,12 @@
    "units": 9000,
    "closeDate": "2026-10-31",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 77040,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "348519560890",
@@ -183,12 +186,12 @@
    "units": 12000,
    "closeDate": "2026-11-01",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 77040,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "348860146385",
@@ -204,12 +207,12 @@
    "units": 8000,
    "closeDate": "2026-11-01",
    "probability": 0.1,
+   "dealProbability": 0.1,
    "weighted": 51360,
-   "weightedMethod": "fallback",
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": null,
    "inPeriod": true,
-   "flags": [
-    "weighted_fallback"
-   ]
+   "flags": []
   },
   {
    "id": "344150841029",
@@ -225,8 +228,10 @@
    "units": 3500,
    "closeDate": "2026-12-01",
    "probability": 0.4,
-   "weighted": 14980,
-   "weightedMethod": "stored",
+   "dealProbability": 0.4,
+   "weighted": 119840,
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": 14980,
    "inPeriod": true,
    "flags": [
     "weighted_stored_differs_from_calc"
@@ -246,8 +251,10 @@
    "units": 6000,
    "closeDate": "2026-12-01",
    "probability": 0.2,
-   "weighted": 38520,
-   "weightedMethod": "stored",
+   "dealProbability": 0.2,
+   "weighted": 77040,
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": 38520,
    "inPeriod": true,
    "flags": [
     "weighted_stored_differs_from_calc"
@@ -267,8 +274,10 @@
    "units": 2500,
    "closeDate": "2026-12-31",
    "probability": 0.4,
-   "weighted": 33900,
-   "weightedMethod": "stored",
+   "dealProbability": 0.4,
+   "weighted": 67800,
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": 33900,
    "inPeriod": true,
    "flags": [
     "weighted_stored_differs_from_calc"
@@ -288,8 +297,10 @@
    "units": 20000,
    "closeDate": "2027-02-28",
    "probability": 0.2,
-   "weighted": 25680,
-   "weightedMethod": "stored",
+   "dealProbability": 0.2,
+   "weighted": 256800,
+   "weightedMethod": "stage",
+   "hubspotWeightedAmount": 25680,
    "inPeriod": false,
    "flags": [
     "weighted_stored_differs_from_calc"
@@ -360,27 +371,9 @@
  ],
  "flagsForThisAe": [
   {
-   "code": "WEIGHTED_FALLBACK",
-   "severity": "medium",
-   "message": "58 open deal(s) use amount × hs_deal_stage_probability because weighted_amount is null",
-   "count": 58,
-   "amount": 40969029.45,
-   "amountBasis": "gross amount of flagged deals",
-   "dealIds": [
-    "338123039459",
-    "339205769967",
-    "342326416072",
-    "342947057356",
-    "344149654216",
-    "345155802838",
-    "348519560890",
-    "348860146385"
-   ]
-  },
-  {
    "code": "WEIGHTED_STORED_DIVERGES",
-   "severity": "medium",
-   "message": "45 open deal(s) carry a stored weighted_amount that is not amount × hs_deal_stage_probability (stored value used, per weighting rule)",
+   "severity": "low",
+   "message": "45 open deal(s) carry a HubSpot weighted_amount that differs from amount × stage probability (weighted_amount is not used; reference only)",
    "count": 45,
    "amount": 25830349.18,
    "amountBasis": "gross amount of flagged deals",

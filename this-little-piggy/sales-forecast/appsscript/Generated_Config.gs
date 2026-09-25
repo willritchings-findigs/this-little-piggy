@@ -48,7 +48,8 @@ var FORECAST_CONFIG = {
       "stage_probability": "hs_deal_stage_probability",
       "weighted_stored": "weighted_amount"
     },
-    "weightingRule": {
+    "weightingMethod": "stage_probability",
+    "gtmDashboardWeightingRule": {
       "open_with_stored_value": "weighted_amount",
       "open_without_stored_value": "amount * hs_deal_stage_probability",
       "closed_won": "amount (100%)",
@@ -144,7 +145,7 @@ var FORECAST_CONFIG = {
       {
         "name": "Will Ritchings",
         "email": "will.ritchings@findigs.com",
-        "_note": "Script owner (decision 2026-09-25). Admin role is PENDING CONFIRMATION: Will was not named on the leadership list."
+        "_note": "Script owner and core owner of the tool (decisions 2026-09-25)."
       }
     ],
     "non_roster_owners": {
@@ -221,6 +222,13 @@ var FORECAST_CONFIG = {
       "delta_threshold_pct": 0.1,
       "default_view": "implied_landing",
       "default_axis": "shared"
+    },
+    "weighting": {
+      "method": "stage_probability",
+      "formula": "amount × pipeline stage probability (GET /crm/v3/pipelines/deals metadata.probability)",
+      "hubspot_weighted_amount": "pulled for reference only; never used in any total",
+      "decision": "2026-09-25: only 4 of 49 populated weighted_amount values equal amount × stage probability; stored values total $4.20M vs $5.96M stage-weighted on the same deals. Stage probability used for every open deal.",
+      "deviation_from_gtm_dashboard": "gtm-dashboard/config.json weighting_rule (stored weighted_amount first) is NOT changed by this tool. Weighted pipeline will differ between the two tools until Notion Data Definitions 'Weighted deal value' is updated."
     },
     "data_refresh_minutes": 30,
     "series_colors": {

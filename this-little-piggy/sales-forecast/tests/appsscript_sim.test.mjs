@@ -99,7 +99,9 @@ test('pullData_: live fixture reconciles on the runtime tie-out path; totals mat
   assert.equal(ds.metrics.company.closedWonYtd.count, 73);
   assert.equal(ds.metrics.company.grossOpen.amount, 69616046.13);
   assert.equal(ds.metrics.company.grossOpen.count, 107);
-  assert.equal(ds.metrics.company.weightedOpen.fallbackCount, 58);
+  assert.equal(ds.metrics.company.weightedOpen.amount, 11304048.49);
+  assert.equal(ds.metrics.company.weightedOpen.stageCount, 107);
+  assert.equal(ds.metrics.company.weightedOpen.hubspotStoredCount, 49);
   assert.equal(logs.build.at(-1).status, 'OK');
   assert.equal(logs.cache.length, 1);
   assert.ok(hub.calls.some((c) => c.url.includes('/crm/v3/objects/deals?')), 'independent list path used');

@@ -15,6 +15,9 @@
 | Q8 | No holiday cutoff adjustments; missed weeks show as gaps | `config/forecast.json` holiday_overrides = {} |
 | Q9 | Commit = "High Confidence" (was 99%) | `config/forecast.json` definitions.commit |
 | — | Year rollover as proposed; Will creates the 2027 folder | `config/forecast.json` drive.folders_by_fiscal_year |
+| P1-2 | Will Ritchings = admin and core owner | `config/roster.json` admins |
+| P1-3 | **Weighted pipeline = amount × pipeline stage probability for every open deal.** HubSpot `weighted_amount` is reference only (only 4 of 49 populated values matched stage weighting). Company weighted is $11,304,048.49 vs $9,512,983.17 under the old stored-first rule. This deliberately deviates from gtm-dashboard, whose config is unchanged | `config/forecast.json` weighting |
+| P1-4 | Owners API v3: `archived` = inactive; missing `userId` = no user seat. To be confirmed on the first live run | `ForecastCore.normalizeOwners` |
 
 ---
 **Data as of:** 2026-09-25, live HubSpot pulls via MCP (portal 243635806)
@@ -243,7 +246,7 @@ Brand: the repo has Findigs tokens in `gtm-dashboard/template.html` (Forest `#21
 
 | # | Severity | Finding | Evidence (2026-09-25) | Handling in tool |
 |---|---|---|---|---|
-| DQ-1 | High | `weighted_amount` null on most open deals | 58 of 107 (54%) | Fallback `amount × hs_deal_stage_probability`. Count shown per AE, for the team, and in methodology |
+| DQ-1 | High | `weighted_amount` is blank on 58 of 107 open deals, and 45 of the 49 populated values don't equal amount × stage probability | Stored $4.20M vs $5.96M stage-weighted on the same deals | **Superseded by P1-3:** stage probability is used for all deals, and `weighted_amount` is shown as reference in methodology |
 | DQ-2 | High | Clay Stapleford: HubSpot owner `isActive=true`, but there is **no HubSpot user seat** for him. Notion (9/14) says his accounts are flagged for reassignment, and that has not been executed | 5 open / $2,508,550.00 (2 past due, $975,840.00). 14 CW YTD / $654,238.85 | Non-roster reconciliation row plus a banner. Deals appear in no AE's builder until reassigned. The `isActive` check alone would **not** catch this case, so the app also checks for a user seat |
 | DQ-3 | Medium | Excluded owner Reese Ryan holds deals | 2 open / $197,865.00 (both past due). 16 CW YTD / $302,132.80 | Non-roster row |
 | DQ-4 | Medium | Inactive owner holds closed-won YTD | Hayden Ashwill: 4 / $113,672.60 | Counts in company CW YTD and in the non-roster row |

@@ -112,15 +112,28 @@ test('real roster: Phil is ae_leader, leadership list matches decision', () => {
 });
 
 // ------------------------------------------------------------------ deals
-test('weighting: stored first; "" and null fall back; flags', () => {
-  const s = C.deriveOpenDeal(deal('1', { weighted_amount: '50' }), ctx());
-  assert.deepEqual([s.weighted, s.weightedMethod], [50, 'stored']); assert.ok(s.flags.includes('weighted_stored_differs_from_calc'));
+test('weighting (default, decision 2026-09-25): amount × pipeline stage probability; weighted_amount reference only', () => {
+  assert.equal(HS.weightingMethod, 'stage_probability');
+  const s1 = C.deriveOpenDeal(deal('1', { weighted_amount: '50' }), ctx());
+  assert.deepEqual([s1.weighted, s1.weightedMethod, s1.hubspotWeightedAmount], [100, 'stage', 50]);
+  assert.ok(s1.flags.includes('weighted_stored_differs_from_calc'));
   const e = C.deriveOpenDeal(deal('2', { weighted_amount: '' }), ctx());
-  assert.deepEqual([e.weighted, e.weightedMethod], [100, 'fallback']);
-  const n = C.deriveOpenDeal(deal('3', {}), ctx());
-  assert.equal(n.weightedMethod, 'fallback'); assert.ok(n.flags.includes('weighted_fallback'));
+  assert.deepEqual([e.weighted, e.hubspotWeightedAmount], [100, null]);
+  // deal-level probability is ignored for weighting; stage default is used and the deviation flagged
+  const dv = C.deriveOpenDeal(deal('3', { dealstage: '3753890498', hs_deal_stage_probability: '0.15', amount: '1000' }), ctx());
+  assert.deepEqual([dv.weighted, dv.probability, dv.dealProbability], [200, 0.2, 0.15]);
+  assert.ok(dv.flags.includes('prob_deviates_from_stage') && !dv.flags.includes('prob_from_stage'));
   const eq = C.deriveOpenDeal(deal('4', { weighted_amount: '100' }), ctx());
   assert.ok(!eq.flags.includes('weighted_stored_differs_from_calc'));
+});
+test('weighting (stored_first, gtm-dashboard rule) still available: stored first; "" and null fall back', () => {
+  const c2 = { ...ctx(), hs: { ...HS, weightingMethod: 'stored_first' } };
+  const s1 = C.deriveOpenDeal(deal('1', { weighted_amount: '50' }), c2);
+  assert.deepEqual([s1.weighted, s1.weightedMethod], [50, 'stored']);
+  const e = C.deriveOpenDeal(deal('2', { weighted_amount: '' }), c2);
+  assert.deepEqual([e.weighted, e.weightedMethod], [100, 'fallback']); assert.ok(e.flags.includes('weighted_fallback'));
+  const b = C.deriveOpenDeal(deal('3', { hs_deal_stage_probability: '' }), c2);
+  assert.equal(b.probability, 0.1); assert.ok(b.flags.includes('prob_from_stage'));
 });
 test('missing amount: blank + flag, never imputed', () => {
   const d = C.deriveOpenDeal(deal('1', { amount: '' }), ctx());
@@ -141,12 +154,6 @@ test('past due and in-period', () => {
   assert.equal(later.inPeriod, false);
   const nye = C.deriveOpenDeal(deal('4', { closedate: '2027-01-01T04:00:00Z' }), ctx());
   assert.equal(nye.closeDate, '2026-12-31'); assert.equal(nye.inPeriod, true);
-});
-test('probability: stage default when deal value blank; deviation flagged', () => {
-  const b = C.deriveOpenDeal(deal('1', { hs_deal_stage_probability: '' }), ctx());
-  assert.equal(b.probability, 0.1); assert.ok(b.flags.includes('prob_from_stage'));
-  const dv = C.deriveOpenDeal(deal('2', { dealstage: '3753890498', hs_deal_stage_probability: '0.15' }), ctx());
-  assert.equal(dv.probability, 0.15); assert.ok(dv.flags.includes('prob_deviates_from_stage'));
 });
 test('classify: renewal + lost excluded, won filtered by ET FY window and as-of, dedupe', () => {
   const raw = [
@@ -176,7 +183,7 @@ test('computeMetrics: rows, zero-pipeline AE, non-roster, unassigned, totals tie
      deal('w2', { dealstage: '3753890502', closedate: '2026-02-01T05:00:00Z', amount: '700', hubspot_owner_id: '9' })]);
   const a = m.rows.find((r) => r.key === 'a-one').metrics, b = m.rows.find((r) => r.key === 'b-two').metrics, z = m.rows.find((r) => r.key === 'z-zero').metrics;
   assert.deepEqual([a.grossOpen.amount, a.grossOpen.count, a.grossOpenInPeriod.count, a.closedWonYtd.amount], [2000, 2, 1, 500]);
-  assert.deepEqual([a.weightedOpen.storedCount, a.weightedOpen.fallbackCount, a.weightedOpen.amount], [1, 1, 200]);
+  assert.deepEqual([a.weightedOpen.stageCount, a.weightedOpen.amount, a.weightedOpen.hubspotStoredCount, a.weightedOpen.hubspotStoredAmount], [2, 200, 1, 100]);
   assert.deepEqual([b.grossOpen.amount, b.grossOpen.count, b.grossOpen.nullAmountCount, b.weightedOpen.unavailableCount], [0, 1, 1, 1]);
   assert.deepEqual([z.grossOpen.count, z.closedWonYtd.count, z.weightedOpen.amount], [0, 0, 0]);            // zero-pipeline AE still has a row
   assert.equal(m.team.grossOpen.amount, 2000); assert.equal(m.team.closedWonYtd.amount, 500);
@@ -184,7 +191,7 @@ test('computeMetrics: rows, zero-pipeline AE, non-roster, unassigned, totals tie
   assert.equal(m.company.grossOpen.amount, m.team.grossOpen.amount + m.nonRoster.total.grossOpen.amount);
   assert.equal(m.company.closedWonYtd.amount, 1200);
   const codes = m.flags.map((f) => f.code);
-  for (const c of ['NON_ROSTER_OPEN_DEALS', 'NON_ACTIVE_OWNER_WON_YTD', 'MISSING_AMOUNT', 'PAST_DUE', 'WEIGHTED_FALLBACK']) assert.ok(codes.includes(c), c);
+  for (const c of ['NON_ROSTER_OPEN_DEALS', 'NON_ACTIVE_OWNER_WON_YTD', 'MISSING_AMOUNT', 'PAST_DUE', 'WEIGHTED_UNAVAILABLE']) assert.ok(codes.includes(c), c);
   assert.equal(m.flags.find((f) => f.code === 'NON_ROSTER_OPEN_DEALS' && f.ownerId === '9').severity, 'high');
 });
 test('computeMetrics: roster owner inactive / unknown / seatless flagged high', () => {
@@ -218,5 +225,6 @@ test('config: reuses gtm-dashboard definitions, excludes renewal, never pulls fo
   for (const f of ['hs_acv', 'acv__c', 'acv', 'hs_forecast_amount', 'hs_is_closed_won', 'hs_is_closed_lost']) assert.ok(!HS.pullProperties.includes(f), f);
   assert.equal(CFG.forecast.definitions.commit.confidence, 'High confidence');
   assert.equal(CFG.forecast.cutoff.late_rule, 'next_week');
+  assert.equal(CFG.roster.admins[0].email, 'will.ritchings@findigs.com');
   assert.deepEqual(CFG.forecast.cutoff.holiday_overrides, {});
 });

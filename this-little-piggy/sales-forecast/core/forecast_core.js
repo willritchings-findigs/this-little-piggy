@@ -9,7 +9,9 @@
  * from gtm-dashboard/build.py, both deliberate:
  *   - a null amount / units / close date is surfaced as blank + flag, never a hard stop and never imputed;
  *   - "" is treated as null (HubSpot returns empty strings on some cleared fields; the reporting API
- *     counts them as null, so we must too or the tie-out drifts).
+ *     counts them as null, so we must too or the tie-out drifts);
+ *   - weighted pipeline = amount × pipeline stage probability (decision 2026-09-25, hs.weightingMethod
+ *     'stage_probability'); gtm-dashboard's stored-first rule remains available as 'stored_first'.
  */
 var ForecastCore = (function () {
   'use strict';
@@ -164,20 +166,29 @@ var ForecastCore = (function () {
     var close = etDate(p[f.close_date]);
     var probDeal = num(p[f.stage_probability]);
     var probStage = st ? st.probability : null;
-    var prob = probDeal !== null ? probDeal : probStage;
     var stored = num(p[f.weighted_stored]);
-    var weighted = null, method = 'none';
-    if (stored !== null) { weighted = stored; method = 'stored'; }
-    else if (amount !== null && prob !== null) { weighted = amount * prob; method = 'fallback'; }
+    var mode = ctx.hs.weightingMethod || 'stage_probability';
+    var prob, weighted = null, method = 'none';
+    if (mode === 'stage_probability') {
+      // Decision 2026-09-25: amount × pipeline stage probability (pipelines API) for every open deal.
+      // HubSpot weighted_amount is kept only as a reference value; it is not used.
+      prob = probStage;
+      if (amount !== null && prob !== null) { weighted = amount * prob; method = 'stage'; }
+    } else {
+      // gtm-dashboard rule: stored weighted_amount, else amount × hs_deal_stage_probability.
+      prob = probDeal !== null ? probDeal : probStage;
+      if (stored !== null) { weighted = stored; method = 'stored'; }
+      else if (amount !== null && prob !== null) { weighted = amount * prob; method = 'fallback'; }
+    }
     var flags = [];
     if (amount === null) flags.push('missing_amount');
     if (close === null) flags.push('missing_close_date');
     if (units === null) flags.push('missing_units');
     if (close !== null && close < ctx.asOf) flags.push('past_due');
     if (!st) flags.push('unknown_stage');
-    if (probDeal === null) flags.push('prob_from_stage');
+    if (mode !== 'stage_probability' && probDeal === null) flags.push('prob_from_stage');
     if (probDeal !== null && probStage !== null && Math.abs(probDeal - probStage) > 1e-9) flags.push('prob_deviates_from_stage');
-    if (method === 'stored' && amount !== null && prob !== null && Math.abs(stored - amount * prob) > 0.01) flags.push('weighted_stored_differs_from_calc');
+    if (stored !== null && amount !== null && probStage !== null && Math.abs(stored - amount * probStage) > 0.01) flags.push('weighted_stored_differs_from_calc');
     if (method === 'fallback') flags.push('weighted_fallback');
     if (method === 'none') flags.push('weighted_unavailable');
     return {
@@ -186,7 +197,8 @@ var ForecastCore = (function () {
       stageId: sid, stage: st ? st.label : sid, stageOrder: st ? st.order : null,
       ownerId: blank(p[f.owner]) ? '' : String(p[f.owner]),
       amount: amount, units: units, closeDate: close,
-      probability: prob, weighted: weighted, weightedMethod: method,
+      probability: prob, dealProbability: probDeal, weighted: weighted, weightedMethod: method,
+      hubspotWeightedAmount: stored,
       inPeriod: close !== null && close <= ctx.periodEnd,
       flags: flags
     };
@@ -229,7 +241,8 @@ var ForecastCore = (function () {
       closedWonYtd: { amount: 0, count: 0, nullAmountCount: 0 },
       grossOpen: { amount: 0, count: 0, nullAmountCount: 0 },
       grossOpenInPeriod: { amount: 0, count: 0, nullAmountCount: 0, noCloseDateCount: 0 },
-      weightedOpen: { amount: 0, storedCount: 0, storedAmount: 0, fallbackCount: 0, fallbackAmount: 0, unavailableCount: 0 },
+      weightedOpen: { amount: 0, stageCount: 0, storedCount: 0, storedAmount: 0, fallbackCount: 0, fallbackAmount: 0, unavailableCount: 0,
+                      hubspotStoredCount: 0, hubspotStoredAmount: 0 },
       dq: { pastDue: 0, pastDueAmount: 0, missingAmount: 0, missingCloseDate: 0, missingUnits: 0, probDeviates: 0 }
     };
   }
@@ -242,7 +255,9 @@ var ForecastCore = (function () {
       if (d.amount === null) m.grossOpenInPeriod.nullAmountCount++; else m.grossOpenInPeriod.amount += d.amount;
     }
     var w = m.weightedOpen;
-    if (d.weightedMethod === 'stored') { w.storedCount++; w.storedAmount += d.weighted; w.amount += d.weighted; }
+    if (d.hubspotWeightedAmount !== null) { w.hubspotStoredCount++; w.hubspotStoredAmount += d.hubspotWeightedAmount; }
+    if (d.weightedMethod === 'stage') { w.stageCount++; w.amount += d.weighted; }
+    else if (d.weightedMethod === 'stored') { w.storedCount++; w.storedAmount += d.weighted; w.amount += d.weighted; }
     else if (d.weightedMethod === 'fallback') { w.fallbackCount++; w.fallbackAmount += d.weighted; w.amount += d.weighted; }
     else w.unavailableCount++;
     if (d.flags.indexOf('past_due') >= 0) { m.dq.pastDue++; m.dq.pastDueAmount += d.amount || 0; }
@@ -259,7 +274,7 @@ var ForecastCore = (function () {
     Object.keys(m).forEach(function (k) { Object.keys(m[k]).forEach(function (j) { t[k][j] += m[k][j]; }); });
   }
   function roundMetrics_(m) {
-    var money = { amount: 1, storedAmount: 1, fallbackAmount: 1, pastDueAmount: 1 };
+    var money = { amount: 1, storedAmount: 1, fallbackAmount: 1, pastDueAmount: 1, hubspotStoredAmount: 1 };
     Object.keys(m).forEach(function (k) { Object.keys(m[k]).forEach(function (j) { if (money[j]) m[k][j] = round2(m[k][j]); }); });
     return m;
   }
@@ -330,8 +345,11 @@ var ForecastCore = (function () {
         amount: round2(ds.reduce(function (s, d) { return s + (d.amount || 0); }, 0)), amountBasis: 'gross amount of flagged deals', dealIds: ds.map(function (d) { return d.id; }) });
     }
     dealFlag('WEIGHTED_FALLBACK', 'medium', 'use amount × hs_deal_stage_probability because weighted_amount is null', function (d) { return d.weightedMethod === 'fallback'; });
-    dealFlag('WEIGHTED_STORED_DIVERGES', 'medium', 'carry a stored weighted_amount that is not amount × hs_deal_stage_probability (stored value used, per weighting rule)', function (d) { return d.flags.indexOf('weighted_stored_differs_from_calc') >= 0; });
-    dealFlag('WEIGHTED_UNAVAILABLE', 'high', 'have no weighted value (no weighted_amount and no amount/probability)', function (d) { return d.weightedMethod === 'none'; });
+    var stageMode = (input.hs.weightingMethod || 'stage_probability') === 'stage_probability';
+    dealFlag('WEIGHTED_STORED_DIVERGES', stageMode ? 'low' : 'medium',
+             'carry a HubSpot weighted_amount that differs from amount × stage probability' + (stageMode ? ' (weighted_amount is not used; reference only)' : ' (stored value used, per weighting rule)'),
+             function (d) { return d.flags.indexOf('weighted_stored_differs_from_calc') >= 0; });
+    dealFlag('WEIGHTED_UNAVAILABLE', 'high', 'have no weighted value (missing amount or stage probability); shown blank', function (d) { return d.weightedMethod === 'none'; });
     dealFlag('PAST_DUE', 'medium', 'have a close date before today', function (d) { return d.flags.indexOf('past_due') >= 0; });
     dealFlag('MISSING_AMOUNT', 'high', 'have no amount (shown blank, excluded from $ sums, counted)', function (d) { return d.flags.indexOf('missing_amount') >= 0; });
     dealFlag('MISSING_CLOSE_DATE', 'high', 'have no close date (shown blank, excluded from in-period)', function (d) { return d.flags.indexOf('missing_close_date') >= 0; });
