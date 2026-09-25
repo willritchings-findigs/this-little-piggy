@@ -19,7 +19,10 @@ before(async () => {
   seeded = await startPreview({ synthetic: true, appOpts: { now: '2026-09-28T10:00:00-04:00' } });
   single = await startPreview({ appOpts: { now: '2026-09-24T10:00:00-04:00' } });
   single.app.session.email = 'ben.dewinter@findigs.com';
-  single.app.call('apiSubmitForecast', { commit: 100000, gut: 200000, best_case: 300000 });
+  single.app.call('apiSubmitForecast', { commit: 100000, gut: 200000, best_case: 300000 });   // week of Sep 25
+  const t0 = Date.parse('2026-09-28T10:00:00-04:00'), s0 = Date.now();
+  single.app.ctx.nowMs_ = () => t0 + (Date.now() - s0);                                      // Sep 25 cutoff has passed
+  single.app.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 });                  // open week of Oct 2: hidden
   browser = await chromium.launch();
 });
 after(async () => { if (browser) await browser.close(); for (const p of [seeded, single]) if (p) p.server.close(); });
@@ -132,15 +135,18 @@ test('drill-down: click a point → movement; mismatch flagged not hidden; no-ta
   await page.close();
 });
 
-test('single week of data: points render with "Trend requires 2+ submissions"; open week reads "Not yet submitted"', { skip }, async () => {
+test('single closed week: points render with "Trend requires 2+ submissions"; the open week is hidden until its cutoff', { skip }, async () => {
   const { page, errors } = await open(single, { as: 'ben.dewinter@findigs.com' });
   await page.waitForSelector('#t-single');
   assert.match(await page.textContent('#t-single'), /Trend requires 2\+ submissions/);
   assert.equal(await page.$$eval('#t-grid canvas', (c) => c.length), 5);
   assert.match(await page.textContent('[data-card="ben-de-winter"]'), /Trend requires 2\+ submissions/);
   assert.deepEqual(await chartData(page, 'ben-de-winter', 0), [584825.04]);            // implied: CW YTD 484,825.04 + 100,000
+  assert.deepEqual(await page.evaluate(() => Chart.getChart(document.querySelector('[data-card="team"] canvas')).data.labels), ['2026-09-25']);
+  assert.match(await page.textContent('#t-open'), /1 submission for the week of Oct 2, 2026 will appear after the cutoff/);
+  assert.deepEqual(await page.$$eval('#t-week option', (o) => o.map((x) => x.value)), ['2026-09-25']);
   await page.click('[data-card="phil-aroian"] details.as-table summary');
-  assert.match(await page.textContent('[data-card="phil-aroian"] .trend-table'), /Not yet submitted/);
+  assert.match(await page.textContent('[data-card="phil-aroian"] .trend-table'), /Not submitted/);
   await page.screenshot({ path: join(SHOTS, 'phase4_trend_single_week.png'), fullPage: true });
   assert.deepEqual(errors, []);
   await page.close();

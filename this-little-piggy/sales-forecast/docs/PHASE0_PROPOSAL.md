@@ -38,3 +38,4 @@
 | P4-5 | Snapshots are re-hashed when the drill-down reads them; a changed or missing file is reported in the panel | `Trend.gs readSnapshot_` |
 | P4-6 | Chart.js 4.4.4 loads from jsDelivr with SRI. If the CDN is blocked, slow (8 s), or fails SRI, the app serves the same bundled build | `Client_ChartLoader.html`, `apiGetChartJs` |
 | P4-7 | Synthetic history is test-mode only, seeded once, marked synthetic in file names, `submission_id`, and the snapshot body, and never mixed into an AE/week that already has real test rows | `Synthetic.gs` |
+| P4-8 | The open week is hidden from Section 3 (charts, change table, drill-down) until its Friday 12:00 ET cutoff passes, so a partly submitted week never reads as a collapse. A note shows how many open-week submissions are waiting; Section 1 shows them live | `Trend.gs apiGetTrend` |

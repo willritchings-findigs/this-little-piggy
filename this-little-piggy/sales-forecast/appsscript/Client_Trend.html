@@ -121,6 +121,8 @@ var Trend = (function () {
     var d = S.data, s = series();
     S.series = s;
     var notes = [];
+    if (d.openWeekRows) notes.push('<div class="note" id="t-open">' + A.icon('schedule') + ' ' + d.openWeekRows + ' submission' + (d.openWeekRows === 1 ? '' : 's') +
+      ' for the week of ' + A.esc(A.date(d.week.forecastWeek)) + ' will appear after the cutoff (' + A.esc(A.stamp(d.week.cutoffAt)) + '). See Forecast submission for this week so far.</div>');
     if (d.syntheticRows) notes.push('<div class="note">' + A.icon('science') + ' Includes ' + d.syntheticRows + ' synthetic test submissions seeded for verification. They exist only in the test folder.</div>');
     if (!s.weeks.length) {
       $('t-notes').innerHTML = notes.join('') + '<div class="note">No official submissions yet. The trend starts after the first Friday cutoff with a submission.</div>';

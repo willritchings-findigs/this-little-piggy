@@ -224,3 +224,16 @@ test('syntheticHistory is deterministic and every non-mismatch week with tags re
     assert.equal(m.allReconcile, !(a.slug === 'matt-lynch' && w === '2026-09-25'), a.slug + ' ' + w);
   }
 });
+
+test('apiGetTrend: the open week is hidden until its cutoff passes, and counted for the note', () => {
+  const app = loadApp({ email: 'ben.dewinter@findigs.com', now: '2026-09-24T10:00:00-04:00' });
+  app.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 });
+  let t = app.call('apiGetTrend');
+  assert.equal(t.rows.length, 0); assert.equal(t.openWeekRows, 1);
+  app.setNow('2026-09-25T11:59:59-04:00');
+  assert.equal(app.call('apiGetTrend').rows.length, 0);
+  app.setNow('2026-09-25T12:00:00-04:00');                                               // cutoff passed → week of Sep 25 closes
+  t = app.call('apiGetTrend');
+  assert.deepEqual(t.rows.map((r) => r.forecast_week), ['2026-09-25']); assert.equal(t.openWeekRows, 0); assert.equal(t.reportWeek, '2026-09-25');
+});
+

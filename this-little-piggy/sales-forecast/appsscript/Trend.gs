@@ -4,11 +4,17 @@
  * the rows returned here, so the charts, the change table, and the tests all use the same code.
  */
 
-/** Rollup rows for the current forecast year (plus the prior year when the prior week crosses New Year). */
+/**
+ * Rollup rows for closed forecast weeks only (current FY, plus the prior FY when the prior week crosses New Year).
+ * Decision P4-8: the open week is hidden until its cutoff passes (Section 1 shows it live), so a partly
+ * submitted week never reads as a collapse in the trend.
+ */
 function apiGetTrend() {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
   var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
-  var rows = submissionsForWeek_(week).map(function (r) {
+  var all = submissionsForWeek_(week);
+  var openWeekRows = all.filter(function (r) { return r.forecast_week >= week.forecastWeek; }).length;
+  var rows = all.filter(function (r) { return r.forecast_week < week.forecastWeek; }).map(function (r) {
     return { ae_slug: r.ae_slug, forecast_week: r.forecast_week, submitted_at: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case,
              closed_won_ytd: r.closed_won_ytd, is_official: r.is_official, resubmission_seq: Number(r.resubmission_seq) || null,
              builder_saved: r.builder_saved === true || String(r.builder_saved).toUpperCase() === 'TRUE',
@@ -20,7 +26,7 @@ function apiGetTrend() {
     week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt },
     reportWeek: ForecastCore.defaultReportWeek(rows, week.forecastWeek),
     threshold: cfg.forecast.section3.delta_threshold_pct,
-    rows: rows, syntheticRows: rows.filter(function (r) { return r.synthetic; }).length
+    rows: rows, syntheticRows: rows.filter(function (r) { return r.synthetic; }).length, openWeekRows: openWeekRows
   }));
 }
 

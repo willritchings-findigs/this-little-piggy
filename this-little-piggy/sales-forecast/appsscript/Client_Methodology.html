@@ -85,7 +85,7 @@ var Methodology = (function () {
     ]));
 
     h += sec('Forecast trend rules', '<ul>' + [
-      'Plots official submissions only: one point per AE per Friday.',
+      'Plots official submissions only: one point per AE per Friday. The open week appears after its Friday 12:00 ET cutoff; until then it is shown only in Forecast submission.',
       'A week with no official submission is a gap marked "Not submitted". It is never plotted as zero and the prior value is never carried forward.',
       'Team = sum of the AEs who submitted that week; partial weeks are labeled with coverage. Team week-over-week change is shown only when every AE submitted both weeks.',
       'Change table: Team Δ uses only AEs who submitted both weeks (like for like). Changes beyond ±' + Math.round(CFG.section3.delta_threshold_pct * 100) + '% are highlighted; a change from $0 is always highlighted.',
