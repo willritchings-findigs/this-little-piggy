@@ -501,7 +501,187 @@ var ForecastCore = (function () {
     return { ok: errors.length === 0, errors: errors, clean: clean };
   }
 
+  // ------------------------------------------------------------------ Section 1: weeks, cutoff, validation, snapshots
+  var DOW = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+
+  /**
+   * Forecast week for a submission time: the first weekly cutoff (Friday 12:00 ET) strictly after the
+   * submission. Submitting at or after the cutoff therefore lands in the NEXT week (decision 2026-09-25).
+   * No holiday overrides (decision 2026-09-25).
+   */
+  function forecastWeekFor(ms, cutoff) {
+    var wd = DOW[(cutoff && cutoff.weekday) || 'Friday'], t = (cutoff && cutoff.time_et) || '12:00';
+    var p = etParts(ms), today = p.y + '-' + pad_(p.m) + '-' + pad_(p.d);
+    var candidate = addDays(today, (wd - p.dow + 7) % 7);
+    var cutMs = etToUtcMs(candidate, t);
+    if (ms >= cutMs) { candidate = addDays(candidate, 7); cutMs = etToUtcMs(candidate, t); }
+    return { forecastWeek: candidate, cutoffAtMs: cutMs, cutoffAt: etIso(cutMs), previousWeek: addDays(candidate, -7) };
+  }
+
+  /** Forecast period for a submission: from the submission date (never before Jan 1 of the week's FY) to Dec 31 of that FY. */
+  function forecastPeriodFor(submissionDate, forecastWeek) {
+    var fy = fiscalYearOf(forecastWeek), jan1 = fy + '-01-01';
+    return { start: submissionDate < jan1 ? jan1 : submissionDate, end: fy + '-12-31', fiscalYear: fy };
+  }
+
+  /** Parse a user-entered dollar value: a number, or a string of digits with an optional leading $ and thousands commas. Anything else → NaN. */
+  function parseUsd(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : NaN;
+    var s = String(v === null || v === undefined ? '' : v).trim().replace(/^\$/, '').replace(/,/g, '');
+    if (s === '' || !/^-?\d+(\.\d+)?$/.test(s)) return NaN;
+    return Number(s);
+  }
+
+  /**
+   * Blocks: non-numeric, negative, more than 2 decimals, or Commit ≤ Gut ≤ Best Case violated.
+   * Warns (does not block): Best Case above the AE's in-period gross open pipeline (decision 2026-09-25, Q4).
+   */
+  function validateForecast(values, ctx) {
+    var errors = [], warnings = [], out = {};
+    [['commit', 'Commit'], ['gut', 'Gut'], ['best_case', 'Best Case']].forEach(function (f) {
+      var raw = values ? values[f[0]] : undefined, n = parseUsd(raw);
+      if (raw === null || raw === undefined || String(raw).trim() === '') errors.push({ field: f[0], code: 'required', message: f[1] + ' is required.' });
+      else if (isNaN(n)) errors.push({ field: f[0], code: 'non_numeric', message: f[1] + ' must be a number.' });
+      else if (n < 0) errors.push({ field: f[0], code: 'negative', message: f[1] + ' cannot be negative.' });
+      else if (Math.abs(Math.round(n * 100) - n * 100) > 1e-6) errors.push({ field: f[0], code: 'precision', message: f[1] + ' can have at most 2 decimal places.' });
+      else out[f[0]] = round2(n);
+    });
+    if (out.commit !== undefined && out.gut !== undefined && out.commit > out.gut)
+      errors.push({ field: 'commit', code: 'nesting', message: 'Commit cannot be greater than Gut. Every Commit deal is also in Gut.' });
+    if (out.gut !== undefined && out.best_case !== undefined && out.gut > out.best_case)
+      errors.push({ field: 'gut', code: 'nesting', message: 'Gut cannot be greater than Best Case. Every Gut deal is also in Best Case.' });
+    var pipe = ctx && ctx.inPeriodPipeline;
+    if (!errors.length && pipe !== null && pipe !== undefined && out.best_case > pipe)
+      warnings.push({ field: 'best_case', code: 'best_case_exceeds_in_period_pipeline',
+                      message: 'Best Case is above your open pipeline closing within the forecast period. You can still submit.', pipeline: round2(pipe) });
+    return { ok: errors.length === 0, errors: errors, warnings: warnings, values: errors.length ? null : out };
+  }
+
+  function slugTimestamp_(iso) { return String(iso).replace(/:/g, '-'); }
+  /** forecast_{week}_{slug}_{submitted_at ISO8601}.json; colons → '-' (Drive sync clients reject ':'). */
+  function snapshotFileName(forecastWeek, slug, submittedAtIso) {
+    return 'forecast_' + forecastWeek + '_' + slug + '_' + slugTimestamp_(submittedAtIso) + '.json';
+  }
+
+  /** Immutable snapshot (schema 1.0, docs/PHASE0_PROPOSAL.md §4). Deals list = every open deal the AE owns, incl. untagged. */
+  function buildSnapshot(a) {
+    var s = builderSummary(a.openDeals, a.tags, a.period.end);
+    var cw = a.row.metrics.closedWonYtd.amount, v = a.values;
+    return {
+      schema_version: a.schemaVersion, submission_id: a.submissionId, app_version: a.appVersion || null,
+      forecast_week: a.week.forecastWeek, cutoff_at: a.week.cutoffAt,
+      forecast_period: { start: a.period.start, end: a.period.end },
+      ae: { name: a.ae.name, email: a.ae.email, hubspot_owner_id: String(a.ae.hubspot_owner_id), slug: a.ae.slug },
+      submitted_at: a.submittedAt, submitted_by_email: a.submittedBy,
+      forecast: { commit: v.commit, gut: v.gut, best_case: v.best_case },
+      validation: { nesting_ok: true, warnings: a.warnings.map(function (w) { return w.code; }) },
+      context_at_submission: {
+        data_pulled_at: a.pulledAt,
+        closed_won_ytd: { amount: cw, count: a.row.metrics.closedWonYtd.count, window: [a.period.fiscalYear + '-01-01', a.asOf] },
+        gross_open_pipeline: { amount: a.row.metrics.grossOpen.amount, count: a.row.metrics.grossOpen.count },
+        gross_open_pipeline_in_period: { amount: a.row.metrics.grossOpenInPeriod.amount, count: a.row.metrics.grossOpenInPeriod.count },
+        weighted_open_pipeline: { amount: a.row.metrics.weightedOpen.amount, method: a.weightingMethod, stage_weighted_count: a.row.metrics.weightedOpen.stageCount,
+                                  unavailable_count: a.row.metrics.weightedOpen.unavailableCount },
+        implied_landing: { commit: round2(cw + v.commit), gut: round2(cw + v.gut), best_case: round2(cw + v.best_case) },
+        tie_out_status: a.tieOutStatus, stage_map_hash: a.stageMapSha256 || null
+      },
+      builder: {
+        saved: !!a.tagsSavedAt, state_updated_at: a.tagsSavedAt || null,
+        totals: { commit: s.cumulative.commit.amount, gut_cumulative: s.cumulative.gut.amount, best_case_cumulative: s.cumulative.best_case.amount },
+        tag_counts: { commit: s.byTag.commit.count, gut: s.byTag.gut.count, best_case: s.byTag.best_case.count, lost: s.byTag.lost.count, none: s.byTag.none.count },
+        deals: a.openDeals.map(function (d) {
+          return { deal_id: d.id, deal_name: d.name, pipeline: d.pipelineId, stage_id: d.stageId, stage: d.stage, amount: d.amount, units: d.units,
+                   close_date: d.closeDate, tag: tagOf_(a.tags, d.id),
+                   flags: d.flags.filter(function (f) { return ['past_due', 'missing_amount', 'missing_close_date'].indexOf(f) >= 0; }) };
+        })
+      }
+    };
+  }
+
+  /**
+   * Per (AE, week): resubmission sequence and official flag. The latest submission of a week is official
+   * (every submission is by construction before its week's cutoff). Input rows need ae_slug, forecast_week, submitted_at.
+   */
+  function officialAssignments(rows) {
+    var groups = {};
+    rows.forEach(function (r, i) { var k = r.ae_slug + '|' + r.forecast_week; (groups[k] = groups[k] || []).push({ i: i, t: r.submitted_at }); });
+    var out = rows.map(function () { return { seq: 0, official: false }; });
+    Object.keys(groups).forEach(function (k) {
+      var g = groups[k].slice().sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : a.i - b.i; });
+      g.forEach(function (x, n) { out[x.i] = { seq: n + 1, official: n === g.length - 1 }; });
+    });
+    return out;
+  }
+
+  /** Status for the current week: not_submitted / submitted / resubmitted. */
+  function submissionStatus(rows, slug, week) {
+    var n = rows.filter(function (r) { return r.ae_slug === slug && r.forecast_week === week; }).length;
+    return n === 0 ? 'not_submitted' : n === 1 ? 'submitted' : 'resubmitted';
+  }
+
+  function latestFor_(rows, slug, week, officialOnly) {
+    var c = rows.filter(function (r) { return r.ae_slug === slug && r.forecast_week === week && (!officialOnly || r.is_official); });
+    c.sort(function (a, b) { return a.submitted_at < b.submitted_at ? 1 : -1; });
+    return c[0] || null;
+  }
+  function delta_(cur, prev) {
+    if (cur === null || cur === undefined || prev === null || prev === undefined) return null;
+    return { amount: round2(cur - prev), pct: prev === 0 ? null : (cur - prev) / prev };
+  }
+
+  /**
+   * Section 1 row model for one AE: this week's latest submission (never carried forward), last week's official
+   * submission, WoW deltas, status, implied landing (live Closed Won YTD + this week's Gut).
+   */
+  function sectionOneRow(metricsRow, subRows, week) {
+    var slug = metricsRow.key, cur = latestFor_(subRows, slug, week.forecastWeek, false), prev = latestFor_(subRows, slug, week.previousWeek, true);
+    var f = function (r, k) { return r ? r[k] : null; };
+    var fields = {};
+    ['commit', 'gut', 'best_case'].forEach(function (k) {
+      fields[k] = { current: f(cur, k), lastWeek: f(prev, k), delta: delta_(f(cur, k), f(prev, k)) };
+    });
+    var cw = metricsRow.metrics.closedWonYtd.amount;
+    return {
+      key: slug, name: metricsRow.name, role: metricsRow.role, ownerStatus: metricsRow.ownerStatus, metrics: metricsRow.metrics,
+      forecast: fields, lastSubmittedAt: cur ? cur.submitted_at : null, status: submissionStatus(subRows, slug, week.forecastWeek),
+      submissionsThisWeek: subRows.filter(function (r) { return r.ae_slug === slug && r.forecast_week === week.forecastWeek; }).length,
+      impliedLanding: cur ? round2(cw + cur.gut) : null
+    };
+  }
+
+  /**
+   * Team Total forecast: sum of this week's latest submissions from roster AEs that have submitted (count reported).
+   * The week-over-week delta is like-for-like: only AEs with both this week's and last week's official submission,
+   * so a missing submission never shows up as a forecast drop.
+   */
+  function sectionOneTeam(rows) {
+    var keys = ['commit', 'gut', 'best_case'], t = { aeCount: rows.length, submittedCount: 0, lastWeekCount: 0, likeForLikeCount: 0 };
+    keys.forEach(function (k) { t[k] = { current: null, lastWeek: null, delta: null }; });
+    var cur = {}, prev = {}, bothCur = {}, bothPrev = {};
+    keys.forEach(function (k) { cur[k] = 0; prev[k] = 0; bothCur[k] = 0; bothPrev[k] = 0; });
+    rows.forEach(function (r) {
+      var hasCur = r.forecast.commit.current !== null, hasPrev = r.forecast.commit.lastWeek !== null;
+      if (hasCur) t.submittedCount++;
+      if (hasPrev) t.lastWeekCount++;
+      if (hasCur && hasPrev) t.likeForLikeCount++;
+      keys.forEach(function (k) {
+        if (hasCur) cur[k] += r.forecast[k].current;
+        if (hasPrev) prev[k] += r.forecast[k].lastWeek;
+        if (hasCur && hasPrev) { bothCur[k] += r.forecast[k].current; bothPrev[k] += r.forecast[k].lastWeek; }
+      });
+    });
+    keys.forEach(function (k) {
+      if (t.submittedCount) t[k].current = round2(cur[k]);
+      if (t.lastWeekCount) t[k].lastWeek = round2(prev[k]);
+      if (t.likeForLikeCount) t[k].delta = delta_(round2(bothCur[k]), round2(bothPrev[k]));
+    });
+    return t;
+  }
+
   return {
+    DOW: DOW, forecastWeekFor: forecastWeekFor, forecastPeriodFor: forecastPeriodFor, parseUsd: parseUsd,
+    validateForecast: validateForecast, snapshotFileName: snapshotFileName, buildSnapshot: buildSnapshot,
+    officialAssignments: officialAssignments, submissionStatus: submissionStatus, sectionOneRow: sectionOneRow, sectionOneTeam: sectionOneTeam,
     TAGS: TAGS, TAG_LABELS: TAG_LABELS, FORECAST_TAGS: FORECAST_TAGS, normalizeTag: normalizeTag,
     builderSummary: builderSummary, builderFilter: builderFilter, sortDeals: sortDeals,
     validateTagChanges: validateTagChanges,

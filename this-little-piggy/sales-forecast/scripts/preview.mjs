@@ -33,6 +33,9 @@ const SHIM = (as) => `<script>
 
 export function startPreview({ port = 0, delayMs = 0, defaultAs = 'ben.dewinter@findigs.com', appOpts = {} } = {}) {
   const app = loadApp({ email: defaultAs, ...appOpts });
+  // The clock starts at appOpts.now (if given) and then ticks in real time, like production.
+  const base = app.store.clock, started = Date.now();
+  app.ctx.nowMs_ = () => base + (Date.now() - started);
   app.ctx.pullData_();
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, 'http://x');

@@ -24,3 +24,9 @@
 | P2-4 | Series colors Commit `#0F7A50`, Gut `#7A9A1F`, Best Case `#3B6FB8`, Closed Won YTD `#8A5A00` | `config/forecast.json` series_colors |
 | P2-5 | Leadership's default AE is the first alphabetically | `Main.gs targetAe_` |
 | P2-6 | Notion Data Definitions now holds two approved weighting methods, usable interchangeably per tool: Method A "Weighted deal value" / "Weighted open pipeline" (GTM dashboard) and Method B "Weighted deal value (stage probability)" / "Weighted open pipeline (stage probability)" (Sales forecast tool). New "Used by" option: Sales forecast tool | Notion Metric Definitions |
+| P3-1 | Gate passed: live Apps Script run on 2026-09-25 met every criterion | `verification/2026-09-25/live_run_apps_script.md` |
+| P3-2 | An AE sees only their own Section 1 row; ae_leader, leadership, and admin see every row plus Team Total, other owners, and company total (read-only) | `Main.gs apiGetSubmission` |
+| P3-3 | Inputs start empty each week, or show this week's latest submission. Last week's values appear only as the "Last week" reference under each input and are never carried forward | `Client_Submission.html` |
+| P3-4 | Team Total forecast = sum of this week's latest submissions (shows "n of 5 submitted"). WoW is like-for-like: only AEs who submitted both weeks | `ForecastCore.sectionOneTeam` |
+| P3-5 | A submission at exactly 12:00:00 ET belongs to the next week (the cutoff is exclusive) | `ForecastCore.forecastWeekFor` |
+| P3-6 | Test mode: Script Property `FORECAST_TEST_FOLDER_ID` routes all writes to Sales Forecasts/_test | `Storage.gs` |

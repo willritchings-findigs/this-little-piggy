@@ -85,8 +85,8 @@ if (document.fonts && document.fonts.load) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Section 1 (Phase 3) becomes the default tab once it ships.
-  App.initTabs('builder');
+  App.initTabs('submission');
+  Submission.init();
   Builder.init();
 });
 </script>

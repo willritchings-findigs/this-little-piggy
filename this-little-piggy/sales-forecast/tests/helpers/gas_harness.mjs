@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import vm from 'node:vm';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -62,7 +62,7 @@ export class FakeSheet {
   getDataRange() { const rows = this.rows; return { getValues: () => rows.map((r) => r.slice()) }; }
   getRange(r, c, nr = 1, nc = 1) {
     const self = this;
-    return { setValues(vals) {
+    return { setValue(v) { self.getRange(r, c, 1, 1).setValues([[v]]); }, setValues(vals) {
       if (vals.length !== nr || vals.some((v) => v.length !== nc)) throw new Error('setValues dimension mismatch');
       for (let i = 0; i < nr; i++) { const row = self.rows[r - 1 + i] || (self.rows[r - 1 + i] = []);
         for (let j = 0; j < nc; j++) row[c - 1 + j] = clean(vals[i][j]); }
@@ -71,17 +71,46 @@ export class FakeSheet {
 }
 const clean = (v) => (typeof v === 'string' && v.startsWith("'") ? v.slice(1) : v);   // Sheets strips the text-forcing apostrophe
 
-export function loadApp({ email = 'will.ritchings@findigs.com', hub = fakeHubSpot(), token = 'test-token', asOf = '2026-09-25', lockBusy = false } = {}) {
-  const store = { build: [], cache: null, sheets: {} };
+/** In-memory Drive: folders by id, files by id. Only the calls the app makes. */
+export class FakeDrive {
+  constructor() { this.folders = {}; this.files = {}; this.n = 0; }
+  folder(id, name = id) {
+    if (!this.folders[id]) {
+      const self = this, f = { id, name, subfolders: {}, fileIds: [] };
+      const iter = (arr) => { let i = 0; return { hasNext: () => i < arr.length, next: () => arr[i++] }; };
+      f.api = {
+        getId: () => id, getName: () => name,
+        getFoldersByName: (n) => iter(f.subfolders[n] ? [self.folders[f.subfolders[n]].api] : []),
+        createFolder: (n) => { const cid = 'fld' + ++self.n; self.folder(cid, n); f.subfolders[n] = cid; return self.folders[cid].api; },
+        getFilesByName: (n) => iter(f.fileIds.filter((x) => self.files[x] && self.files[x].name === n).map((x) => self.fileApi(x))),
+        createFile: (n, body, mime) => { const fid = 'file' + ++self.n; self.files[fid] = { id: fid, name: n, body, mime, folder: id, writes: 1 }; f.fileIds.push(fid); return self.fileApi(fid); }
+      };
+      this.folders[id] = f;
+    }
+    return this.folders[id].api;
+  }
+  fileApi(fid) {
+    const rec = this.files[fid];
+    return { getId: () => fid, getName: () => rec.name, getBlob: () => ({ getDataAsString: () => rec.body }),
+             setContent: (b) => { rec.body = b; rec.writes++; }, setTrashed: () => { rec.trashed = true; } };
+  }
+  filesIn(folderApi) { return this.folders[folderApi.getId()].fileIds.map((x) => this.files[x]); }
+}
+
+export function loadApp({ email = 'will.ritchings@findigs.com', hub = fakeHubSpot(), token = 'test-token', asOf = '2026-09-25', lockBusy = false,
+                          now = '2026-09-25T14:00:00-04:00', testFolderId = null } = {}) {
+  const store = { build: [], rollups: {}, sheets: null, clock: Date.parse(now), drive: new FakeDrive(), props: {} };
   const session = { email };
+  const props = () => ({ HUBSPOT_TOKEN: token, FORECAST_TEST_FOLDER_ID: testFolderId, ...store.props });
   const ctx = {
     console, JSON, Math, Date, Object, Array, String, Number, Error, encodeURIComponent, RegExp,
     UrlFetchApp: { fetch: (u, o) => hub.fetch(u, o) },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => (k === 'HUBSPOT_TOKEN' ? token : null), setProperty() {} }) },
-    Utilities: { sleep() {}, DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props()[k] ?? null, setProperty() {} }) },
+    Utilities: { sleep() {}, DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' }, getUuid: () => randomUUID(),
       computeDigest: (_a, s) => [...createHash('sha256').update(s).digest()].map((b) => (b > 127 ? b - 256 : b)) },
     Session: { getActiveUser: () => ({ getEmail: () => session.email }) },
-    LockService: { getScriptLock: () => ({ tryLock: () => !lockBusy, waitLock() {}, releaseLock() {} }) },
+    LockService: { getScriptLock: () => ({ tryLock: () => !store.lockBusy, waitLock() {}, releaseLock() {} }) },
+    DriveApp: { getFolderById: (id) => store.drive.folder(id), getFileById: (id) => { if (!store.drive.files[id] || store.drive.files[id].trashed) throw new Error('No item with the given ID'); return store.drive.fileApi(id); } },
     Logger: { log() {} },
     HtmlService: {
       XFrameOptionsMode: { DEFAULT: 'DEFAULT' },
@@ -90,24 +119,34 @@ export function loadApp({ email = 'will.ritchings@findigs.com', hub = fakeHubSpo
       createTemplateFromFile: (name) => ({ evaluate: () => htmlOut(renderTemplate(readFileSync(join(GAS, name + '.html'), 'utf8'), ctx)) })
     }
   };
+  store.lockBusy = lockBusy;
   vm.createContext(ctx);
-  const files = readdirSync(GAS).filter((f) => f.endsWith('.gs')).sort((a, b) => (a.startsWith('Generated') ? -1 : b.startsWith('Generated') ? 1 : a < b ? -1 : 1));
+  // Same order Apps Script uses (clasp pushes alphabetically), so top-level cross-file dependencies fail here too.
+  const files = readdirSync(GAS).filter((f) => f.endsWith('.gs')).sort();
   for (const f of files) vm.runInContext(readFileSync(join(GAS, f), 'utf8'), ctx, { filename: f });
 
-  // Storage layer → memory
+  // Sheets → memory, one rollup per (mode, FY). Drive, cache, and folder routing run the real Storage.gs code on FakeDrive.
   const tabs = vm.runInContext('ROLLUP_TABS_', ctx);
-  for (const [t, h] of Object.entries(tabs)) store.sheets[t] = new FakeSheet(t, h);
-  ctx.getRollup_ = () => ({ getSheetByName: (n) => store.sheets[n] || null });
-  ctx.writeDataCache_ = (d) => { d._writtenMs = Date.now(); store.cache = JSON.parse(JSON.stringify(d)); };
-  ctx.readDataCache_ = () => (store.cache ? JSON.parse(JSON.stringify(store.cache)) : null);
+  const rollup = (key) => {
+    if (!store.rollups[key]) { store.rollups[key] = {}; for (const [t, h] of Object.entries(tabs)) store.rollups[key][t] = new FakeSheet(t, h); }
+    return store.rollups[key];
+  };
+  ctx.getRollup_ = (fy) => {
+    ctx.getYearFolder_(fy);                       // same "folder not configured" block as production
+    const sheets = rollup((ctx.isTestMode_() ? 'T' : 'P') + fy);
+    return { getSheetByName: (n) => sheets[n] || null };
+  };
+  store.sheets = rollup('P2026');
   ctx.appendBuildLog_ = (e) => store.build.push(e);
   ctx.todayEt_ = () => asOf;
+  ctx.nowMs_ = () => store.clock;
   const origPull = ctx.pullData_;
   ctx.pullData_ = (opts) => origPull(Object.assign({ asOf }, opts || {}));
 
   /** Call a server function the way google.script.run would: JSON in, JSON out. */
   const call = (fn, ...args) => JSON.parse(JSON.stringify(ctx[fn](...JSON.parse(JSON.stringify(args)))));
-  return { ctx, store, session, hub, call };
+  const setNow = (iso) => { store.clock = Date.parse(iso); };
+  return { ctx, store, session, hub, call, setNow };
 }
 
 function htmlOut(html) {

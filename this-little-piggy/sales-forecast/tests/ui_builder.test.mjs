@@ -32,6 +32,7 @@ async function open(as) {
   // External CDNs (fonts, logo, icons) are not reachable in CI; block them so tests are deterministic.
   await page.route(/^https:\/\/(media\.findigs\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//, (r) => r.abort());
   await page.goto(`${preview.url}/?as=${encodeURIComponent(as)}`);
+  await page.click('#tabbtn-builder');   // Section 1 is the default tab
   await page.waitForSelector('#b-table tbody tr');
   return { page, errors };
 }
@@ -60,7 +61,7 @@ test('AE: default view, tagging updates nested totals, autosave, persists on rel
   await page.waitForFunction(() => /Saved/.test(document.getElementById('b-save').textContent), null, { timeout: 5000 });
   await page.screenshot({ path: join(SHOTS, 'phase2_builder_ae.png'), fullPage: true });
 
-  await page.reload(); await page.waitForSelector('#b-table tbody tr');
+  await page.reload(); await page.click('#tabbtn-builder'); await page.waitForSelector('#b-table tbody tr');
   assert.equal(await page.inputValue(`select[data-deal="${rows[0].id}"]`), 'commit');
   assert.equal(await page.inputValue(`select[data-deal="${rows[3].id}"]`), 'lost');
   assert.equal(money(await tileVal(page, 'best_case')), amts[0] + amts[1] + amts[2]);

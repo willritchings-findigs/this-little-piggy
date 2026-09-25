@@ -104,3 +104,38 @@ function apiSaveTags(aeSlug, changes) {
   var tags = readTags_(v.ae.email);
   return JSON.parse(JSON.stringify({ savedAt: savedAt, tags: tags, tagsSavedAt: tagsSavedAt_(tags) }));
 }
+
+/**
+ * Section 1 data. AEs get their own row only; ae_leader / leadership / admin get every roster row plus
+ * Team Total, the non-roster reconciliation row, and the company total.
+ */
+function apiGetSubmission() {
+  var v = currentViewer_(), cfg = FORECAST_CONFIG;
+  var ds = getDataset_(false), m = ds.metrics;
+  var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
+  var subs = submissionsForWeek_(week);
+  var all = m.rows.map(function (r) { return ForecastCore.sectionOneRow(r, subs, week); });
+  var own = v.ae ? all.filter(function (r) { return r.key === v.ae.slug; })[0] : null;
+  var history = v.ae ? subs.filter(function (r) { return r.ae_slug === v.ae.slug && r.forecast_week === week.forecastWeek; })
+    .map(function (r) { return { submittedAt: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case, isOfficial: r.is_official, fileName: r.file_name }; }) : [];
+  return JSON.parse(JSON.stringify({
+    viewer: viewerOut_(v), testMode: isTestMode_(),
+    week: { forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, previousWeek: week.previousWeek },
+    period: ForecastCore.forecastPeriodFor(ForecastCore.etDate(nowMs_()), week.forecastWeek),
+    pulledAt: ds.pulledAt, tieOutOk: ds.tieOut ? ds.tieOut.ok : null,
+    rows: v.canViewAll ? all : (own ? [own] : []),
+    editableSlug: v.ae ? v.ae.slug : null,
+    team: v.canViewAll ? { metrics: m.team, forecast: ForecastCore.sectionOneTeam(all) } : null,
+    nonRoster: v.canViewAll ? m.nonRoster : null,
+    company: v.canViewAll ? m.company : null,
+    history: history
+  }));
+}
+
+/** Submit the viewer's own forecast. Values are validated again server-side; the client is never trusted. */
+function apiSubmitForecast(values) {
+  var v = currentViewer_();
+  if (!v.ae) throw new Error('Only AEs on the forecast roster can submit a forecast.');
+  var res = writeSubmission_(v, values || {});
+  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission() }));
+}

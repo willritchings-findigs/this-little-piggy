@@ -1,6 +1,10 @@
 /**
- * Drive / Sheets storage. Phase 1 scope: year folder resolution, _system cache, rollup workbook, build log.
- * Snapshot writes (immutable) arrive in Phase 3.
+ * Drive / Sheets storage: year folder resolution, _system cache, rollup workbook, build log.
+ * Snapshot writes live in Snapshots.gs.
+ *
+ * TEST MODE: when Script Property FORECAST_TEST_FOLDER_ID is set, every read and write (cache, rollup,
+ * snapshots, builder tags, build log) goes to FY<year> subfolders of that folder instead of the production
+ * folders, and the UI shows a TEST MODE banner. Delete the property to go live.
  *
  * Mutable vs immutable:
  *   _system/data_cache.json  — mutable cache, overwritten each pull (never a snapshot).
@@ -18,7 +22,15 @@ var ROLLUP_TABS_ = {
   meta: ['key', 'value']
 };
 
+function testFolderId_() { return PropertiesService.getScriptProperties().getProperty('FORECAST_TEST_FOLDER_ID') || null; }
+function isTestMode_() { return !!testFolderId_(); }
+
 function getYearFolder_(fiscalYear) {
+  var testId = testFolderId_();
+  if (testId) {
+    var root = DriveApp.getFolderById(testId), name = 'FY' + fiscalYear, it = root.getFoldersByName(name);
+    return it.hasNext() ? it.next() : root.createFolder(name);
+  }
   var id = FORECAST_CONFIG.forecast.drive.folders_by_fiscal_year[String(fiscalYear)];
   if (!id) throw new Error('No Drive folder configured for FY' + fiscalYear + ' in config/forecast.json (drive.folders_by_fiscal_year). Submissions are blocked until an admin adds it.');
   return DriveApp.getFolderById(id);
@@ -48,10 +60,11 @@ function readDataCache_() {
 
 /** Rollup workbook for a fiscal year, created in the year folder on first use. */
 function getRollup_(fiscalYear) {
-  var props = PropertiesService.getScriptProperties(), key = 'ROLLUP_ID_' + fiscalYear;
+  var test = isTestMode_();
+  var props = PropertiesService.getScriptProperties(), key = (test ? 'ROLLUP_ID_TEST_' : 'ROLLUP_ID_') + fiscalYear;
   var id = props.getProperty(key);
   if (id) { try { return SpreadsheetApp.openById(id); } catch (e) { /* recreate below */ } }
-  var folder = getYearFolder_(fiscalYear), name = 'Sales Forecast Rollup ' + fiscalYear;
+  var folder = getYearFolder_(fiscalYear), name = 'Sales Forecast Rollup ' + fiscalYear + (test ? ' (TEST)' : '');
   var it = folder.getFilesByName(name), ss;
   if (it.hasNext()) ss = SpreadsheetApp.open(it.next());
   else {

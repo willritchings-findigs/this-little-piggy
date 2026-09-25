@@ -130,6 +130,33 @@ table.deals td.blank { background: var(--neutral-10); }
 .tag-cell select { height: 32px; min-width: 124px; }
 .empty { padding: var(--space-6); text-align: center; color: var(--fg-2); }
 
+/* Section 1 */
+.weekbar { background: var(--bg-surface); border-radius: var(--r-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); }
+.table-wrap.wide { max-height: none; overflow-x: auto; }
+table.forecast th[scope="row"] { min-width: 150px; max-width: 230px; text-align: left; font-weight: 700; color: var(--fg-1); background: transparent; position: static; cursor: default; font-size: 14px; white-space: normal; border-bottom: 1px solid var(--neutral-20); padding: var(--space-2) var(--space-3); vertical-align: top; }
+table.forecast thead th { cursor: default; white-space: normal; vertical-align: bottom; }
+table.forecast .lw { font-size: 12px; font-weight: 400; white-space: nowrap; }
+table.forecast th[scope="row"] .lw { white-space: normal; }
+table.forecast td, table.forecast thead th { padding-left: var(--space-2); padding-right: var(--space-2); }
+table.forecast tr.own td, table.forecast tr.own th { background: var(--neutral-20); }
+table.forecast tr.own-actions td { background: var(--neutral-20); border-bottom: 2px solid var(--forest); }
+table.forecast tr.total th, table.forecast tr.total td { background: var(--neutral-10); font-weight: 700; }
+table.forecast tr.subtle th, table.forecast tr.subtle td { color: var(--fg-2); }
+table.forecast tr.child th { padding-left: var(--space-6); font-weight: 400; }
+.money { display: inline-flex; align-items: center; border: 1px solid var(--border-subtle); border-radius: var(--r-md); background: var(--sand); height: 36px; padding: 0 var(--space-2); box-shadow: inset 3px 0 0 var(--swatch); }
+.money .cur { color: var(--fg-2); padding: 0 var(--space-1) 0 var(--space-2); }
+.money input { border: 0; outline: none; background: transparent; width: 88px; text-align: right; font-variant-numeric: tabular-nums; }
+.money:focus-within { border: 2px solid var(--forest); padding: 0 7px; }
+.money.invalid { border: 1px solid var(--fg-danger); background: var(--coral-20); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+.btn.primary { background: var(--key-green); border-color: var(--key-green); color: var(--forest); height: 40px; padding: 0 var(--space-5); }
+.btn.primary:hover:not(:disabled) { filter: brightness(0.92); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.msg { font-size: 13px; margin-top: var(--space-2); display: flex; gap: var(--space-2); align-items: center; }
+.msg.error { color: var(--fg-danger); }
+.msg.warn { color: var(--fg-1); }
+.banner code { font-family: var(--font-mono); font-size: 12px; }
+
 /* Methodology panel */
 details.meth { margin-top: var(--space-6); background: var(--bg-surface); border-radius: var(--r-xl); padding: var(--space-4) var(--space-5); }
 details.meth summary { cursor: pointer; font-weight: 700; }

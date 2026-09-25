@@ -43,3 +43,14 @@ npm run verify:phase1 # re-runs the 2026-09-25 tie-out from verification/
 - [x] `_system/data_cache.json` exists in the 2026 folder
 
 `.clasp.json` holds the script ID and is git-ignored.
+
+## Phase 3 trial in test mode (admin)
+Test mode sends every write (snapshots, rollup Sheet, builder tags, cache, build log) to **Sales Forecasts → _test** instead of the 2026 folder, and the app shows a TEST MODE banner.
+1. `git pull`, then in `sales-forecast/` run `npm test` and `clasp push` (answer **y** to overwrite the manifest).
+2. Apps Script → Project Settings → Script properties → add `FORECAST_TEST_FOLDER_ID` = `17CBtW0XTcMq-GO3OsXlbRArf9olSHnIg`.
+3. **Deploy → New deployment → Web app.** Set Execute as **Me** and Who has access **Anyone within Findigs**. Copy the web app URL.
+4. Open the URL. You're an admin, so you see every row read-only. To try the AE flow, have one AE open it, or temporarily add yourself as an AE in `config/roster.json` locally (don't commit), then run `npm run build && clasp push`.
+5. Submit, then resubmit, and confirm that `_test/FY2026` has one `forecast_*.json` per submission and that **Sales Forecast Rollup 2026 (TEST)** has one row per submission with `is_official` TRUE only on the latest.
+6. **Go live:** delete the `FORECAST_TEST_FOLDER_ID` property. No redeploy is needed. Test files stay in `_test` and are never read in live mode.
+
+Admin function: `verifySnapshots` (run from the editor) re-hashes every snapshot in the rollup and lists any file that changed or is missing.

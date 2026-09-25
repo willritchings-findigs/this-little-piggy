@@ -154,17 +154,17 @@ var FORECAST_CONFIG = {
         {
           "name": "Reese Ryan",
           "hubspot_owner_id": "663611618",
-          "reason": "Excluded pending role confirmation"
+          "reason": "Not on the roster pending role confirmation"
         },
         {
           "name": "Clay Stapleford",
           "hubspot_owner_id": "686754956",
-          "reason": "Owner record isActive=true but no HubSpot user seat; accounts flagged for reassignment (Notion, 2026-09-14)"
+          "reason": "No HubSpot user seat; accounts pending reassignment"
         },
         {
           "name": "Hayden Ashwill",
           "hubspot_owner_id": "1542312872",
-          "reason": "Inactive owner; closed-won YTD only, no open deals"
+          "reason": "Inactive in HubSpot; closed-won this year, no open deals"
         }
       ]
     }
@@ -192,8 +192,8 @@ var FORECAST_CONFIG = {
         "2026": "1WGzeVVLMlfTHpU9S5GKVB45EDRx84I_P"
       },
       "missing_folder_behavior": "block_submission",
-      "test_folder_id": null,
-      "test_folder_note": "Set in Phase 4 for synthetic snapshots. Never the production folder."
+      "test_folder_id": "17CBtW0XTcMq-GO3OsXlbRArf9olSHnIg",
+      "test_folder_note": "Sales Forecasts/_test (Sales Forecast tool test mode), created 2026-09-25. Runtime test mode is switched on by Script Property FORECAST_TEST_FOLDER_ID = this ID; delete the property to go live. Also used for Phase 4 synthetic snapshots. Never the production folder."
     },
     "definitions": {
       "commit": {

@@ -27,9 +27,9 @@
   "non_roster_owners": {
     "_about": "Owners holding in-scope open or closed-won-YTD deals who do not submit forecasts. Shown read-only in a reconciliation row so Section 1 column totals tie to company totals.",
     "owners": [
-      { "name": "Reese Ryan",      "hubspot_owner_id": "663611618",  "reason": "Excluded pending role confirmation" },
-      { "name": "Clay Stapleford", "hubspot_owner_id": "686754956",  "reason": "Owner record isActive=true but no HubSpot user seat; accounts flagged for reassignment (Notion, 2026-09-14)" },
-      { "name": "Hayden Ashwill",  "hubspot_owner_id": "1542312872", "reason": "Inactive owner; closed-won YTD only, no open deals" }
+      { "name": "Reese Ryan",      "hubspot_owner_id": "663611618",  "reason": "Not on the roster pending role confirmation" },
+      { "name": "Clay Stapleford", "hubspot_owner_id": "686754956",  "reason": "No HubSpot user seat; accounts pending reassignment" },
+      { "name": "Hayden Ashwill",  "hubspot_owner_id": "1542312872", "reason": "Inactive in HubSpot; closed-won this year, no open deals" }
     ]
   }
 }

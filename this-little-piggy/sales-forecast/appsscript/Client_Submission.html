@@ -1,0 +1,181 @@
+<script>
+/* Section 1 — Forecast Submission. Validation is ForecastCore.validateForecast (same code the server re-runs). */
+var Submission = (function () {
+  'use strict';
+  var C = ForecastCore, A = App;
+  var FIELDS = [['commit', 'Commit'], ['gut', 'Gut'], ['best_case', 'Best Case']];
+  var st = { view: null, draft: {}, submitting: false, lastResult: null, loaded: false };
+  function $(id) { return document.getElementById(id); }
+
+  function init() { load(); }
+
+  function load() {
+    return A.rpc('apiGetSubmission').then(function (v) { setView(v); }).catch(function (e) {
+      A.banner('error', A.esc(e.message), 'submission-load-error');
+    });
+  }
+
+  function setView(v) {
+    st.view = v; st.loaded = true;
+    var own = ownRow();
+    st.draft = {};
+    FIELDS.forEach(function (f) { var c = own ? own.forecast[f[0]].current : null; st.draft[f[0]] = c === null || c === undefined ? '' : fmtInput(c); });
+    A.setHeader(v.viewer, v.pulledAt, v.tieOutOk);
+    if (v.testMode) A.banner('warn', '<strong>Test mode.</strong> Submissions, tags, and the rollup Sheet are written to the test folder, not the production 2026 folder.', 'testmode-banner');
+    render();
+  }
+
+  function ownRow() { var v = st.view; return v && v.editableSlug ? v.rows.filter(function (r) { return r.key === v.editableSlug; })[0] : null; }
+  function fmtInput(n) { return Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+  function signedUsd(d) { return d === 0 ? '±$0' : (d > 0 ? '+' : '−') + A.usd0(Math.abs(d)); }
+  function pct(p) { return p === null || p === undefined ? '' : ' (' + (p > 0 ? '+' : '') + (p * 100).toFixed(1) + '%)'; }
+
+  function currentValidation() {
+    var own = ownRow(); if (!own) return null;
+    return C.validateForecast(st.draft, { inPeriodPipeline: own.metrics.grossOpenInPeriod.amount, periodEnd: A.date(st.view.period.end) });
+  }
+
+  function statusChip(s) {
+    if (s === 'submitted') return '<span class="tag jade">' + A.icon('check_circle') + 'Submitted this week</span>';
+    if (s === 'resubmitted') return '<span class="tag sky">' + A.icon('published_with_changes') + 'Resubmitted</span>';
+    return '<span class="tag coral">' + A.icon('schedule') + 'Not submitted</span>';
+  }
+
+  function lastWeekLine(field, value) {
+    var lw = field.lastWeek;
+    if (lw === null || lw === undefined) return '<div class="lw muted">Last week: none</div>';
+    var cur = value === null || value === undefined || value === '' || isNaN(value) ? null : value;
+    var d = cur === null ? null : Math.round((cur - lw) * 100) / 100;
+    return '<div class="lw muted">Last week ' + A.usd0(lw) + '</div>' + (d === null ? '' : '<div class="lw muted">WoW ' + signedUsd(d) + pct(lw === 0 ? null : d / lw) + '</div>');
+  }
+
+  function metricCells(m) {
+    return '<td class="num">' + A.usd0(m.closedWonYtd.amount) + '<div class="lw muted">' + m.closedWonYtd.count + ' deals</div></td>' +
+      '<td class="num">' + A.usd0(m.grossOpen.amount) + '<div class="lw muted">' + m.grossOpen.count + ' deals</div>' +
+        '<div class="lw muted" title="Open deals closing on or before ' + A.esc(A.date(st.view.period.end)) + '">By ' + A.date(st.view.period.end).replace(/, \d{4}$/, '') + ': ' + A.usd0(m.grossOpenInPeriod.amount) + '</div></td>' +
+      '<td class="num">' + A.usd0(m.weightedOpen.amount) + (m.weightedOpen.unavailableCount ? '<div class="lw muted">' + m.weightedOpen.unavailableCount + ' unweighted</div>' : '') + '</td>';
+  }
+
+  function aeRow(r) {
+    var v = st.view, editable = v.editableSlug === r.key, cells = '';
+    if (editable) {
+      var val = currentValidation(), errs = {};
+      (val ? val.errors : []).forEach(function (e) { if (st.draft[e.field] !== '' || e.code !== 'required') errs[e.field] = true; });
+      FIELDS.forEach(function (f) {
+        cells += '<td class="num input-cell"><label class="money' + (errs[f[0]] ? ' invalid' : '') + '" style="--swatch:' + swatch(f[0]) + '"><span class="sr-only">' + f[1] + '</span><span class="cur">$</span>' +
+          '<input type="text" inputmode="decimal" autocomplete="off" data-field="' + f[0] + '" value="' + A.esc(st.draft[f[0]]) + '" aria-invalid="' + (errs[f[0]] ? 'true' : 'false') + '"' + (st.submitting ? ' disabled' : '') + '></label>' +
+          lastWeekLine(r.forecast[f[0]], C.parseUsd(st.draft[f[0]])) + '</td>';
+      });
+    } else {
+      FIELDS.forEach(function (f) {
+        var x = r.forecast[f[0]];
+        cells += '<td class="num">' + (x.current === null ? '<span class="muted">—</span>' : A.usd0(x.current)) + lastWeekLine(x, x.current) + '</td>';
+      });
+    }
+    var gutDraft = editable ? C.parseUsd(st.draft.gut) : null;
+    var implied = editable && !isNaN(gutDraft) && st.draft.gut !== '' ? r.metrics.closedWonYtd.amount + gutDraft : r.impliedLanding;
+    return '<tr data-ae="' + A.esc(r.key) + '"' + (editable ? ' class="own"' : '') + '>' +
+      '<th scope="row">' + A.esc(r.name) + (r.role === 'ae_leader' ? '<div class="lw muted">AE and leadership</div>' : '') +
+        (r.ownerStatus !== 'active' ? '<div><span class="tag danger">' + A.icon('error') + A.esc(r.ownerStatus.replace(/_/g, ' ')) + '</span></div>' : '') + '</th>' +
+      metricCells(r.metrics) + cells +
+      '<td>' + (r.lastSubmittedAt ? A.esc(A.stamp(r.lastSubmittedAt)) + (r.submissionsThisWeek > 1 ? '<div class="lw muted">' + r.submissionsThisWeek + ' submissions this week</div>' : '') : '<span class="muted">—</span>') + '</td>' +
+      '<td>' + statusChip(r.status) + '</td>' +
+      '<td class="num">' + (implied === null || implied === undefined ? '<span class="muted">—</span>' : A.usd0(implied) + (editable && st.draft.gut !== '' && (r.forecast.gut.current === null || C.parseUsd(st.draft.gut) !== r.forecast.gut.current) ? '<div class="lw muted">draft</div>' : '')) + '</td>' +
+      '</tr>' + (editable ? actionRow() : '');
+  }
+
+  function swatch(k) { return { commit: 'var(--series-commit)', gut: 'var(--series-gut)', best_case: 'var(--series-best)' }[k]; }
+
+  function actionRow() {
+    var val = currentValidation(), msgs = '';
+    var shown = val.errors.filter(function (e) { return st.draft[e.field] !== '' || e.code !== 'required'; });
+    shown.forEach(function (e) { msgs += '<div class="msg error">' + A.icon('error') + A.esc(e.message) + '</div>'; });
+    val.warnings.forEach(function (w) { msgs += '<div class="msg warn">' + A.icon('warning') + A.esc(w.message.replace(' You can still submit.', '')) + ' Your open pipeline closing by ' + A.esc(A.date(st.view.period.end)) + ' is ' + A.usd0(w.pipeline) + '. You can still submit.</div>'; });
+    var disabled = !val.ok || st.submitting;
+    return '<tr class="own-actions"><td colspan="10"><div class="actions">' +
+      '<button type="button" class="btn primary" id="s-submit"' + (disabled ? ' disabled' : '') + '>' + (st.submitting ? 'Submitting…' : (ownRow().status === 'not_submitted' ? 'Submit forecast' : 'Resubmit forecast')) + '</button>' +
+      '<span class="muted">Commit ≤ Gut ≤ Best Case. Your latest submission before ' + A.esc(A.stamp(st.view.week.cutoffAt)) + ' is the official number for this week.</span>' +
+      '</div>' + msgs + '</td></tr>';
+  }
+
+  function teamRows() {
+    var v = st.view; if (!v.team) return '';
+    var t = v.team.forecast, cells = '';
+    FIELDS.forEach(function (f) {
+      var x = t[f[0]];
+      cells += '<td class="num">' + (x.current === null ? '<span class="muted">—</span>' : A.usd0(x.current)) +
+        '<div class="lw muted">' + (x.lastWeek === null ? 'Last week: none' : 'Last week ' + A.usd0(x.lastWeek)) + '</div>' +
+        (x.delta ? '<div class="lw muted" title="Like-for-like: only AEs who submitted both weeks">WoW ' + signedUsd(x.delta.amount) + pct(x.delta.pct) + ' · ' + t.likeForLikeCount + ' AE' + (t.likeForLikeCount === 1 ? '' : 's') + '</div>' : '') + '</td>';
+    });
+    var html = '<tr class="total"><th scope="row">Team Total<div class="lw muted">' + t.submittedCount + ' of ' + t.aeCount + ' AEs submitted</div></th>' +
+      metricCells(v.team.metrics) + cells + '<td></td><td></td><td></td></tr>';
+    var nr = v.nonRoster;
+    if (nr && nr.owners.length) {
+      html += '<tr class="subtle"><th scope="row">Other owners<div class="lw muted">Not on the forecast roster; no forecast</div></th>' + metricCells(nr.total) + '<td colspan="6"></td></tr>';
+      nr.owners.forEach(function (o) {
+        html += '<tr class="subtle child"><th scope="row">' + A.esc(o.name) + '<div class="lw muted">' + A.esc(o.reason) + '</div></th>' + metricCells(o.metrics) + '<td colspan="6"></td></tr>';
+      });
+    }
+    html += '<tr class="total"><th scope="row">Company total<div class="lw muted">Ties to HubSpot</div></th>' + metricCells(v.company) + '<td colspan="6"></td></tr>';
+    return html;
+  }
+
+  function history() {
+    var h = st.view.history || [];
+    if (!h.length) return '';
+    return '<div class="note"><strong>Your submissions this week</strong><ul>' + h.map(function (x) {
+      return '<li>' + A.esc(A.stamp(x.submittedAt)) + ': Commit ' + A.usd0(x.commit) + ' · Gut ' + A.usd0(x.gut) + ' · Best Case ' + A.usd0(x.best_case) +
+        (x.isOfficial ? ' <span class="tag jade">Current official</span>' : '') + '</li>';
+    }).join('') + '</ul></div>';
+  }
+
+  function render() {
+    var v = st.view;
+    $('s-week').innerHTML = A.icon('event') + ' Forecast week ending <strong>Fri, ' + A.esc(A.date(v.week.forecastWeek)) + '</strong> · cutoff ' + A.esc(A.stamp(v.week.cutoffAt)) +
+      ' · forecast period ' + A.esc(A.date(v.period.start)) + ' to ' + A.esc(A.date(v.period.end)) +
+      '<div class="muted">A submission at or after the cutoff counts toward the following week.</div>';
+    $('s-readonly').innerHTML = v.editableSlug ? '' : '<div class="note">' + A.icon('visibility') + ' Read-only view. AEs submit their own forecasts.</div>';
+    var body = v.rows.map(aeRow).join('') + teamRows();
+    document.querySelector('#s-table tbody').innerHTML = body || '<tr><td colspan="10" class="empty">No rows to show.</td></tr>';
+    $('s-history').innerHTML = history();
+    bind();
+  }
+
+  function bind() {
+    document.querySelectorAll('#s-table input[data-field]').forEach(function (inp) {
+      inp.addEventListener('input', function (e) {
+        st.draft[e.target.getAttribute('data-field')] = e.target.value;
+        rerenderOwnRowKeepFocus(e.target);
+      });
+    });
+    var b = $('s-submit'); if (b) b.addEventListener('click', submit);
+  }
+
+  /** Re-render the editable row on each keystroke without losing the caret. */
+  function rerenderOwnRowKeepFocus(input) {
+    var field = input.getAttribute('data-field'), pos = input.selectionStart;
+    render();
+    var again = document.querySelector('#s-table input[data-field="' + field + '"]');
+    if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (e) {} }
+  }
+
+  function submit() {
+    var val = currentValidation(); if (!val || !val.ok || st.submitting) return;
+    st.submitting = true; render();
+    A.rpc('apiSubmitForecast', { commit: st.draft.commit, gut: st.draft.gut, best_case: st.draft.best_case }).then(function (res) {
+      st.submitting = false;
+      var r = res.result;
+      A.banner('info', '<strong>Forecast submitted</strong> for the week ending ' + A.esc(A.date(r.forecastWeek)) + ' at ' + A.esc(A.stamp(r.submittedAt)) +
+        (r.resubmissionSeq > 1 ? ' (submission ' + r.resubmissionSeq + ' this week; it replaces your earlier one as the official number)' : '') +
+        '. Snapshot saved as <code>' + A.esc(r.fileName) + '</code>.' +
+        (r.warnings.length ? ' Warnings recorded: ' + r.warnings.map(function (w) { return A.esc(w.message); }).join(' ') : ''), 'submit-result');
+      setView(res.view);
+    }).catch(function (e) {
+      st.submitting = false; render();
+      A.banner('error', '<strong>Not submitted.</strong> ' + A.esc(e.message), 'submit-result');
+    });
+  }
+
+  return { init: init, _state: st, reload: load };
+})();
+</script>

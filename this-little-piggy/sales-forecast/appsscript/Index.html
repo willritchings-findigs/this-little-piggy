@@ -25,7 +25,31 @@
 
   <main>
     <section id="tab-submission" role="tabpanel" aria-labelledby="tabbtn-submission" hidden>
-      <div class="placeholder">Forecast submission ships in Phase 3.</div>
+      <div class="section-head">
+        <h2>Forecast submission</h2>
+        <p class="sub">Forecast the incremental closed-won dollars you will book from today through the end of the forecast period, on top of what has already closed won this year.</p>
+      </div>
+      <div id="s-week" class="weekbar"></div>
+      <div id="s-readonly"></div>
+      <div class="table-wrap wide">
+        <table class="deals forecast" id="s-table">
+          <caption class="sr-only">Forecast submission by AE</caption>
+          <thead><tr>
+            <th scope="col">AE</th>
+            <th scope="col" class="num">Closed Won YTD</th>
+            <th scope="col" class="num">Gross open pipeline</th>
+            <th scope="col" class="num">Weighted open pipeline</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-commit)"></span> Commit</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-gut)"></span> Gut</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-best)"></span> Best Case</th>
+            <th scope="col">Last submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Implied landing<div class="lw muted">Closed Won YTD + Gut</div></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="s-history"></div>
     </section>
 
     <section id="tab-builder" role="tabpanel" aria-labelledby="tabbtn-builder" hidden>
@@ -78,5 +102,6 @@
   <?!= include('Client_Core') ?>
   <?!= include('Client_App') ?>
   <?!= include('Client_Builder') ?>
+  <?!= include('Client_Submission') ?>
 </body>
 </html>
