@@ -48,7 +48,11 @@ var App = (function () {
     area.appendChild(el);
   }
 
+  var tabHooks = {}, tabLoaded = {};
+  /** Run fn the first time a tab is shown (sections load lazily so page load makes one server call, not several). */
+  function onFirstShow(name, fn) { tabHooks[name] = fn; }
   function selectTab(name) {
+    if (tabHooks[name] && !tabLoaded[name]) { tabLoaded[name] = true; tabHooks[name](); }
     document.querySelectorAll('.tabs button').forEach(function (b) {
       var on = b.getAttribute('data-tab') === name;
       b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
@@ -77,7 +81,7 @@ var App = (function () {
   }
 
   return { rpc: rpc, esc: esc, usd0: usd0, usd2: usd2, int: int, date: date, stamp: stamp, icon: icon, banner: banner,
-           initTabs: initTabs, selectTab: selectTab, setHeader: setHeader };
+           initTabs: initTabs, selectTab: selectTab, onFirstShow: onFirstShow, setHeader: setHeader };
 })();
 
 if (document.fonts && document.fonts.load) {
@@ -85,8 +89,8 @@ if (document.fonts && document.fonts.load) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  App.onFirstShow('submission', Submission.init);
+  App.onFirstShow('builder', Builder.init);
   App.initTabs('submission');
-  Submission.init();
-  Builder.init();
 });
 </script>

@@ -22,14 +22,44 @@ var ROLLUP_TABS_ = {
   meta: ['key', 'value']
 };
 
+// Script-lock depth for this execution (a literal, so it is safe whatever the file load order).
+var LOCK_DEPTH_ = 0;
+
+/**
+ * Run fn under the script lock. Re-entrant within one execution. If the lock can't be had in 30 s:
+ * throws busyMessage, or returns undefined when busyMessage === null (soft callers such as the build log).
+ */
+function withScriptLock_(fn, busyMessage) {
+  if (LOCK_DEPTH_ > 0) return fn();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    if (busyMessage === null) return undefined;
+    throw new Error(busyMessage || 'The app is busy saving another change. Please try again in a few seconds.');
+  }
+  LOCK_DEPTH_++;
+  try { return fn(); } finally { LOCK_DEPTH_--; lock.releaseLock(); }
+}
+
+/**
+ * Child folder by name, created at most once. Two requests arriving together (e.g. two sections loading on
+ * the same page) both miss on the fast path; the re-check under the lock makes the second one find the first's folder.
+ */
+function getOrCreateFolder_(parent, name) {
+  var it = parent.getFoldersByName(name);
+  if (it.hasNext()) return it.next();
+  return withScriptLock_(function () {
+    var again = parent.getFoldersByName(name);
+    return again.hasNext() ? again.next() : parent.createFolder(name);
+  });
+}
+
 function testFolderId_() { return PropertiesService.getScriptProperties().getProperty('FORECAST_TEST_FOLDER_ID') || null; }
 function isTestMode_() { return !!testFolderId_(); }
 
 function getYearFolder_(fiscalYear) {
   var testId = testFolderId_();
   if (testId) {
-    var root = DriveApp.getFolderById(testId), name = 'FY' + fiscalYear, it = root.getFoldersByName(name);
-    return it.hasNext() ? it.next() : root.createFolder(name);
+    return getOrCreateFolder_(DriveApp.getFolderById(testId), 'FY' + fiscalYear);
   }
   var id = FORECAST_CONFIG.forecast.drive.folders_by_fiscal_year[String(fiscalYear)];
   if (!id) throw new Error('No Drive folder configured for FY' + fiscalYear + ' in config/forecast.json (drive.folders_by_fiscal_year). Submissions are blocked until an admin adds it.');
@@ -37,9 +67,7 @@ function getYearFolder_(fiscalYear) {
 }
 
 function getSystemFolder_(fiscalYear) {
-  var parent = getYearFolder_(fiscalYear);
-  var it = parent.getFoldersByName('_system');
-  return it.hasNext() ? it.next() : parent.createFolder('_system');
+  return getOrCreateFolder_(getYearFolder_(fiscalYear), '_system');
 }
 
 function writeDataCache_(dataset) {
@@ -47,8 +75,12 @@ function writeDataCache_(dataset) {
   dataset._writtenMs = Date.now();
   var body = JSON.stringify(dataset);
   var it = folder.getFilesByName('data_cache.json');
-  if (it.hasNext()) it.next().setContent(body);
-  else folder.createFile('data_cache.json', body, 'application/json');
+  if (it.hasNext()) { it.next().setContent(body); return; }
+  withScriptLock_(function () {
+    var again = folder.getFilesByName('data_cache.json');
+    if (again.hasNext()) again.next().setContent(body);
+    else folder.createFile('data_cache.json', body, 'application/json');
+  }, null);
 }
 
 function readDataCache_() {
@@ -67,6 +99,11 @@ function getRollup_(fiscalYear) {
   var id = props.getProperty(key), ss = null;
   if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; /* recreate below */ } }
   if (ss && props.getProperty(layoutKey) === layout) return ss;
+  // Slow path (first use, new FY, or a new column layout): create/check under the lock so it happens once.
+  return withScriptLock_(function () { return getRollupSlow_(fiscalYear, test, props, key, layoutKey, layout, ss); });
+}
+
+function getRollupSlow_(fiscalYear, test, props, key, layoutKey, layout, ss) {
   if (!ss) {
     var folder = getYearFolder_(fiscalYear), name = 'Sales Forecast Rollup ' + fiscalYear + (test ? ' (TEST)' : '');
     var it = folder.getFilesByName(name);
@@ -100,14 +137,14 @@ function ensureHeader_(sh, expected) {
 }
 
 function appendBuildLog_(e) {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) { console.error('build_log lock timeout: ' + JSON.stringify(e)); return; }
-  try {
+  var done = withScriptLock_(function () {
     var fy = ForecastCore.fiscalYearOf(e.asOf || todayEt_());
     getRollup_(fy).getSheetByName('build_log').appendRow([
       ForecastCore.etIso(Date.now()), e.status || '', e.asOf || '', e.pulledAt || '', e.openCount, e.wonYtdCount,
       e.cwYtd, e.grossOpen, e.weightedOpen, e.weightedFallbackCount, e.tieOut || '', (e.message || '').slice(0, 45000),
       FORECAST_CONFIG.generatedFrom.gtmDashboardConfigVersion + ' / ' + FORECAST_CONFIG.generatedFrom.rosterVersion
     ]);
-  } finally { lock.releaseLock(); }
+    return true;
+  }, null);
+  if (!done) console.error('build_log lock timeout: ' + JSON.stringify(e));
 }

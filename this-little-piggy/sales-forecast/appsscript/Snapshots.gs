@@ -86,9 +86,7 @@ function writeSubmission_(v, rawValues, targetAe) {
   var body = JSON.stringify(snapshot, null, 2), sha = sha256Hex_(body);
   var name = ForecastCore.snapshotFileName(week.forecastWeek, ae.slug, submittedAt);
 
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) throw new Error('Another submission is being saved. Nothing was saved; please submit again in a few seconds.');
-  try {
+  return withScriptLock_(function () {
     if (folder.getFilesByName(name).hasNext()) throw new Error('A snapshot named ' + name + ' already exists; not overwriting. Submit again.');
     var file = folder.createFile(name, body, 'application/json');
     var sh = getRollup_(fy).getSheetByName('submissions');
@@ -112,7 +110,7 @@ function writeSubmission_(v, rawValues, targetAe) {
     return { submissionId: snapshot.submission_id, forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, submittedAt: submittedAt,
              fileName: name, fileId: file.getId(), sha256: sha, resubmissionSeq: existing.length + 1, warnings: warnings, values: chk.values,
              aeName: ae.name, onBehalf: onBehalf, submittedBy: v.email };
-  } finally { lock.releaseLock(); }
+  }, 'Another submission is being saved. Nothing was saved; please submit again in a few seconds.');
 }
 
 /** Admin: re-hash every snapshot listed in the rollup and report any file that changed or disappeared. */

@@ -121,8 +121,9 @@ test('apiSaveTags: AE tags are isolated per AE (Phil and Ben in the same sheet)'
   assert.deepEqual(Object.keys(app.call('apiGetBuilder', null).tags), [benId]);
 });
 test('apiSaveTags: lock contention returns a clear error (tags kept client-side)', () => {
-  const app = appAs(BEN, { lockBusy: true });
+  const app = appAs(BEN);
   const id = app.call('apiGetBuilder', null).deals[0].id;
+  app.store.lockBusy = true;
   assert.throws(() => app.call('apiSaveTags', 'ben-de-winter', [{ dealId: id, tag: 'commit' }]), /Another save is in progress/);
 });
 test('open deals only: a tagged deal that leaves the open pipeline drops out of the builder and totals, with no note', () => {
@@ -155,4 +156,31 @@ test('zero-pipeline AE gets an empty builder, not an error', () => {
   const b = app.call('apiGetBuilder', null);
   assert.equal(b.deals.length, 0);
   assert.deepEqual(C.builderSummary(b.deals, b.tags, b.period.end).cumulative.best_case, { amount: 0, count: 0 });
+});
+
+test('concurrent first loads create each folder and cache file once (re-check under the lock)', () => {
+  // Simulate a second execution creating the folder between our fast-path miss and our lock.
+  const app = loadApp({ email: BEN, testFolderId: 'ROOT' });
+  const root = app.store.drive.folder('ROOT');
+  const orig = root.getFoldersByName; let calls = 0;
+  root.getFoldersByName = (n) => { calls++; if (calls === 1) { const miss = orig('__none__'); root.createFolder(n); return miss; } return orig(n); };
+  app.ctx.pullData_();
+  root.getFoldersByName = orig;
+  const fy = app.store.drive.folders['ROOT'].subfolders;
+  const made = (n) => Object.values(app.store.drive.folders).filter((f) => f.name === n).length;
+  assert.equal(made('FY2026'), 1, 'FY2026 created exactly once');
+  assert.equal(made('_system'), 1, '_system created exactly once');
+  const sysId = app.store.drive.folders[fy.FY2026].subfolders._system;
+  const caches = app.store.drive.folders[sysId].fileIds.filter((id) => app.store.drive.files[id].name === 'data_cache.json');
+  assert.equal(caches.length, 1);
+  app.ctx.pullData_();   // second pull updates the same cache file
+  assert.equal(app.store.drive.folders[sysId].fileIds.length, 1);
+  assert.equal(app.store.drive.files[caches[0]].writes, 2);
+});
+test('withScriptLock_ is re-entrant within one execution', () => {
+  const app = loadApp({ email: BEN });
+  assert.equal(app.ctx.withScriptLock_(() => app.ctx.withScriptLock_(() => 42, 'x'), 'y'), 42);
+  app.store.lockBusy = true;
+  assert.throws(() => app.ctx.withScriptLock_(() => 1, 'busy!'), /busy!/);
+  assert.equal(app.ctx.withScriptLock_(() => 1, null), undefined);
 });

@@ -34,9 +34,7 @@ function tagsSavedAt_(tags) {
  * Existing rows are updated in place; new rows are appended in one write.
  */
 function writeTags_(aeEmail, clean, byEmail) {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) throw new Error('Another save is in progress. Your tags are kept on screen; try again in a few seconds.');
-  try {
+  return withScriptLock_(function () {
     var sh = builderSheet_(), e = String(aeEmail).toLowerCase(), now = ForecastCore.etIso(Date.now());
     var values = sh.getDataRange().getValues(), rowByDeal = {};
     for (var i = 1; i < values.length; i++) {
@@ -50,5 +48,5 @@ function writeTags_(aeEmail, clean, byEmail) {
     });
     if (appends.length) sh.getRange(sh.getLastRow() + 1, 1, appends.length, appends[0].length).setValues(appends);
     return now;
-  } finally { lock.releaseLock(); }
+  }, 'Another save is in progress. Your tags are kept on screen; try again in a few seconds.');
 }
