@@ -60,11 +60,6 @@ var Builder = (function () {
       html += '<div class="note">' + A.icon('visibility') + ' Viewing <strong>' + A.esc(d.ae.name) + '</strong>\'s builder, read-only. Tags are set by the AE.' +
         (d.tagsSavedAt ? ' Last saved ' + A.esc(A.stamp(d.tagsSavedAt)) + '.' : ' No tags saved yet.') + '</div>';
     }
-    if (d.staleTags && d.staleTags.length) {
-      html += '<div class="note">' + A.icon('history') + ' ' + d.staleTags.length + ' previously tagged deal(s) are no longer open for ' + A.esc(d.ae.name) +
-        ' (closed, lost, or reassigned since tagging). They are not in the totals.<ul>' +
-        d.staleTags.map(function (s) { return '<li><a href="' + A.esc(C.dealUrl(CLIENT_CONFIG.portalId, s.dealId)) + '" target="_blank" rel="noopener">Deal ' + A.esc(s.dealId) + '</a>: was ' + A.esc(C.TAG_LABELS[s.tag]) + '</li>'; }).join('') + '</ul></div>';
-    }
     $('b-notes').innerHTML = html;
   }
 

@@ -228,7 +228,7 @@ var FORECAST_CONFIG = {
       "formula": "amount × pipeline stage probability (GET /crm/v3/pipelines/deals metadata.probability)",
       "hubspot_weighted_amount": "pulled for reference only; never used in any total",
       "decision": "2026-09-25: only 4 of 49 populated weighted_amount values equal amount × stage probability; stored values total $4.20M vs $5.96M stage-weighted on the same deals. Stage probability used for every open deal.",
-      "deviation_from_gtm_dashboard": "gtm-dashboard/config.json weighting_rule (stored weighted_amount first) is NOT changed by this tool. Weighted pipeline will differ between the two tools until Notion Data Definitions 'Weighted deal value' is updated."
+      "notion_definition": "Method B: Notion Data Definitions rows 'Weighted deal value (stage probability)' and 'Weighted open pipeline (stage probability)' (Used by: Sales forecast tool, confirmed 2026-09-25). gtm-dashboard uses Method A ('Weighted deal value'). Both are approved and interchangeable per tool, so weighted pipeline intentionally differs between the two tools."
     },
     "data_refresh_minutes": 30,
     "series_colors": {

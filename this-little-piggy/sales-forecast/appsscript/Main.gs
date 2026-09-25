@@ -70,7 +70,11 @@ function viewerOut_(v) {
   return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null };
 }
 
-/** Section 2 data for one AE: open deals, saved tags, stale tags. Read-only unless the viewer is that AE. */
+/**
+ * Section 2 data for one AE: open deals and saved tags. Read-only unless the viewer is that AE.
+ * Only currently open deals are returned (decision 2026-09-25): a tagged deal that closes or is reassigned
+ * simply drops out; closed-won shows up in Closed Won YTD instead.
+ */
 function apiGetBuilder(aeSlug) {
   var v = currentViewer_(), ae = targetAe_(v, aeSlug);
   var ds = getDataset_(false);
@@ -83,7 +87,6 @@ function apiGetBuilder(aeSlug) {
     ae: { slug: ae.slug, name: ae.name, ownerId: String(ae.hubspot_owner_id) },
     readOnly: !(v.ae && v.ae.slug === ae.slug),
     aes: aes, deals: deals, tags: tags, tagsSavedAt: tagsSavedAt_(tags),
-    staleTags: ForecastCore.staleTags(tags, deals),
     pulledAt: ds.pulledAt, asOf: ds.asOf, period: ds.period,
     tieOutOk: ds.tieOut ? ds.tieOut.ok : null
   }));

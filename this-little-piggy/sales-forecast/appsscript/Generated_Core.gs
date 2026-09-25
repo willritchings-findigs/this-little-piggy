@@ -484,13 +484,6 @@ var ForecastCore = (function () {
     });
   }
 
-  /** Tags on deals that are no longer in the AE's open pipeline (closed, lost, or reassigned since tagging). */
-  function staleTags(tagMap, deals) {
-    var open = {}; (deals || []).forEach(function (d) { open[d.id] = true; });
-    return Object.keys(tagMap || {}).filter(function (id) { return !open[id] && tagOf_(tagMap, id) !== 'none'; })
-      .map(function (id) { return { dealId: id, tag: tagOf_(tagMap, id), updatedAt: tagMap[id].updatedAt || null }; });
-  }
-
   /** Server-side guard for a save request: known tags only, deals must be the AE's currently open deals. */
   function validateTagChanges(changes, openDealIds) {
     var errors = [], clean = [], allowed = {}, seen = {};
@@ -509,7 +502,7 @@ var ForecastCore = (function () {
 
   return {
     TAGS: TAGS, TAG_LABELS: TAG_LABELS, FORECAST_TAGS: FORECAST_TAGS, normalizeTag: normalizeTag,
-    builderSummary: builderSummary, builderFilter: builderFilter, sortDeals: sortDeals, staleTags: staleTags,
+    builderSummary: builderSummary, builderFilter: builderFilter, sortDeals: sortDeals,
     validateTagChanges: validateTagChanges,
     num: num, round2: round2, etOffsetMinutes: etOffsetMinutes, etParts: etParts, etDate: etDate, etIso: etIso,
     etToUtcMs: etToUtcMs, addDays: addDays, fiscalYearOf: fiscalYearOf, periodFor: periodFor,

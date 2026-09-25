@@ -57,10 +57,6 @@ test('sortDeals: every column, both directions, blanks last', () => {
   assert.equal(ids('tag', 'asc', T({ 1: 'lost', 3: 'commit' })), '312');   // commit < lost < none
   assert.equal(ids('bogus', 'asc'), ids('closeDate', 'asc'));
 });
-test('staleTags: forecast/lost tags on deals no longer open; None ignored', () => {
-  const s = C.staleTags({ a: { tag: 'commit', updatedAt: 'x' }, b: { tag: 'none' }, c: { tag: 'gut' } }, [D('c', 1, '2026-10-01')]);
-  assert.deepEqual(s, [{ dealId: 'a', tag: 'commit', updatedAt: 'x' }]);
-});
 test('validateTagChanges: rejects unknown deals and tags; last change per deal wins', () => {
   const ok = C.validateTagChanges([{ dealId: 'a', tag: 'Gut' }, { dealId: 'a', tag: 'commit' }, { dealId: 'b', tag: 'none' }], ['a', 'b']);
   assert.equal(ok.ok, true); assert.deepEqual(ok.clean, [{ dealId: 'a', tag: 'commit' }, { dealId: 'b', tag: 'none' }]);
@@ -127,16 +123,28 @@ test('apiSaveTags: lock contention returns a clear error (tags kept client-side)
   const id = app.call('apiGetBuilder', null).deals[0].id;
   assert.throws(() => app.call('apiSaveTags', 'ben-de-winter', [{ dealId: id, tag: 'commit' }]), /Another save is in progress/);
 });
-test('stale tags: a tagged deal that leaves the open pipeline is reported, not totaled', () => {
+test('open deals only: a tagged deal that leaves the open pipeline drops out of the builder and totals, with no note', () => {
   const hub = fakeHubSpot();
   const app = appAs(BEN, { hub });
-  const b = app.call('apiGetBuilder', null), gone = b.deals[0].id;
-  app.call('apiSaveTags', 'ben-de-winter', [{ dealId: gone, tag: 'commit' }]);
+  const b = app.call('apiGetBuilder', null), gone = b.deals[0].id, kept = b.deals[1].id;
+  app.call('apiSaveTags', 'ben-de-winter', [{ dealId: gone, tag: 'commit' }, { dealId: kept, tag: 'gut' }]);
   hub.open = hub.open.filter((d) => String(d.id) !== gone);    // e.g. closed won since tagging
   app.ctx.pullData_();
   const after = app.call('apiGetBuilder', null);
   assert.equal(after.deals.length, 11);
-  assert.deepEqual(after.staleTags.map((s) => [s.dealId, s.tag]), [[gone, 'commit']]);
+  assert.ok(!after.deals.some((d) => d.id === gone));
+  assert.equal(after.staleTags, undefined);
+  const s = C.builderSummary(after.deals, after.tags, after.period.end);
+  assert.deepEqual([s.cumulative.commit.count, s.cumulative.gut.count], [0, 1]);
+  // the closed deal can no longer be tagged either
+  assert.throws(() => app.call('apiSaveTags', 'ben-de-winter', [{ dealId: gone, tag: 'gut' }]), /not one of this AE's open deals/);
+});
+test('missing close date: the rep can tag it into the forecast and it counts', () => {
+  const deals = [D('x', 500, null), D('y', 100, '2026-10-01')];
+  assert.equal(C.builderFilter(deals, false, END).length, 2);
+  const s = C.builderSummary(deals, T({ x: 'commit' }), END);
+  assert.deepEqual(s.cumulative.commit, { amount: 500, count: 1 });
+  assert.deepEqual(s.warnings.missingCloseDateTagged, ['x']);
 });
 test('zero-pipeline AE gets an empty builder, not an error', () => {
   const hub = fakeHubSpot();
