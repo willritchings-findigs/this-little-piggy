@@ -8,10 +8,13 @@ config/roster.json, config/forecast.json   hand-edited sources
 core/forecast_core.js                      all business logic (Node-tested, copied into Apps Script)
 appsscript/                                clasp project root
   Generated_Config.gs, Generated_Core.gs   GENERATED — never edit; run `npm run build`
-  HubSpot.gs  Data.gs  Storage.gs  Main.gs
+  Client_Core.html, Client_Config.html     GENERATED — browser copies of core + safe config subset (no roster)
+  HubSpot.gs  Data.gs  Storage.gs  BuilderState.gs  Main.gs      server
+  Index.html  Styles.html  Client_App.html  Client_Builder.html   UI (HtmlService)
 scripts/build.mjs                          gtm-dashboard/config.json + config/*.json → Generated_Config.gs
 scripts/verify_phase1.mjs                  live-pull tie-out against reporting-API controls
-tests/                                     node --test (core + Apps Script simulation)
+scripts/preview.mjs                        local preview: real .gs + UI, fake HubSpot, in-memory Sheets
+tests/                                     node --test: core, Apps Script simulation, builder API, Chromium UI
 verification/<date>/                       raw pulls, controls, tieout.md, sample AE output
 ```
 
@@ -19,7 +22,8 @@ HubSpot definitions (pipelines, stage IDs, fields, weighting, tolerance) come **
 
 ## Local checks
 ```
-npm test              # build --check + 28 tests (no dependencies)
+npm test              # build --check + all tests (UI tests need global Playwright; they skip otherwise)
+npm run preview       # http://127.0.0.1:8787/?as=ben.dewinter@findigs.com  (try ?as=brian.korchin@findigs.com)
 npm run verify:phase1 # re-runs the 2026-09-25 tie-out from verification/
 ```
 

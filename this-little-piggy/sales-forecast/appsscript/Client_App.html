@@ -1,0 +1,92 @@
+<script>
+/* App shell: RPC, formatting, tabs, banners. Shared by all sections. */
+var App = (function () {
+  'use strict';
+
+  /** Promise wrapper for google.script.run. */
+  function rpc(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e && e.message ? e : new Error(String(e))); });
+      r[fn].apply(r, args);
+    });
+  }
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function usd0(v) {
+    if (v === null || v === undefined) return '';
+    var n = Math.round(v), s = Math.abs(n).toLocaleString('en-US');
+    return (n < 0 ? '−$' : '$') + s;
+  }
+  function usd2(v) {
+    if (v === null || v === undefined) return '';
+    return (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function int(v) { return v === null || v === undefined ? '' : Math.round(v).toLocaleString('en-US'); }
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function date(d) { if (!d) return ''; var a = d.split('-'); return MONTHS[+a[1] - 1] + ' ' + (+a[2]) + ', ' + a[0]; }
+  /** ET ISO (…-04:00) → "Sep 25, 2026 1:45 PM ET". The offset is already ET, so read the wall-clock fields directly. */
+  function stamp(iso) {
+    if (!iso) return '';
+    var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!m) return String(iso);
+    var h = +m[4], ap = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+    return MONTHS[+m[2] - 1] + ' ' + (+m[3]) + ', ' + m[1] + ' ' + h12 + ':' + m[5] + ' ' + ap + ' ET';
+  }
+  function icon(name) { return '<span class="material-symbols-rounded" aria-hidden="true">' + name + '</span>'; }
+
+  function banner(kind, html, id) {
+    var area = document.getElementById('banner-area');
+    if (id) { var old = document.getElementById(id); if (old) old.remove(); }
+    var el = document.createElement('div');
+    el.className = 'banner ' + kind; if (id) el.id = id;
+    el.innerHTML = icon(kind === 'error' ? 'error' : kind === 'warn' ? 'warning' : 'info') + '<div>' + html + '</div>';
+    area.appendChild(el);
+  }
+
+  function selectTab(name) {
+    document.querySelectorAll('.tabs button').forEach(function (b) {
+      var on = b.getAttribute('data-tab') === name;
+      b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+      document.getElementById(b.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  function initTabs(defaultTab) {
+    var btns = Array.prototype.slice.call(document.querySelectorAll('.tabs button'));
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () { selectTab(b.getAttribute('data-tab')); });
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        var n = btns[(i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length]; n.focus(); n.click();
+      });
+    });
+    selectTab(defaultTab);
+  }
+
+  function setHeader(viewer, pulledAt, tieOutOk) {
+    document.getElementById('viewer').textContent = viewer.name + ' · ' + ({ ae: 'AE', ae_leader: 'AE and leadership', leadership: 'Leadership', admin: 'Admin' }[viewer.role] || viewer.role);
+    var s = document.getElementById('data-status');
+    s.innerHTML = 'HubSpot data pulled ' + esc(stamp(pulledAt)) +
+      (tieOutOk === false ? ' <span class="tag danger">' + icon('error') + 'Tie-out mismatch</span>'
+        : tieOutOk === true ? ' <span class="tag jade">' + icon('check_circle') + 'Tied out</span>' : '');
+    if (tieOutOk === false) banner('error', '<strong>Tie-out mismatch.</strong> Closed Won YTD or Gross Open Pipeline did not reconcile to the independent HubSpot check within $0.01. Figures may be incomplete; see Sources &amp; methodology.', 'tieout-banner');
+  }
+
+  return { rpc: rpc, esc: esc, usd0: usd0, usd2: usd2, int: int, date: date, stamp: stamp, icon: icon, banner: banner,
+           initTabs: initTabs, selectTab: selectTab, setHeader: setHeader };
+})();
+
+if (document.fonts && document.fonts.load) {
+  document.fonts.load('18px "Material Symbols Rounded"', 'home').then(function (f) { if (f && f.length) document.documentElement.classList.add('icons-ready'); }).catch(function () {});
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Section 1 (Phase 3) becomes the default tab once it ships.
+  App.initTabs('builder');
+  Builder.init();
+});
+</script>

@@ -412,7 +412,104 @@ var ForecastCore = (function () {
     };
   }
 
+  // ------------------------------------------------------------------ Section 2: Forecast Builder
+  var TAGS = ['commit', 'gut', 'best_case', 'lost', 'none'];
+  var TAG_LABELS = { commit: 'Commit', gut: 'Gut', best_case: 'Best Case', lost: 'Lost', none: 'None' };
+  var FORECAST_TAGS = ['commit', 'gut', 'best_case'];
+
+  function normalizeTag(t) {
+    var s = String(t === null || t === undefined || t === '' ? 'none' : t).toLowerCase();
+    return TAGS.indexOf(s) >= 0 ? s : null;
+  }
+  function tagOf_(tagMap, id) { var t = tagMap && tagMap[id]; return (t && normalizeTag(t.tag)) || 'none'; }
+
+  /**
+   * Summary bar. Honors the nesting rule: Commit = Σ commit; Gut = Commit + Σ gut; Best Case = Gut + Σ best_case.
+   * Computed over ALL of the AE's open deals (not the current filter), so toggling the filter never changes totals.
+   * Deals with no amount count toward tag counts but add $0, and are listed so the AE sees why.
+   */
+  function builderSummary(deals, tagMap, periodEnd) {
+    var byTag = {};
+    TAGS.forEach(function (t) { byTag[t] = { amount: 0, count: 0, nullAmountCount: 0 }; });
+    var outOfPeriod = [], missingAmount = [], missingClose = [];
+    (deals || []).forEach(function (d) {
+      var t = tagOf_(tagMap, d.id), b = byTag[t];
+      b.count++;
+      if (d.amount === null) b.nullAmountCount++; else b.amount += d.amount;
+      if (FORECAST_TAGS.indexOf(t) >= 0) {
+        if (d.amount === null) missingAmount.push(d.id);
+        if (d.closeDate === null) missingClose.push(d.id);
+        else if (d.closeDate > periodEnd) outOfPeriod.push(d.id);
+      }
+    });
+    TAGS.forEach(function (t) { byTag[t].amount = round2(byTag[t].amount); });
+    var c = byTag.commit, g = byTag.gut, b = byTag.best_case;
+    return {
+      cumulative: {
+        commit: { amount: round2(c.amount), count: c.count },
+        gut: { amount: round2(c.amount + g.amount), count: c.count + g.count },
+        best_case: { amount: round2(c.amount + g.amount + b.amount), count: c.count + g.count + b.count }
+      },
+      byTag: byTag,
+      warnings: { outOfPeriodTagged: outOfPeriod, missingAmountTagged: missingAmount, missingCloseDateTagged: missingClose },
+      totalDeals: (deals || []).length
+    };
+  }
+
+  /** Default filter: close date on/before period end (includes past-due). Deals with no close date always show (flagged, never excluded). */
+  function builderFilter(deals, showAll, periodEnd) {
+    return (deals || []).filter(function (d) { return showAll || d.closeDate === null || d.closeDate <= periodEnd; });
+  }
+
+  var SORT_KEYS = ['tag', 'name', 'stage', 'amount', 'units', 'closeDate'];
+  /** Sort by any column. Blanks always sort last in either direction. Ties break on name, then id. */
+  function sortDeals(deals, key, dir, tagMap) {
+    if (SORT_KEYS.indexOf(key) < 0) key = 'closeDate';
+    var sign = dir === 'desc' ? -1 : 1;
+    function val(d) {
+      if (key === 'tag') return TAGS.indexOf(tagOf_(tagMap, d.id));
+      if (key === 'stage') return d.stageOrder === null || d.stageOrder === undefined ? null : d.stageOrder * 100 + (d.pipeline === 'New Logo' ? 0 : 1);
+      if (key === 'name') return (d.name || '').toLowerCase() || null;
+      return d[key] === undefined ? null : d[key];
+    }
+    return (deals || []).slice().sort(function (a, b) {
+      var va = val(a), vb = val(b);
+      if (va === null && vb !== null) return 1;
+      if (vb === null && va !== null) return -1;
+      if (va !== null && vb !== null && va !== vb) return (va < vb ? -1 : 1) * sign;
+      var na = (a.name || '').toLowerCase(), nb = (b.name || '').toLowerCase();
+      if (na !== nb) return na < nb ? -1 : 1;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
+  }
+
+  /** Tags on deals that are no longer in the AE's open pipeline (closed, lost, or reassigned since tagging). */
+  function staleTags(tagMap, deals) {
+    var open = {}; (deals || []).forEach(function (d) { open[d.id] = true; });
+    return Object.keys(tagMap || {}).filter(function (id) { return !open[id] && tagOf_(tagMap, id) !== 'none'; })
+      .map(function (id) { return { dealId: id, tag: tagOf_(tagMap, id), updatedAt: tagMap[id].updatedAt || null }; });
+  }
+
+  /** Server-side guard for a save request: known tags only, deals must be the AE's currently open deals. */
+  function validateTagChanges(changes, openDealIds) {
+    var errors = [], clean = [], allowed = {}, seen = {};
+    (openDealIds || []).forEach(function (id) { allowed[String(id)] = true; });
+    if (!Array.isArray(changes)) return { ok: false, errors: ['changes must be a list'], clean: [] };
+    if (changes.length > 1000) return { ok: false, errors: ['too many changes in one save (max 1000)'], clean: [] };
+    changes.forEach(function (c) {
+      var id = String(c && c.dealId), tag = normalizeTag(c && c.tag);
+      if (!allowed[id]) errors.push('deal ' + id + ' is not one of this AE\'s open deals');
+      else if (tag === null) errors.push('unknown tag "' + (c && c.tag) + '" for deal ' + id);
+      else seen[id] = tag;   // last change for a deal wins
+    });
+    Object.keys(seen).forEach(function (id) { clean.push({ dealId: id, tag: seen[id] }); });
+    return { ok: errors.length === 0, errors: errors, clean: clean };
+  }
+
   return {
+    TAGS: TAGS, TAG_LABELS: TAG_LABELS, FORECAST_TAGS: FORECAST_TAGS, normalizeTag: normalizeTag,
+    builderSummary: builderSummary, builderFilter: builderFilter, sortDeals: sortDeals, staleTags: staleTags,
+    validateTagChanges: validateTagChanges,
     num: num, round2: round2, etOffsetMinutes: etOffsetMinutes, etParts: etParts, etDate: etDate, etIso: etIso,
     etToUtcMs: etToUtcMs, addDays: addDays, fiscalYearOf: fiscalYearOf, periodFor: periodFor,
     buildStageMap: buildStageMap, normalizeOwners: normalizeOwners, resolveViewer: resolveViewer, dealUrl: dealUrl,

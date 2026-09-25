@@ -1,0 +1,189 @@
+<script>
+/* Section 2 — Forecast Builder. Totals come from ForecastCore.builderSummary (same code as the server and tests). */
+var Builder = (function () {
+  'use strict';
+  var C = ForecastCore, A = App;
+  var SWATCH = { commit: 'var(--series-commit)', gut: 'var(--series-gut)', best_case: 'var(--series-best)', lost: 'var(--tag-lost)', none: 'var(--tag-none)' };
+  var SAVE_DEBOUNCE_MS = 700;
+  var st = { data: null, tags: {}, showAll: false, sortKey: 'closeDate', sortDir: 'asc', pending: {}, inflight: null, timer: null, lastSavedAt: null, error: null };
+
+  function $(id) { return document.getElementById(id); }
+
+  function init() {
+    $('b-showall').addEventListener('change', function (e) { st.showAll = e.target.checked; renderTable(); });
+    $('b-ae').addEventListener('change', function (e) {
+      if (hasUnsaved() && !confirm('You have unsaved tag changes. Switch AE anyway?')) { e.target.value = st.data.ae.slug; return; }
+      load(e.target.value);
+    });
+    document.querySelectorAll('#b-table th[data-sort]').forEach(function (th) {
+      th.tabIndex = 0;
+      var go = function () {
+        var k = th.getAttribute('data-sort');
+        if (st.sortKey === k) st.sortDir = st.sortDir === 'asc' ? 'desc' : 'asc'; else { st.sortKey = k; st.sortDir = 'asc'; }
+        renderTable();
+      };
+      th.addEventListener('click', go);
+      th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+    window.addEventListener('beforeunload', function (e) { if (hasUnsaved()) { e.preventDefault(); e.returnValue = ''; } });
+    load(null);
+  }
+
+  function hasUnsaved() { return Object.keys(st.pending).length > 0 || !!st.inflight; }
+
+  function load(slug) {
+    $('b-save').textContent = 'Loading…';
+    return A.rpc('apiGetBuilder', slug).then(function (d) {
+      st.data = d; st.tags = d.tags || {}; st.pending = {}; st.error = null; st.lastSavedAt = d.tagsSavedAt;
+      A.setHeader(d.viewer, d.pulledAt, d.tieOutOk);
+      render();
+    }).catch(function (e) {
+      $('b-save').textContent = '';
+      A.banner('error', A.esc(e.message), 'builder-load-error');
+    });
+  }
+
+  function tagOf(id) { return (st.tags[id] && st.tags[id].tag) || 'none'; }
+
+  function render() {
+    var d = st.data;
+    var sel = $('b-ae');
+    sel.innerHTML = d.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '"' + (a.slug === d.ae.slug ? ' selected' : '') + '>' + A.esc(a.name) + '</option>'; }).join('');
+    sel.disabled = d.aes.length < 2;
+    $('b-showall-label').textContent = 'Show all open deals (default: close date on or before ' + A.date(d.period.end) + ')';
+    renderNotes(); renderSummary(); renderTable(); renderSaveStatus();
+  }
+
+  function renderNotes() {
+    var d = st.data, html = '';
+    if (d.readOnly) {
+      html += '<div class="note">' + A.icon('visibility') + ' Viewing <strong>' + A.esc(d.ae.name) + '</strong>\'s builder, read-only. Tags are set by the AE.' +
+        (d.tagsSavedAt ? ' Last saved ' + A.esc(A.stamp(d.tagsSavedAt)) + '.' : ' No tags saved yet.') + '</div>';
+    }
+    if (d.staleTags && d.staleTags.length) {
+      html += '<div class="note">' + A.icon('history') + ' ' + d.staleTags.length + ' previously tagged deal(s) are no longer open for ' + A.esc(d.ae.name) +
+        ' (closed, lost, or reassigned since tagging). They are not in the totals.<ul>' +
+        d.staleTags.map(function (s) { return '<li><a href="' + A.esc(C.dealUrl(CLIENT_CONFIG.portalId, s.dealId)) + '" target="_blank" rel="noopener">Deal ' + A.esc(s.dealId) + '</a>: was ' + A.esc(C.TAG_LABELS[s.tag]) + '</li>'; }).join('') + '</ul></div>';
+    }
+    $('b-notes').innerHTML = html;
+  }
+
+  function renderSummary() {
+    var d = st.data, s = C.builderSummary(d.deals, st.tags, d.period.end);
+    var tiles = [
+      ['commit', 'Commit', 'Commit-tagged deals', s.cumulative.commit],
+      ['gut', 'Gut', 'Commit + Gut', s.cumulative.gut],
+      ['best_case', 'Best Case', 'Commit + Gut + Best Case', s.cumulative.best_case]
+    ].map(function (t) {
+      return '<div class="tile" style="--swatch:' + SWATCH[t[0]] + '" data-tile="' + t[0] + '">' +
+        '<div class="t-label">' + t[1] + '</div><div class="t-rule">' + t[2] + '</div>' +
+        '<div class="t-value" title="' + A.usd2(t[3].amount) + '">' + A.usd0(t[3].amount) + '</div>' +
+        '<div class="t-count">' + t[3].count + ' deal' + (t[3].count === 1 ? '' : 's') + '</div></div>';
+    }).join('');
+    var subs = C.TAGS.map(function (t) {
+      var b = s.byTag[t];
+      return '<span class="subtotal" data-subtotal="' + t + '"><span class="swatch" style="--swatch:' + SWATCH[t] + '"></span>' + C.TAG_LABELS[t] +
+        ' <span class="s-amt" title="' + A.usd2(b.amount) + '">' + A.usd0(b.amount) + '</span><span class="s-n">' + b.count + ' deal' + (b.count === 1 ? '' : 's') + '</span></span>';
+    }).join('');
+    var w = s.warnings, warn = [];
+    if (w.missingAmountTagged.length) warn.push('<span class="tag sun">' + A.icon('warning') + w.missingAmountTagged.length + ' tagged deal(s) have no amount: counted, but $0 in the totals</span>');
+    if (w.outOfPeriodTagged.length) warn.push('<span class="tag sun">' + A.icon('event_busy') + w.outOfPeriodTagged.length + ' tagged deal(s) close after ' + A.date(d.period.end) + ': included in the totals</span>');
+    if (w.missingCloseDateTagged.length) warn.push('<span class="tag sun">' + A.icon('warning') + w.missingCloseDateTagged.length + ' tagged deal(s) have no close date</span>');
+    $('b-summary').innerHTML = '<div class="tiles">' + tiles + '</div>' +
+      '<div class="subtotals"><span class="st-title">Tagged only</span>' + subs + '</div>' +
+      (warn.length ? '<div class="b-warnings">' + warn.join('') + '</div>' : '');
+  }
+
+  function flagTags(dl) {
+    var out = [];
+    if (dl.flags.indexOf('past_due') >= 0) out.push('<span class="tag coral">' + A.icon('schedule') + 'Past due</span>');
+    if (dl.flags.indexOf('missing_amount') >= 0) out.push('<span class="tag sun">' + A.icon('warning') + 'No amount</span>');
+    if (dl.flags.indexOf('missing_close_date') >= 0) out.push('<span class="tag sun">' + A.icon('warning') + 'No close date</span>');
+    return out;
+  }
+
+  function renderTable() {
+    var d = st.data; if (!d) return;
+    var visible = C.builderFilter(d.deals, st.showAll, d.period.end);
+    var rows = C.sortDeals(visible, st.sortKey, st.sortDir, st.tags);
+    document.querySelectorAll('#b-table th[data-sort]').forEach(function (th) {
+      var k = th.getAttribute('data-sort'), on = k === st.sortKey;
+      if (on) th.setAttribute('aria-sort', st.sortDir === 'asc' ? 'ascending' : 'descending'); else th.removeAttribute('aria-sort');
+      var label = th.getAttribute('data-label') || th.textContent; th.setAttribute('data-label', label);
+      th.innerHTML = A.esc(label) + ' <span class="material-symbols-rounded sort-ind" aria-hidden="true">' + (on ? (st.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more') + '</span>';
+    });
+    $('b-count').textContent = 'Showing ' + rows.length + ' of ' + d.deals.length + ' open deal' + (d.deals.length === 1 ? '' : 's');
+    var tbody = document.querySelector('#b-table tbody');
+    if (!d.deals.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No open deals for ' + A.esc(d.ae.name) + '.</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No open deals close on or before ' + A.date(d.period.end) + '. Turn on "Show all open deals" to see the rest.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(function (dl) {
+      var t = tagOf(dl.id), flags = flagTags(dl);
+      var opts = C.TAGS.map(function (x) { return '<option value="' + x + '"' + (x === t ? ' selected' : '') + '>' + C.TAG_LABELS[x] + '</option>'; }).join('');
+      return '<tr data-deal="' + A.esc(dl.id) + '"' + (flags.length ? ' class="flagged"' : '') + '>' +
+        '<td><div class="tag-cell"><span class="swatch" style="--swatch:' + SWATCH[t] + '"></span>' +
+          '<select data-deal="' + A.esc(dl.id) + '" aria-label="Forecast tag for ' + A.esc(dl.name) + '"' + (d.readOnly ? ' disabled' : '') + '>' + opts + '</select></div></td>' +
+        '<td class="deal-name"><a href="' + A.esc(dl.url) + '" target="_blank" rel="noopener">' + A.esc(dl.name || '(no name)') + ' ' + A.icon('open_in_new') + '</a>' +
+          (flags.length ? '<div class="deal-flags">' + flags.join('') + '</div>' : '') + '</td>' +
+        '<td>' + A.esc(dl.stage) + '<div class="stage-pipe">' + A.esc(dl.pipeline) + '</div></td>' +
+        (dl.amount === null ? '<td class="num blank" aria-label="Amount blank in HubSpot"></td>' : '<td class="num" title="' + A.usd2(dl.amount) + '">' + A.usd0(dl.amount) + '</td>') +
+        (dl.units === null ? '<td class="num blank" aria-label="Units blank in HubSpot"></td>' : '<td class="num">' + A.int(dl.units) + '</td>') +
+        (dl.closeDate === null ? '<td class="blank" aria-label="Close date blank in HubSpot"></td>' : '<td>' + A.date(dl.closeDate) + '</td>') +
+        '</tr>';
+    }).join('');
+    if (!d.readOnly) tbody.querySelectorAll('select[data-deal]').forEach(function (s) { s.addEventListener('change', onTagChange); });
+  }
+
+  function onTagChange(e) {
+    var id = e.target.getAttribute('data-deal'), tag = e.target.value;
+    st.tags[id] = { tag: tag, updatedAt: null, updatedBy: st.data.viewer.email };
+    st.pending[id] = tag;
+    var sw = e.target.parentNode.querySelector('.swatch'); if (sw) sw.style.setProperty('--swatch', SWATCH[tag]);
+    renderSummary();
+    if (st.sortKey === 'tag') renderTable();
+    scheduleSave();
+  }
+
+  function scheduleSave() {
+    clearTimeout(st.timer); st.error = null; renderSaveStatus();
+    st.timer = setTimeout(flush, SAVE_DEBOUNCE_MS);
+  }
+
+  function flush() {
+    if (st.inflight) { st.timer = setTimeout(flush, SAVE_DEBOUNCE_MS); return; }
+    var ids = Object.keys(st.pending); if (!ids.length) return;
+    var changes = ids.map(function (id) { return { dealId: id, tag: st.pending[id] }; });
+    st.pending = {}; st.inflight = changes; renderSaveStatus();
+    var slug = st.data.ae.slug;
+    A.rpc('apiSaveTags', slug, changes).then(function (res) {
+      st.inflight = null;
+      if (!st.data || st.data.ae.slug !== slug) return;
+      // Server state wins, except for changes made while this save was in flight.
+      var merged = res.tags || {};
+      Object.keys(st.pending).forEach(function (id) { merged[id] = { tag: st.pending[id], updatedAt: null }; });
+      st.tags = merged; st.lastSavedAt = res.tagsSavedAt || res.savedAt;
+      renderSaveStatus(); renderSummary();
+    }).catch(function (err) {
+      st.inflight = null;
+      changes.forEach(function (c) { if (!(c.dealId in st.pending)) st.pending[c.dealId] = c.tag; });
+      st.error = err.message || String(err);
+      renderSaveStatus();
+    });
+  }
+
+  function renderSaveStatus() {
+    var el = $('b-save'); if (!st.data) return;
+    el.className = 'save-status';
+    if (st.data.readOnly) { el.innerHTML = A.icon('lock') + ' Read-only'; return; }
+    if (st.error) {
+      el.className = 'save-status error';
+      el.innerHTML = A.icon('error') + ' Not saved: ' + A.esc(st.error) + ' <button type="button" class="btn" id="b-retry">Retry</button>';
+      $('b-retry').addEventListener('click', function () { st.error = null; flush(); });
+      return;
+    }
+    if (st.inflight || Object.keys(st.pending).length) { el.innerHTML = A.icon('sync') + ' Saving…'; return; }
+    el.innerHTML = st.lastSavedAt ? A.icon('cloud_done') + ' Saved ' + A.esc(A.stamp(st.lastSavedAt)) : 'No tags saved yet';
+  }
+
+  return { init: init, _state: st, flush: flush };
+})();
+</script>

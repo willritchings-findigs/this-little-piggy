@@ -51,10 +51,10 @@
   },
   "data_refresh_minutes": 30,
   "series_colors": {
-    "commit": "#212B14",
-    "gut": "#22C386",
-    "best_case": "#ADD2FF",
-    "best_case_stroke": "#4A7FBF",
-    "closed_won_ytd": "#FFCE59"
+    "_about": "Validated 2026-09-25 with the dataviz palette validator (light mode, 4 slots, order commit/gut/best_case/closed_won_ytd): lightness band, chroma floor, CVD separation, normal-vision floor, contrast ≥3:1 all PASS. Derived from Findigs Jade, Key-green, Sky, and Sun families (the 60-step anchors failed contrast/lightness). Used identically in Sections 1-3.",
+    "commit": "#0F7A50",
+    "gut": "#7A9A1F",
+    "best_case": "#3B6FB8",
+    "closed_won_ytd": "#8A5A00"
   }
 }

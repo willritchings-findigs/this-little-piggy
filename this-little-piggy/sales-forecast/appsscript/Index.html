@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+  <?!= include('Styles') ?>
+</head>
+<body>
+  <header class="app-header">
+    <img class="logo" src="https://media.findigs.com/static/logos/findigs-horizontal-light.svg" alt="Findigs" height="28">
+    <span class="app-title">Sales forecast</span>
+    <span class="spacer"></span>
+    <span id="data-status" class="data-status" aria-live="polite"></span>
+    <span id="viewer" class="viewer"></span>
+  </header>
+
+  <div id="banner-area" class="banner-area" aria-live="polite"></div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tabbtn-submission" aria-controls="tab-submission" data-tab="submission">Forecast submission</button>
+    <button role="tab" id="tabbtn-builder" aria-controls="tab-builder" data-tab="builder">Forecast builder</button>
+    <button role="tab" id="tabbtn-trend" aria-controls="tab-trend" data-tab="trend">Forecast trend</button>
+  </nav>
+
+  <main>
+    <section id="tab-submission" role="tabpanel" aria-labelledby="tabbtn-submission" hidden>
+      <div class="placeholder">Forecast submission ships in Phase 3.</div>
+    </section>
+
+    <section id="tab-builder" role="tabpanel" aria-labelledby="tabbtn-builder" hidden>
+      <div class="section-head">
+        <h2>Forecast builder</h2>
+        <p class="sub">Tag open deals to see which ones make up each forecast value. Tags are saved as you go and never change anything in HubSpot.</p>
+      </div>
+
+      <div id="b-summary" class="summary" aria-live="polite"></div>
+
+      <div class="controls">
+        <label class="field">AE
+          <select id="b-ae" aria-label="AE"></select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="b-showall"> <span id="b-showall-label">Show all open deals</span></label>
+        <span id="b-count" class="muted"></span>
+        <span class="spacer"></span>
+        <span id="b-save" class="save-status" aria-live="polite"></span>
+      </div>
+
+      <div id="b-notes"></div>
+
+      <div class="table-wrap">
+        <table class="deals" id="b-table">
+          <caption class="sr-only">Open deals for the selected AE</caption>
+          <thead><tr>
+            <th scope="col" data-sort="tag">Forecast tag</th>
+            <th scope="col" data-sort="name">Deal name</th>
+            <th scope="col" data-sort="stage">Stage</th>
+            <th scope="col" data-sort="amount" class="num">Amount</th>
+            <th scope="col" data-sort="units" class="num">Units</th>
+            <th scope="col" data-sort="closeDate">Close date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-trend" role="tabpanel" aria-labelledby="tabbtn-trend" hidden>
+      <div class="placeholder">Forecast trend ships in Phase 4.</div>
+    </section>
+
+    <details id="methodology" class="meth">
+      <summary>Sources &amp; methodology</summary>
+      <div id="meth-body" class="meth-body">The full sources and methodology panel ships in Phase 4. Current rules: weighted pipeline = amount × pipeline stage probability; Renewal pipeline <code>2559714036</code> excluded; won and lost are determined by stage ID only.</div>
+    </details>
+  </main>
+
+  <?!= include('Client_Config') ?>
+  <?!= include('Client_Core') ?>
+  <?!= include('Client_App') ?>
+  <?!= include('Client_Builder') ?>
+</body>
+</html>
