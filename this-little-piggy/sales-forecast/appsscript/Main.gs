@@ -51,7 +51,7 @@ function targetAe_(v, slug) {
 function apiGetData(forceRefresh) {
   var v = currentViewer_();
   // A forced refresh costs ~40 HubSpot calls (independent tie-out path), so only view-all roles may trigger it.
-  var ds = getDataset_(!!forceRefresh && v.canViewAll);
+  var ds = getDataset_(!!forceRefresh && v.canRefresh);
   var m = ds.metrics, ownRow = v.ae ? m.rows.filter(function (r) { return r.ownerId === String(v.ae.hubspot_owner_id); }) : [];
   var out = {
     viewer: viewerOut_(v),
@@ -67,7 +67,7 @@ function apiGetData(forceRefresh) {
 }
 
 function viewerOut_(v) {
-  return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null };
+  return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, canRefresh: !!v.canRefresh, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null };
 }
 
 /**
@@ -106,36 +106,45 @@ function apiSaveTags(aeSlug, changes) {
 }
 
 /**
- * Section 1 data. AEs get their own row only; ae_leader / leadership / admin get every roster row plus
- * Team Total, the non-roster reconciliation row, and the company total.
+ * Section 1 data. Everyone gets every roster row, Team Total, the non-roster rows, and the company total.
+ * actingSlug: which AE's row is editable. AEs always act for themselves; an admin picks any AE (on behalf).
  */
-function apiGetSubmission() {
+function apiGetSubmission(actingSlug) {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
+  var allowed = ForecastCore.submittableSlugs(v, cfg.roster);
+  var acting = v.ae ? v.ae.slug : (actingSlug || null);
+  if (acting && allowed.indexOf(acting) < 0) throw new Error('You cannot submit for ' + acting + '.');
   var ds = getDataset_(false), m = ds.metrics;
   var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
   var subs = submissionsForWeek_(week);
   var all = m.rows.map(function (r) { return ForecastCore.sectionOneRow(r, subs, week); });
-  var own = v.ae ? all.filter(function (r) { return r.key === v.ae.slug; })[0] : null;
-  var history = v.ae ? subs.filter(function (r) { return r.ae_slug === v.ae.slug && r.forecast_week === week.forecastWeek; })
-    .map(function (r) { return { submittedAt: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case, isOfficial: r.is_official, fileName: r.file_name }; }) : [];
+  var history = acting ? subs.filter(function (r) { return r.ae_slug === acting && r.forecast_week === week.forecastWeek; })
+    .map(function (r) { return { submittedAt: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case, isOfficial: r.is_official, fileName: r.file_name,
+                                 submittedBy: r.submitted_by || r.ae_email, onBehalf: r.on_behalf === true || String(r.on_behalf).toUpperCase() === 'TRUE' }; }) : [];
   return JSON.parse(JSON.stringify({
     viewer: viewerOut_(v), testMode: isTestMode_(),
     week: { forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, previousWeek: week.previousWeek },
     period: ForecastCore.forecastPeriodFor(ForecastCore.etDate(nowMs_()), week.forecastWeek),
     pulledAt: ds.pulledAt, tieOutOk: ds.tieOut ? ds.tieOut.ok : null,
-    rows: v.canViewAll ? all : (own ? [own] : []),
-    editableSlug: v.ae ? v.ae.slug : null,
-    team: v.canViewAll ? { metrics: m.team, forecast: ForecastCore.sectionOneTeam(all) } : null,
-    nonRoster: v.canViewAll ? m.nonRoster : null,
-    company: v.canViewAll ? m.company : null,
+    rows: all,
+    editableSlug: acting, editableSlugs: allowed, onBehalf: !!acting && !(v.ae && v.ae.slug === acting),
+    aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+    team: { metrics: m.team, forecast: ForecastCore.sectionOneTeam(all) },
+    nonRoster: m.nonRoster,
+    company: m.company,
     history: history
   }));
 }
 
-/** Submit the viewer's own forecast. Values are validated again server-side; the client is never trusted. */
-function apiSubmitForecast(values) {
-  var v = currentViewer_();
-  if (!v.ae) throw new Error('Only AEs on the forecast roster can submit a forecast.');
-  var res = writeSubmission_(v, values || {});
-  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission() }));
+/**
+ * Submit a forecast. AEs submit their own; admins may submit on behalf of any AE (aeSlug required).
+ * Values are validated again server-side; the client is never trusted.
+ */
+function apiSubmitForecast(values, aeSlug) {
+  var v = currentViewer_(), allowed = ForecastCore.submittableSlugs(v, FORECAST_CONFIG.roster);
+  if (v.ae && aeSlug && aeSlug !== v.ae.slug) throw new Error('You can only submit your own forecast.');
+  var slug = v.ae ? v.ae.slug : aeSlug;
+  if (!slug || allowed.indexOf(slug) < 0) throw new Error(v.isAdmin ? 'Choose the AE you are submitting for.' : 'Only AEs on the forecast roster, or an admin on their behalf, can submit a forecast.');
+  var res = writeSubmission_(v, values || {}, rosterAeBySlug_(slug));
+  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission(v.ae ? null : slug) }));
 }

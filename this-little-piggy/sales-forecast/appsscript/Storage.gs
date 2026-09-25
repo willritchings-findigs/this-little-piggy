@@ -15,7 +15,7 @@ var ROLLUP_TABS_ = {
   submissions: ['submission_id', 'forecast_week', 'ae_slug', 'ae_name', 'ae_email', 'owner_id', 'submitted_at', 'commit', 'gut',
                 'best_case', 'closed_won_ytd', 'gross_pipeline', 'gross_pipeline_in_period', 'weighted_pipeline', 'weighted_fallback_n',
                 'is_official', 'resubmission_seq', 'builder_saved', 'builder_commit', 'builder_gut_cum', 'builder_best_cum', 'warnings',
-                'tie_out_status', 'schema_version', 'drive_file_id', 'file_name', 'sha256'],
+                'tie_out_status', 'schema_version', 'drive_file_id', 'file_name', 'sha256', 'submitted_by', 'on_behalf'],
   builder_state: ['ae_email', 'deal_id', 'tag', 'updated_at', 'updated_by'],
   build_log: ['logged_at', 'status', 'as_of', 'pulled_at', 'open_count', 'won_ytd_count', 'cw_ytd', 'gross_open', 'weighted_open',
               'weighted_fallback_n', 'tie_out', 'message', 'config_version'],
@@ -62,22 +62,41 @@ function readDataCache_() {
 function getRollup_(fiscalYear) {
   var test = isTestMode_();
   var props = PropertiesService.getScriptProperties(), key = (test ? 'ROLLUP_ID_TEST_' : 'ROLLUP_ID_') + fiscalYear;
-  var id = props.getProperty(key);
-  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) { /* recreate below */ } }
-  var folder = getYearFolder_(fiscalYear), name = 'Sales Forecast Rollup ' + fiscalYear + (test ? ' (TEST)' : '');
-  var it = folder.getFilesByName(name), ss;
-  if (it.hasNext()) ss = SpreadsheetApp.open(it.next());
-  else {
-    ss = SpreadsheetApp.create(name);
-    DriveApp.getFileById(ss.getId()).moveTo(folder);
+  // Re-check tab headers whenever the expected layout changes (e.g. columns appended in a new release).
+  var layout = JSON.stringify(ROLLUP_TABS_), layoutKey = key + '_LAYOUT';
+  var id = props.getProperty(key), ss = null;
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; /* recreate below */ } }
+  if (ss && props.getProperty(layoutKey) === layout) return ss;
+  if (!ss) {
+    var folder = getYearFolder_(fiscalYear), name = 'Sales Forecast Rollup ' + fiscalYear + (test ? ' (TEST)' : '');
+    var it = folder.getFilesByName(name);
+    if (it.hasNext()) ss = SpreadsheetApp.open(it.next());
+    else {
+      ss = SpreadsheetApp.create(name);
+      DriveApp.getFileById(ss.getId()).moveTo(folder);
+    }
   }
   Object.keys(ROLLUP_TABS_).forEach(function (tab) {
     var sh = ss.getSheetByName(tab) || ss.insertSheet(tab);
     if (sh.getLastRow() === 0) { sh.appendRow(ROLLUP_TABS_[tab]); sh.setFrozenRows(1); }
+    else ensureHeader_(sh, ROLLUP_TABS_[tab]);
   });
   var def = ss.getSheetByName('Sheet1'); if (def && ss.getSheets().length > 1) ss.deleteSheet(def);
   props.setProperty(key, ss.getId());
+  props.setProperty(layoutKey, layout);
   return ss;
+}
+
+/**
+ * Columns are only ever appended to the right. If a tab's header is a strict prefix of the expected header,
+ * the missing header cells are added; any other difference stops with an error rather than guessing.
+ */
+function ensureHeader_(sh, expected) {
+  var cur = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].filter(function (x) { return x !== ''; });
+  for (var i = 0; i < cur.length; i++) {
+    if (cur[i] !== expected[i]) throw new Error('Rollup tab "' + sh.getName() + '" header differs at column ' + (i + 1) + ' (' + cur[i] + ' vs ' + expected[i] + '). Fix the Sheet header manually.');
+  }
+  if (cur.length < expected.length) sh.getRange(1, cur.length + 1, 1, expected.length - cur.length).setValues([expected.slice(cur.length)]);
 }
 
 function appendBuildLog_(e) {

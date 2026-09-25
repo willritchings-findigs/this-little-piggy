@@ -96,7 +96,12 @@ test('owners: archived → inactive, no userId → no seat, active record wins',
 });
 test('resolveViewer: roles, case-insensitivity, unknown and blank rejected', () => {
   assert.equal(C.resolveViewer('A.One@Findigs.com', ROSTER).role, 'ae');
-  assert.equal(C.resolveViewer('a.one@findigs.com', ROSTER).canViewAll, false);
+  assert.equal(C.resolveViewer('a.one@findigs.com', ROSTER).canViewAll, true);      // full transparency (2026-09-25)
+  assert.equal(C.resolveViewer('a.one@findigs.com', ROSTER).canRefresh, false);
+  assert.deepEqual(C.submittableSlugs(C.resolveViewer('a.one@findigs.com', ROSTER), ROSTER), ['a-one']);
+  assert.deepEqual(C.submittableSlugs(C.resolveViewer('b.two@findigs.com', ROSTER), ROSTER), ['b-two']);   // ae_leader: own only
+  assert.deepEqual(C.submittableSlugs(C.resolveViewer('lead@findigs.com', ROSTER), ROSTER), []);
+  assert.deepEqual(C.submittableSlugs(C.resolveViewer('adm@findigs.com', ROSTER), ROSTER), ['a-one', 'b-two', 'z-zero']);
   assert.equal(C.resolveViewer('b.two@findigs.com', ROSTER).canViewAll, true);
   assert.equal(C.resolveViewer('b.two@findigs.com', ROSTER).ae.slug, 'b-two');
   assert.equal(C.resolveViewer('lead@findigs.com', ROSTER).role, 'leadership');

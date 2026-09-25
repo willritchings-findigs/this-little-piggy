@@ -69,13 +69,15 @@ test('validateTagChanges: rejects unknown deals and tags; last change per deal w
 function appAs(email, opts) { const app = loadApp({ email, ...opts }); app.ctx.pullData_(); return app; }
 const BEN = 'ben.dewinter@findigs.com';
 
-test('apiGetBuilder: AE gets own deals, editable; defaults to self; cannot open another AE', () => {
+test('apiGetBuilder: AE gets own deals, editable; defaults to self; can view another AE read-only', () => {
   const { call } = appAs(BEN);
   const b = call('apiGetBuilder', null);
   assert.equal(b.ae.slug, 'ben-de-winter'); assert.equal(b.readOnly, false);
-  assert.equal(b.deals.length, 12); assert.deepEqual(b.aes.map((a) => a.slug), ['ben-de-winter']);
+  assert.equal(b.deals.length, 12); assert.equal(b.aes.length, 5);
   assert.equal(b.tagsSavedAt, null);
-  assert.throws(() => call('apiGetBuilder', 'phil-aroian'), /only view your own/);
+  const other = call('apiGetBuilder', 'phil-aroian');
+  assert.equal(other.readOnly, true); assert.equal(other.deals.length, 32);
+  assert.throws(() => call('apiSaveTags', 'phil-aroian', [{ dealId: other.deals[0].id, tag: 'commit' }]), /only edit your own/);
 });
 test('apiGetBuilder: leadership and ae_leader view any AE read-only; Phil edits only his own', () => {
   const lead = appAs('asaf.raz@findigs.com');

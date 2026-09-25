@@ -49,7 +49,7 @@ Test mode sends every write (snapshots, rollup Sheet, builder tags, cache, build
 1. `git pull`, then in `sales-forecast/` run `npm test` and `clasp push` (answer **y** to overwrite the manifest).
 2. Apps Script → Project Settings → Script properties → add `FORECAST_TEST_FOLDER_ID` = `17CBtW0XTcMq-GO3OsXlbRArf9olSHnIg`.
 3. **Deploy → New deployment → Web app.** Set Execute as **Me** and Who has access **Anyone within Findigs**. Copy the web app URL.
-4. Open the URL. You're an admin, so you see every row read-only. To try the AE flow, have one AE open it, or temporarily add yourself as an AE in `config/roster.json` locally (don't commit), then run `npm run build && clasp push`.
+4. Open the URL. As an admin, use **Submit on behalf of** to pick an AE, for example Ben de Winter, and submit for them.
 5. Submit, then resubmit, and confirm that `_test/FY2026` has one `forecast_*.json` per submission and that **Sales Forecast Rollup 2026 (TEST)** has one row per submission with `is_official` TRUE only on the latest.
 6. **Go live:** delete the `FORECAST_TEST_FOLDER_ID` property. No redeploy is needed. Test files stay in `_test` and are never read in live mode.
 

@@ -25,8 +25,9 @@
 | P2-5 | Leadership's default AE is the first alphabetically | `Main.gs targetAe_` |
 | P2-6 | Notion Data Definitions now holds two approved weighting methods, usable interchangeably per tool: Method A "Weighted deal value" / "Weighted open pipeline" (GTM dashboard) and Method B "Weighted deal value (stage probability)" / "Weighted open pipeline (stage probability)" (Sales forecast tool). New "Used by" option: Sales forecast tool | Notion Metric Definitions |
 | P3-1 | Gate passed: live Apps Script run on 2026-09-25 met every criterion | `verification/2026-09-25/live_run_apps_script.md` |
-| P3-2 | An AE sees only their own Section 1 row; ae_leader, leadership, and admin see every row plus Team Total, other owners, and company total (read-only) | `Main.gs apiGetSubmission` |
+| P3-2 | **Full transparency (revised 2026-09-25):** everyone on the roster sees every Section 1 row, Team Total, other owners, the company total, and every AE's builder, all read-only. Edits stay with the owner | `ForecastCore.resolveViewer` |
 | P3-3 | Inputs start empty each week, or show this week's latest submission. Last week's values appear only as the "Last week" reference under each input and are never carried forward | `Client_Submission.html` |
 | P3-4 | Team Total forecast = sum of this week's latest submissions (shows "n of 5 submitted"). WoW is like-for-like: only AEs who submitted both weeks | `ForecastCore.sectionOneTeam` |
 | P3-5 | A submission at exactly 12:00:00 ET belongs to the next week (the cutoff is exclusive) | `ForecastCore.forecastWeekFor` |
 | P3-6 | Test mode: Script Property `FORECAST_TEST_FOLDER_ID` routes all writes to Sales Forecasts/_test | `Storage.gs` |
+| P3-7 | Admins can submit on behalf of any AE, for example one who is traveling or missing the call. The snapshot records `submitted_by_email` and `submitted_on_behalf`, and the rollup adds `submitted_by` and `on_behalf` columns (appended automatically to existing Sheets). ae_leader and leadership cannot submit for others. Builder tags stay AE-only | `Main.gs apiSubmitForecast` |

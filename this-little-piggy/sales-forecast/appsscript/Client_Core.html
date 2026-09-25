@@ -144,16 +144,27 @@ var ForecastCore = (function () {
   }
 
   // ------------------------------------------------------------------ viewer / roster
+  /**
+   * Everyone on the roster sees everything, read-only (decision 2026-09-25: full transparency).
+   * Edits: an AE (incl. ae_leader) edits their own builder and submits their own forecast; an admin can
+   * submit on behalf of any AE (decision 2026-09-25). canRefresh gates the expensive forced HubSpot refresh.
+   */
   function resolveViewer(email, roster) {
     var e = String(email || '').trim().toLowerCase();
     if (!e) return null;
     var ae = (roster.aes || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
-    if (ae) return { email: e, name: ae.name, role: ae.role, ae: ae, canViewAll: ae.role === 'ae_leader', isAdmin: false };
+    if (ae) return { email: e, name: ae.name, role: ae.role, ae: ae, canViewAll: true, canRefresh: ae.role === 'ae_leader', isAdmin: false };
     var lead = (roster.leadership || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
-    if (lead) return { email: e, name: lead.name, role: 'leadership', ae: null, canViewAll: true, isAdmin: false };
+    if (lead) return { email: e, name: lead.name, role: 'leadership', ae: null, canViewAll: true, canRefresh: true, isAdmin: false };
     var adm = (roster.admins || []).filter(function (a) { return a.email.toLowerCase() === e; })[0];
-    if (adm) return { email: e, name: adm.name, role: 'admin', ae: null, canViewAll: true, isAdmin: true };
+    if (adm) return { email: e, name: adm.name, role: 'admin', ae: null, canViewAll: true, canRefresh: true, isAdmin: true };
     return null;
+  }
+  /** Roster AE slugs this viewer may submit a forecast for. */
+  function submittableSlugs(viewer, roster) {
+    if (!viewer) return [];
+    if (viewer.isAdmin) return (roster.aes || []).map(function (a) { return a.slug; });
+    return viewer.ae ? [viewer.ae.slug] : [];
   }
 
   // ------------------------------------------------------------------ deals
@@ -572,7 +583,7 @@ var ForecastCore = (function () {
       forecast_week: a.week.forecastWeek, cutoff_at: a.week.cutoffAt,
       forecast_period: { start: a.period.start, end: a.period.end },
       ae: { name: a.ae.name, email: a.ae.email, hubspot_owner_id: String(a.ae.hubspot_owner_id), slug: a.ae.slug },
-      submitted_at: a.submittedAt, submitted_by_email: a.submittedBy,
+      submitted_at: a.submittedAt, submitted_by_email: a.submittedBy, submitted_on_behalf: !!a.onBehalf,
       forecast: { commit: v.commit, gut: v.gut, best_case: v.best_case },
       validation: { nesting_ok: true, warnings: a.warnings.map(function (w) { return w.code; }) },
       context_at_submission: {
@@ -687,7 +698,7 @@ var ForecastCore = (function () {
     validateTagChanges: validateTagChanges,
     num: num, round2: round2, etOffsetMinutes: etOffsetMinutes, etParts: etParts, etDate: etDate, etIso: etIso,
     etToUtcMs: etToUtcMs, addDays: addDays, fiscalYearOf: fiscalYearOf, periodFor: periodFor,
-    buildStageMap: buildStageMap, normalizeOwners: normalizeOwners, resolveViewer: resolveViewer, dealUrl: dealUrl,
+    buildStageMap: buildStageMap, normalizeOwners: normalizeOwners, resolveViewer: resolveViewer, submittableSlugs: submittableSlugs, dealUrl: dealUrl,
     deriveOpenDeal: deriveOpenDeal, deriveWonDeal: deriveWonDeal, classifyDeals: classifyDeals,
     computeMetrics: computeMetrics, summarizeForTieOut: summarizeForTieOut, tieOut: tieOut, diffDealSets: diffDealSets
   };

@@ -47,8 +47,10 @@ function submissionsForWeek_(week) {
  * Validate → fresh HubSpot figures → build snapshot → (lock) create file, append row, flip is_official.
  * Returns the stored row plus any warnings. Throws with a user-facing message on any blocking error.
  */
-function writeSubmission_(v, rawValues) {
-  var cfg = FORECAST_CONFIG, ae = v.ae;
+function writeSubmission_(v, rawValues, targetAe) {
+  var cfg = FORECAST_CONFIG, ae = targetAe || v.ae;
+  if (!ae) throw new Error('No AE to submit for.');
+  var onBehalf = !(v.ae && v.ae.slug === ae.slug);
   var submittedMs = nowMs_(), submittedAt = ForecastCore.etIso(submittedMs);
   var week = ForecastCore.forecastWeekFor(submittedMs, cfg.forecast.cutoff);
 
@@ -76,7 +78,7 @@ function writeSubmission_(v, rawValues) {
   var ds = readDataCache_();
   var snapshot = ForecastCore.buildSnapshot({
     schemaVersion: cfg.forecast.schema_version, submissionId: Utilities.getUuid(), appVersion: cfg.generatedFrom.gtmDashboardConfigVersion + '/' + cfg.generatedFrom.rosterVersion,
-    week: week, period: period, ae: ae, submittedAt: submittedAt, submittedBy: v.email, values: chk.values, warnings: warnings,
+    week: week, period: period, ae: ae, submittedAt: submittedAt, submittedBy: v.email, onBehalf: onBehalf, values: chk.values, warnings: warnings,
     pulledAt: fig.pulledAt, asOf: fig.asOf, row: row, weightingMethod: cfg.hubspot.weightingMethod,
     tieOutStatus: ds && ds.tieOut ? (ds.tieOut.ok ? 'reconciled' : 'mismatch') : 'not_checked', stageMapSha256: fig.stageMapSha256,
     openDeals: fig.openDeals, tags: tags, tagsSavedAt: tagsSavedAt_(tags)
@@ -100,14 +102,16 @@ function writeSubmission_(v, rawValues) {
       is_official: true, resubmission_seq: existing.length + 1, builder_saved: snapshot.builder.saved,
       builder_commit: s.commit, builder_gut_cum: s.gut_cumulative, builder_best_cum: s.best_case_cumulative,
       warnings: warnings.map(function (w) { return w.code; }).join(','), tie_out_status: snapshot.context_at_submission.tie_out_status,
-      schema_version: snapshot.schema_version, drive_file_id: file.getId(), file_name: name, sha256: sha
+      schema_version: snapshot.schema_version, drive_file_id: file.getId(), file_name: name, sha256: sha,
+      submitted_by: v.email, on_behalf: onBehalf
     };
     sh.appendRow(subCols_().map(function (c) { return rec[c]; }));
     // Supersede earlier submissions for the same AE and week: the only in-place edit this app makes.
     var col = colIndex_('is_official') + 1;
     existing.forEach(function (r) { if (r.is_official) sh.getRange(r._row, col).setValue(false); });
     return { submissionId: snapshot.submission_id, forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, submittedAt: submittedAt,
-             fileName: name, fileId: file.getId(), sha256: sha, resubmissionSeq: existing.length + 1, warnings: warnings, values: chk.values };
+             fileName: name, fileId: file.getId(), sha256: sha, resubmissionSeq: existing.length + 1, warnings: warnings, values: chk.values,
+             aeName: ae.name, onBehalf: onBehalf, submittedBy: v.email };
   } finally { lock.releaseLock(); }
 }
 

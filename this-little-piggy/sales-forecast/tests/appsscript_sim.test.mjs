@@ -142,24 +142,13 @@ test('missing token fails loudly', () => {
   assert.throws(() => ctx.hsGetPipelines_(), /HUBSPOT_TOKEN is not set/);
 });
 
-test('apiGetData: AE sees only own row and own flags; leadership sees all; stranger denied', () => {
+test('apiGetData: everyone on the roster sees all rows and flags (transparency); stranger denied', () => {
   const hub = fakeHubSpot();
   let app = loadApp(hub, { email: 'ben.dewinter@findigs.com' });
   app.ctx.pullData_({ asOf: '2026-09-25' });
   const ae = app.ctx.apiGetData(false);
-  assert.deepEqual(ae.rows.map((r) => r.key), ['ben-de-winter']);
-  assert.equal(ae.team, null); assert.equal(ae.nonRoster, null);
-  assert.ok(ae.flags.every((f) => f.ownerId === '2111244871'));
-
-  app = loadApp(hub, { email: 'brian.korchin@findigs.com' });
-  app.ctx.pullData_({ asOf: '2026-09-25' });
-  const lead = app.ctx.apiGetData(false);
-  assert.equal(lead.rows.length, 5); assert.equal(lead.company.grossOpen.count, 107);
-
-  app = loadApp(hub, { email: 'phil.aroian@findigs.com' });
-  app.ctx.pullData_({ asOf: '2026-09-25' });
-  assert.equal(app.ctx.apiGetData(false).rows.length, 5);   // ae_leader sees all rows
-
+  assert.equal(ae.rows.length, 5); assert.equal(ae.company.grossOpen.count, 107);
+  assert.ok(ae.flags.some((f) => f.ownerId === '686754956'));
   app = loadApp(hub, { email: 'reese.ryan@findigs.com' });
   assert.throws(() => app.ctx.apiGetData(false), /Access denied/);
   app = loadApp(hub, { email: '' });

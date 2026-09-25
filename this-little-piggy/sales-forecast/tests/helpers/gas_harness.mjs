@@ -58,11 +58,14 @@ export function fakeHubSpot({ page = 200, fail429 = 0, dropFromList = null, open
 export class FakeSheet {
   constructor(name, header) { this.name = name; this.rows = header ? [header.slice()] : []; }
   getLastRow() { return this.rows.length; }
+  getLastColumn() { return this.rows.reduce((m, r) => Math.max(m, r.length), 0); }
+  getName() { return this.name; }
   appendRow(r) { this.rows.push(r.map(clean)); }
   getDataRange() { const rows = this.rows; return { getValues: () => rows.map((r) => r.slice()) }; }
   getRange(r, c, nr = 1, nc = 1) {
     const self = this;
-    return { setValue(v) { self.getRange(r, c, 1, 1).setValues([[v]]); }, setValues(vals) {
+    return { getValues() { return Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => ((self.rows[r - 1 + i] || [])[c - 1 + j] ?? ''))); },
+             setValue(v) { self.getRange(r, c, 1, 1).setValues([[v]]); }, setValues(vals) {
       if (vals.length !== nr || vals.some((v) => v.length !== nc)) throw new Error('setValues dimension mismatch');
       for (let i = 0; i < nr; i++) { const row = self.rows[r - 1 + i] || (self.rows[r - 1 + i] = []);
         for (let j = 0; j < nc; j++) row[c - 1 + j] = clean(vals[i][j]); }

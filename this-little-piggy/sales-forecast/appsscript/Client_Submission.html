@@ -9,8 +9,8 @@ var Submission = (function () {
 
   function init() { load(); }
 
-  function load() {
-    return A.rpc('apiGetSubmission').then(function (v) { setView(v); }).catch(function (e) {
+  function load(actingSlug) {
+    return A.rpc('apiGetSubmission', actingSlug || null).then(function (v) { setView(v); }).catch(function (e) {
       A.banner('error', A.esc(e.message), 'submission-load-error');
     });
   }
@@ -92,7 +92,8 @@ var Submission = (function () {
     shown.forEach(function (e) { msgs += '<div class="msg error">' + A.icon('error') + A.esc(e.message) + '</div>'; });
     val.warnings.forEach(function (w) { msgs += '<div class="msg warn">' + A.icon('warning') + A.esc(w.message.replace(' You can still submit.', '')) + ' Your open pipeline closing by ' + A.esc(A.date(st.view.period.end)) + ' is ' + A.usd0(w.pipeline) + '. You can still submit.</div>'; });
     var disabled = !val.ok || st.submitting;
-    return '<tr class="own-actions"><td colspan="10"><div class="actions">' +
+    var behalf = st.view.onBehalf ? '<div class="msg warn">' + A.icon('supervisor_account') + 'You are submitting on behalf of <strong>' + A.esc(ownRow().name) + '</strong>. The snapshot records you (' + A.esc(st.view.viewer.email) + ') as the submitter.</div>' : '';
+    return '<tr class="own-actions"><td colspan="10">' + behalf + '<div class="actions">' +
       '<button type="button" class="btn primary" id="s-submit"' + (disabled ? ' disabled' : '') + '>' + (st.submitting ? 'Submitting…' : (ownRow().status === 'not_submitted' ? 'Submit forecast' : 'Resubmit forecast')) + '</button>' +
       '<span class="muted">Commit ≤ Gut ≤ Best Case. Your latest submission before ' + A.esc(A.stamp(st.view.week.cutoffAt)) + ' is the official number for this week.</span>' +
       '</div>' + msgs + '</td></tr>';
@@ -123,8 +124,10 @@ var Submission = (function () {
   function history() {
     var h = st.view.history || [];
     if (!h.length) return '';
-    return '<div class="note"><strong>Your submissions this week</strong><ul>' + h.map(function (x) {
+    var own = ownRow();
+    return '<div class="note"><strong>' + (st.view.onBehalf ? A.esc(own.name) + '\'s submissions' : 'Your submissions') + ' this week</strong><ul>' + h.map(function (x) {
       return '<li>' + A.esc(A.stamp(x.submittedAt)) + ': Commit ' + A.usd0(x.commit) + ' · Gut ' + A.usd0(x.gut) + ' · Best Case ' + A.usd0(x.best_case) +
+        (x.onBehalf ? ' <span class="muted">submitted by ' + A.esc(x.submittedBy) + ' on their behalf</span>' : '') +
         (x.isOfficial ? ' <span class="tag jade">Current official</span>' : '') + '</li>';
     }).join('') + '</ul></div>';
   }
@@ -134,7 +137,14 @@ var Submission = (function () {
     $('s-week').innerHTML = A.icon('event') + ' Forecast week ending <strong>Fri, ' + A.esc(A.date(v.week.forecastWeek)) + '</strong> · cutoff ' + A.esc(A.stamp(v.week.cutoffAt)) +
       ' · forecast period ' + A.esc(A.date(v.period.start)) + ' to ' + A.esc(A.date(v.period.end)) +
       '<div class="muted">A submission at or after the cutoff counts toward the following week.</div>';
-    $('s-readonly').innerHTML = v.editableSlug ? '' : '<div class="note">' + A.icon('visibility') + ' Read-only view. AEs submit their own forecasts.</div>';
+    var picker = '';
+    if (v.editableSlugs && v.editableSlugs.length > 1) {
+      picker = '<div class="controls"><label class="field">Submit on behalf of <select id="s-acting" aria-label="Submit on behalf of">' +
+        '<option value="">Choose an AE</option>' +
+        v.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '"' + (a.slug === v.editableSlug ? ' selected' : '') + '>' + A.esc(a.name) + '</option>'; }).join('') +
+        '</select></label><span class="muted">Admins can submit for an AE who is traveling or missing the call.</span></div>';
+    }
+    $('s-readonly').innerHTML = picker + (v.editableSlug || picker ? '' : '<div class="note">' + A.icon('visibility') + ' Read-only view. AEs submit their own forecasts.</div>');
     var body = v.rows.map(aeRow).join('') + teamRows();
     document.querySelector('#s-table tbody').innerHTML = body || '<tr><td colspan="10" class="empty">No rows to show.</td></tr>';
     $('s-history').innerHTML = history();
@@ -149,6 +159,7 @@ var Submission = (function () {
       });
     });
     var b = $('s-submit'); if (b) b.addEventListener('click', submit);
+    var p = $('s-acting'); if (p) p.addEventListener('change', function (e) { load(e.target.value || null); });
   }
 
   /** Re-render the editable row on each keystroke without losing the caret. */
@@ -162,10 +173,10 @@ var Submission = (function () {
   function submit() {
     var val = currentValidation(); if (!val || !val.ok || st.submitting) return;
     st.submitting = true; render();
-    A.rpc('apiSubmitForecast', { commit: st.draft.commit, gut: st.draft.gut, best_case: st.draft.best_case }).then(function (res) {
+    A.rpc('apiSubmitForecast', { commit: st.draft.commit, gut: st.draft.gut, best_case: st.draft.best_case }, st.view.editableSlug).then(function (res) {
       st.submitting = false;
       var r = res.result;
-      A.banner('info', '<strong>Forecast submitted</strong> for the week ending ' + A.esc(A.date(r.forecastWeek)) + ' at ' + A.esc(A.stamp(r.submittedAt)) +
+      A.banner('info', '<strong>Forecast submitted</strong>' + (r.onBehalf ? ' for ' + A.esc(r.aeName) + ' (on their behalf)' : '') + ' for the week ending ' + A.esc(A.date(r.forecastWeek)) + ' at ' + A.esc(A.stamp(r.submittedAt)) +
         (r.resubmissionSeq > 1 ? ' (submission ' + r.resubmissionSeq + ' this week; it replaces your earlier one as the official number)' : '') +
         '. Snapshot saved as <code>' + A.esc(r.fileName) + '</code>.' +
         (r.warnings.length ? ' Warnings recorded: ' + r.warnings.map(function (w) { return A.esc(w.message); }).join(' ') : ''), 'submit-result');

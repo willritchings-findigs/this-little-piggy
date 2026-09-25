@@ -114,7 +114,8 @@ test('resubmission before the cutoff: new file, earlier row un-officialed; only 
   assert.equal(snapFiles(a).length, 2);
   assert.ok(snapFiles(a).every((f) => f.writes === 1 && !f.trashed), 'snapshot files never rewritten or trashed');
   const view = a.call('apiGetSubmission');
-  assert.equal(view.rows[0].status, 'resubmitted'); assert.equal(view.rows[0].forecast.commit.current, 10);
+  const ben = view.rows.find((x) => x.key === 'ben-de-winter');
+  assert.equal(ben.status, 'resubmitted'); assert.equal(ben.forecast.commit.current, 10);
   assert.equal(view.history.length, 2);
 });
 
@@ -128,7 +129,7 @@ test('submission after the cutoff counts toward next week and leaves this week i
   assert.deepEqual([rows[1][io], rows[2][io]], [true, true]);   // both official, different weeks
   const view = a.call('apiGetSubmission');                       // now in the week ending 10/09
   assert.equal(view.week.forecastWeek, '2026-10-09');
-  const f = view.rows[0].forecast;
+  const f = view.rows.find((x) => x.key === 'ben-de-winter').forecast;
   assert.deepEqual([f.commit.current, f.commit.lastWeek, f.commit.delta.amount], [5, 1, 4]);
 });
 
@@ -147,17 +148,58 @@ test('Best Case above in-period pipeline: submitted with a warning recorded in s
   assert.deepEqual(JSON.parse(snapFiles(a)[0].body).validation.warnings, ['best_case_exceeds_in_period_pipeline']);
 });
 
-test('permissions: leadership cannot submit; AE sees only own row; leadership sees all + team/non-roster/company', () => {
+test('permissions: everyone sees all rows + totals; leadership cannot submit; AEs and Phil submit only their own', () => {
   const lead = app('brian.korchin@findigs.com');
   assert.throws(() => lead.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }), /Only AEs/);
+  assert.throws(() => lead.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'ben-de-winter'), /Only AEs/);
   const v = lead.call('apiGetSubmission');
-  assert.equal(v.rows.length, 5); assert.equal(v.editableSlug, null);
+  assert.equal(v.rows.length, 5); assert.equal(v.editableSlug, null); assert.deepEqual(v.editableSlugs, []);
   assert.equal(v.nonRoster.owners.length, 3); assert.equal(v.company.closedWonYtd.amount, 7571305.12);
   assert.equal(v.team.metrics.grossOpen.amount, 66909631.13);
-  const ae = app('ian.mclaughlin@findigs.com').call('apiGetSubmission');
-  assert.deepEqual(ae.rows.map((r) => r.key), ['ian-mclaughlin']); assert.equal(ae.team, null); assert.equal(ae.editableSlug, 'ian-mclaughlin');
-  const phil = app('phil.aroian@findigs.com').call('apiGetSubmission');
-  assert.equal(phil.rows.length, 5); assert.equal(phil.editableSlug, 'phil-aroian');
+  const ian = app('ian.mclaughlin@findigs.com');
+  const iv = ian.call('apiGetSubmission');
+  assert.equal(iv.rows.length, 5); assert.equal(iv.team.metrics.grossOpen.amount, 66909631.13); assert.equal(iv.editableSlug, 'ian-mclaughlin');
+  assert.equal(ian.call('apiGetSubmission', 'ben-de-winter').editableSlug, 'ian-mclaughlin');   // AEs always act for themselves
+  assert.throws(() => ian.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'ben-de-winter'), /only submit your own/);
+  const phil = app('phil.aroian@findigs.com');
+  assert.equal(phil.call('apiGetSubmission').editableSlug, 'phil-aroian');
+  assert.throws(() => phil.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'matt-lynch'), /only submit your own/);
+});
+
+test('admin submits on behalf of an AE: snapshot and row record the admin as submitter', () => {
+  const a = app('will.ritchings@findigs.com');
+  const v0 = a.call('apiGetSubmission');
+  assert.equal(v0.editableSlug, null); assert.equal(v0.editableSlugs.length, 5);
+  assert.throws(() => a.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }), /Choose the AE/);
+  assert.equal(a.call('apiGetSubmission', 'matt-lynch').onBehalf, true);
+  const out = a.call('apiSubmitForecast', { commit: 1, gut: 2, best_case: 3 }, 'matt-lynch');
+  assert.deepEqual([out.result.onBehalf, out.result.aeName, out.view.editableSlug], [true, 'Matt Lynch', 'matt-lynch']);
+  const snap = JSON.parse(snapFiles(a)[0].body);
+  assert.deepEqual([snap.ae.slug, snap.submitted_by_email, snap.submitted_on_behalf], ['matt-lynch', 'will.ritchings@findigs.com', true]);
+  assert.match(snapFiles(a)[0].name, /_matt-lynch_/);
+  const rows = a.store.sheets.submissions.rows, rec = Object.fromEntries(rows[0].map((h, i) => [h, rows[1][i]]));
+  assert.deepEqual([rec.ae_slug, rec.ae_email, rec.submitted_by, rec.on_behalf], ['matt-lynch', 'matt.lynch@findigs.com', 'will.ritchings@findigs.com', true]);
+  assert.deepEqual(out.view.history.map((h) => [h.onBehalf, h.submittedBy]), [[true, 'will.ritchings@findigs.com']]);
+  // the AE's own later submission supersedes the admin's
+  a.session.email = 'matt.lynch@findigs.com'; a.setNow('2026-09-29T10:00:00-04:00');
+  const own = a.call('apiSubmitForecast', { commit: 5, gut: 6, best_case: 7 });
+  assert.equal(own.result.onBehalf, false); assert.equal(own.result.resubmissionSeq, 2);
+  const io = rows[0].indexOf('is_official');
+  assert.deepEqual([rows[1][io], rows[2][io]], [false, true]);
+});
+
+test('rollup header migration: new columns are appended; a mismatched header stops with an error', () => {
+  const a = app('ben.dewinter@findigs.com');
+  const expected = JSON.parse(JSON.stringify(a.store.sheets.submissions.rows[0]));
+  const FakeSheet = a.store.sheets.submissions.constructor;
+  const old = new FakeSheet('submissions', expected.slice(0, 27));
+  old.appendRow(Array(27).fill('x'));
+  a.ctx.ensureHeader_(old, expected);
+  const hdr = JSON.parse(JSON.stringify(old.rows[0]));
+  assert.deepEqual(hdr, expected); assert.deepEqual(hdr.slice(-2), ['submitted_by', 'on_behalf']);
+  assert.equal(old.rows[1].length, 27, 'data rows untouched');
+  const bad = new FakeSheet('submissions', ['submission_id', 'WRONG']);
+  assert.throws(() => a.ctx.ensureHeader_(bad, expected), /header differs at column 2/);
 });
 
 test('two AEs submitting in the same week: separate files and rows, each official, team total sums both', () => {

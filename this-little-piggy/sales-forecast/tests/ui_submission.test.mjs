@@ -31,7 +31,11 @@ const fill = async (page, f, v) => { await page.fill(`#s-table input[data-field=
 
 test('AE: nesting rule blocks submit; warning shown but allowed; submit + resubmit update status and last submitted', { skip }, async () => {
   const { page, errors } = await open('ben.dewinter@findigs.com');
-  assert.equal(await page.$$eval('#s-table tbody tr[data-ae]', (r) => r.length), 1);        // AE sees own row only
+  assert.equal(await page.$$eval('#s-table tbody tr[data-ae]', (r) => r.length), 5);        // everyone sees every row
+  assert.equal(await page.$$eval('#s-table input', (i) => i.length), 3);                    // but edits only their own
+  assert.equal(await page.$$eval('#s-table tr[data-ae="ben-de-winter"] input', (i) => i.length), 3);
+  assert.match(await page.textContent('#s-table'), /Team Total/);
+  assert.equal(await page.$('#s-acting'), null);
   assert.match(await page.textContent('tr[data-ae="ben-de-winter"]'), /Not submitted/);
   assert.match(await page.textContent('#s-week'), /Oct 2, 2026/);
   assert.equal(await page.isDisabled('#s-submit'), true);                                   // empty
@@ -75,6 +79,7 @@ test('Leadership: all rows read-only, Team Total, other owners, company total th
   assert.equal(await page.$('#s-submit'), null);
   const total = await page.textContent('#s-table tr.total');
   assert.match(total, /Team Total/); assert.match(total, /1 of 5 AEs submitted/);             // Ben from the previous test
+  assert.equal(await page.$('#s-acting'), null);                                             // leadership cannot submit
   assert.match(await page.textContent('#s-table'), /Clay Stapleford/);
   assert.match(await page.textContent('#s-table'), /\$7,571,305/);                           // company CW YTD
   assert.match(await page.textContent('tr[data-ae="phil-aroian"]'), /Not submitted/);
@@ -100,5 +105,24 @@ test('Server-side rejection is shown and nothing changes', { skip }, async () =>
   assert.match(await page.textContent('#submit-result'), /Not submitted.*Another submission/s);
   assert.match(await page.textContent('tr[data-ae="matt-lynch"]'), /Not submitted/);
   assert.equal(await page.isDisabled('#s-submit'), false);
+  await page.close();
+});
+
+test('Admin: submits on behalf of an AE via the picker; attribution shown', { skip }, async () => {
+  const { page, errors } = await open('will.ritchings@findigs.com');
+  assert.equal(await page.$$eval('#s-table input', (i) => i.length), 0);
+  assert.equal(await page.$$eval('#s-acting option', (o) => o.length), 6);
+  await page.selectOption('#s-acting', 'ian-mclaughlin');
+  await page.waitForSelector('#s-table tr[data-ae="ian-mclaughlin"] input');
+  assert.match(await page.textContent('tr.own-actions'), /on behalf of Ian McLaughlin/);
+  await fill(page, 'commit', '10000'); await fill(page, 'gut', '20000'); await fill(page, 'best_case', '30000');
+  await page.click('#s-submit');
+  await page.waitForSelector('#submit-result');
+  assert.match(await page.textContent('#submit-result'), /for Ian McLaughlin \(on their behalf\)/);
+  assert.match(await page.textContent('tr[data-ae="ian-mclaughlin"]'), /Submitted this week/);
+  assert.match(await page.textContent('#s-history'), /submitted by will\.ritchings@findigs\.com on their behalf/);
+  assert.equal(await page.inputValue('#s-acting'), 'ian-mclaughlin');
+  await page.screenshot({ path: join(SHOTS, 'phase3_submission_admin_on_behalf.png'), fullPage: true });
+  assert.deepEqual(errors, []);
   await page.close();
 });
