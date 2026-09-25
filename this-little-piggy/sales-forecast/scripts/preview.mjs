@@ -6,6 +6,7 @@
  *
  *   node scripts/preview.mjs [port]        then open http://localhost:<port>/?as=ben.dewinter@findigs.com
  * `as` sets the signed-in Google identity (defaults to the first roster AE).
+ *   node scripts/preview.mjs 8787 --synthetic   test mode + four weeks of synthetic history (Section 3)
  */
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
@@ -31,12 +32,13 @@ const SHIM = (as) => `<script>
 })();
 </script>`;
 
-export function startPreview({ port = 0, delayMs = 0, defaultAs = 'ben.dewinter@findigs.com', appOpts = {} } = {}) {
-  const app = loadApp({ email: defaultAs, ...appOpts });
+export function startPreview({ port = 0, delayMs = 0, defaultAs = 'ben.dewinter@findigs.com', appOpts = {}, synthetic = false } = {}) {
+  const app = loadApp({ email: defaultAs, ...(synthetic ? { testFolderId: 'TEST-FOLDER' } : {}), ...appOpts });
   // The clock starts at appOpts.now (if given) and then ticks in real time, like production.
   const base = app.store.clock, started = Date.now();
   app.ctx.nowMs_ = () => base + (Date.now() - started);
   app.ctx.pullData_();
+  if (synthetic) app.ctx.seedSyntheticSnapshots();
   const server = http.createServer((req, res) => {
     const u = new URL(req.url, 'http://x');
     const as = u.searchParams.get('as') || defaultAs;
@@ -63,6 +65,6 @@ export function startPreview({ port = 0, delayMs = 0, defaultAs = 'ben.dewinter@
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { url } = await startPreview({ port: Number(process.argv[2] || 8787) });
+  const { url } = await startPreview({ port: Number(process.argv[2] || 8787), synthetic: process.argv.includes('--synthetic') });
   console.log(`preview at ${url}/?as=ben.dewinter@findigs.com  (try ?as=brian.korchin@findigs.com)`);
 }

@@ -1,6 +1,6 @@
 # Sales Forecast (weekly AE call/commit tool)
 
-Google Apps Script web app for the Friday AE forecast and the Monday Revenue Leadership review. Architecture, schema, and decisions: `docs/PHASE0_PROPOSAL.md`. The full deployment, roster maintenance, and year-rollover guide will be written in Phase 5. This file currently covers only the Phase 1 data layer.
+Google Apps Script web app for the Friday AE forecast and the Monday Revenue Leadership review. Architecture, schema, and decisions: `docs/PHASE0_PROPOSAL.md`. The full deployment, roster maintenance, and year-rollover guide will be written in Phase 5. This file currently covers local checks and the admin trial steps for Phases 1, 3, and 4.
 
 ## Layout
 ```
@@ -9,8 +9,11 @@ core/forecast_core.js                      all business logic (Node-tested, copi
 appsscript/                                clasp project root
   Generated_Config.gs, Generated_Core.gs   GENERATED — never edit; run `npm run build`
   Client_Core.html, Client_Config.html     GENERATED — browser copies of core + safe config subset (no roster)
-  HubSpot.gs  Data.gs  Storage.gs  BuilderState.gs  Main.gs      server
-  Index.html  Styles.html  Client_App.html  Client_Builder.html   UI (HtmlService)
+  Client_ChartLoader.html, Vendor_ChartJs.html  GENERATED — Chart.js 4.4.4 CDN tag (SRI) + bundled fallback copy
+  HubSpot.gs  Data.gs  Storage.gs  BuilderState.gs  Snapshots.gs  Trend.gs  Synthetic.gs  Main.gs   server
+  Index.html  Styles.html  Client_App.html  Client_Builder.html  Client_Submission.html
+  Client_Trend.html  Client_Methodology.html                             UI (HtmlService)
+vendor/chart.umd.js                        Chart.js 4.4.4 (MIT, CHARTJS_LICENSE.md), byte-identical to the jsDelivr file
 scripts/build.mjs                          gtm-dashboard/config.json + config/*.json → Generated_Config.gs
 scripts/verify_phase1.mjs                  live-pull tie-out against reporting-API controls
 scripts/preview.mjs                        local preview: real .gs + UI, fake HubSpot, in-memory Sheets
@@ -24,6 +27,7 @@ HubSpot definitions (pipelines, stage IDs, fields, weighting, tolerance) come **
 ```
 npm test              # build --check + all tests (UI tests need global Playwright; they skip otherwise)
 npm run preview       # http://127.0.0.1:8787/?as=ben.dewinter@findigs.com  (try ?as=brian.korchin@findigs.com)
+node scripts/preview.mjs 8787 --synthetic   # test mode with four weeks of synthetic history for Section 3
 npm run verify:phase1 # re-runs the 2026-09-25 tie-out from verification/
 ```
 
@@ -54,3 +58,12 @@ Test mode sends every write (snapshots, rollup Sheet, builder tags, cache, build
 6. **Go live:** delete the `FORECAST_TEST_FOLDER_ID` property. No redeploy is needed. Test files stay in `_test` and are never read in live mode.
 
 Admin function: `verifySnapshots` (run from the editor) re-hashes every snapshot in the rollup and lists any file that changed or is missing.
+
+## Phase 4 trend check in test mode (admin)
+Section 3 needs history. `seedSyntheticSnapshots` writes four closed weeks of synthetic official submissions to the **test** folder and TEST rollup only. It refuses to run without `FORECAST_TEST_FOLDER_ID`, refuses to run twice, and skips any AE/week that already has a real test submission (for example, the Phase 3 trial rows). Every synthetic file is named `forecast_synthetic_*.json`, and every synthetic row has a `submission_id` starting with `synthetic-`.
+1. `git pull`, then `npm test` and `clasp push`. Keep the `FORECAST_TEST_FOLDER_ID` property from Phase 3.
+2. In the editor, select `seedSyntheticSnapshots` and click **Run**. The log lists the weeks, the snapshot count, and any skipped AE/weeks.
+3. Open the web app → **Forecast trend**. Built-in scenarios: Spencer misses week 2 (gap marked "Not submitted"), Ian resubmits in weeks 3 and 4 (turn on **Show resubmissions**), Ben saves no builder tags in week 3 (the drill-down refuses to infer movement), and Matt's week 4 deliberately does not reconcile (flagged red).
+4. Click any AE point, or **Deal movement** in a table, to open the drill-down. Open **Sources & methodology** at the bottom.
+5. **Before go-live:** the synthetic rows live only in the TEST rollup, and deleting the property stops the app from reading it. Nothing in production needs cleaning.
+

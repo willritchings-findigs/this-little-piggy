@@ -89,12 +89,46 @@
     </section>
 
     <section id="tab-trend" role="tabpanel" aria-labelledby="tabbtn-trend" hidden>
-      <div class="placeholder">Forecast trend ships in Phase 4.</div>
+      <div class="section-head">
+        <h2>Forecast trend</h2>
+        <p class="sub">How each official Friday forecast has moved week over week. Only the last submission before each cutoff is plotted; a missed week is a gap, never zero.</p>
+      </div>
+      <div id="t-notes"></div>
+      <div class="controls" id="t-controls">
+        <div class="seg" role="group" aria-label="Values">
+          <button type="button" data-view="implied_landing">Implied landing</button>
+          <button type="button" data-view="incremental">Incremental</button>
+        </div>
+        <label class="field">AE
+          <select id="t-ae" aria-label="AE filter"></select>
+        </label>
+        <div class="seg" role="group" aria-label="Y-axis for AE charts">
+          <button type="button" data-axis="shared">Shared axis</button>
+          <button type="button" data-axis="independent">Independent axes</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="t-overlay"> Show resubmissions</label>
+      </div>
+      <div id="t-legend" class="legend" aria-hidden="true"></div>
+      <div id="t-team"></div>
+      <div id="t-grid" class="multiples"></div>
+      <div id="t-drill" class="drill" hidden tabindex="-1" aria-live="polite"></div>
+      <div class="card" id="t-change-card">
+        <div class="card-head">
+          <h3>Week-over-week change</h3>
+          <label class="field">Week
+            <select id="t-week" aria-label="Report week"></select>
+          </label>
+          <span id="t-change-note" class="muted"></span>
+        </div>
+        <div class="table-wrap wide">
+          <table class="deals change" id="t-change"><caption class="sr-only">Week-over-week change by AE</caption></table>
+        </div>
+      </div>
     </section>
 
     <details id="methodology" class="meth">
       <summary>Sources &amp; methodology</summary>
-      <div id="meth-body" class="meth-body">The full sources and methodology panel ships in Phase 4. Current rules: weighted pipeline = amount × pipeline stage probability; Renewal pipeline <code>2559714036</code> excluded; won and lost are determined by stage ID only.</div>
+      <div id="meth-body" class="meth-body">Loading…</div>
     </details>
   </main>
 
@@ -103,5 +137,8 @@
   <?!= include('Client_App') ?>
   <?!= include('Client_Builder') ?>
   <?!= include('Client_Submission') ?>
+  <?!= include('Client_ChartLoader') ?>
+  <?!= include('Client_Trend') ?>
+  <?!= include('Client_Methodology') ?>
 </body>
 </html>

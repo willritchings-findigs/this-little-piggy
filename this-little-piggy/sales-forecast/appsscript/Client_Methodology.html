@@ -1,0 +1,117 @@
+<script>
+/* Sources & methodology panel: collapsed by default; loads apiGetMethodology the first time it is opened. */
+var Methodology = (function () {
+  'use strict';
+  var A = App, CFG = CLIENT_CONFIG, loaded = false;
+  var LABEL = { commit: 'Commit', gut: 'Gut', best_case: 'Best Case' };
+
+  function init() {
+    var d = document.getElementById('methodology');
+    d.addEventListener('toggle', function () { if (d.open && !loaded) { loaded = true; load(); } });
+  }
+
+  function load() {
+    var body = document.getElementById('meth-body');
+    body.innerHTML = 'Loading…';
+    A.rpc('apiGetMethodology').then(function (m) { body.innerHTML = render(m); })
+      .catch(function (e) { loaded = false; body.innerHTML = '<div class="note error">' + A.icon('error') + ' ' + A.esc(e.message) + '</div>'; });
+  }
+
+  var code = function (s) { return '<code>' + A.esc(s) + '</code>'; };
+  function sec(title, html) { return '<section class="meth-sec"><h4>' + A.esc(title) + '</h4>' + html + '</section>'; }
+  function dl(pairs) { return '<dl class="meth-dl">' + pairs.map(function (p) { return '<dt>' + A.esc(p[0]) + '</dt><dd>' + p[1] + '</dd>'; }).join('') + '</dl>'; }
+
+  function render(m) {
+    var h = '';
+    var t = m.tieOut;
+    h += sec('Data source', dl([
+      ['System', 'HubSpot portal ' + code(m.source.portalId) + ', read-only (no deal or property writes)'],
+      ['APIs', m.source.apis.map(A.esc).join('<br>')],
+      ['Data pulled', A.esc(A.stamp(m.pulledAt)) + ' · refreshed every ' + A.esc(m.refreshMinutes) + ' minutes; each submission re-pulls its AE\'s figures'],
+      ['Closed Won YTD window', A.esc(A.date(m.period.fyStart)) + ' to ' + A.esc(A.date(m.asOf)) + ' (ET)'],
+      ['Tie-out', t ? (t.ok ? '<span class="tag jade">Tied out</span> ' : '<span class="tag danger">Mismatch</span> ') + 'Closed Won YTD and Gross Open Pipeline vs an independent HubSpot Objects list query, tolerance $' + A.esc(t.tolerance.toFixed(2)) + (t.mismatches ? ' · ' + t.mismatches + ' mismatch(es)' : '') : 'Not run']
+    ]));
+
+    h += sec('Objects and fields', dl([
+      ['Object', 'Deals'],
+      ['Dollar field', code(m.fields.bookings_amount) + ' (bookings amount). ACV fields ' + code('hs_acv') + ' and ' + code('acv__c') + ' are never read.'],
+      ['Not used', Object.keys(m.notUsed).map(function (k) { return code(k) + ' ' + A.esc(m.notUsed[k]); }).join('<br>')],
+      ['Owner', code(m.fields.owner)],
+      ['Units', code(m.fields.units)],
+      ['Close date', code(m.fields.close_date) + ' (read as a date in America/New_York)'],
+      ['Stage probability', code(m.fields.stage_probability) + ' on the deal is pulled for reference; weighting uses the pipeline stage probability'],
+      ['Stored weighted amount', code(m.fields.weighted_stored) + ' ' + A.esc(m.weighting.reference)],
+      ['Won / lost', A.esc(m.stageRule)]
+    ]));
+
+    h += sec('Pipelines and stages', '<table class="deals compact"><thead><tr><th scope="col">Pipeline</th><th scope="col">ID</th><th scope="col">Scope</th></tr></thead><tbody>' +
+      m.pipelines.map(function (p) { return '<tr><td>' + A.esc(p.label) + '</td><td>' + code(p.id) + '</td><td>' + (p.inScope ? 'Included' : '<strong>Excluded</strong>' + (p.id === '2559714036' ? ' (Renewal)' : '')) + '</td></tr>'; }).join('') +
+      '</tbody></table>' +
+      '<table class="deals compact"><thead><tr><th scope="col">Pipeline</th><th scope="col">Stage</th><th scope="col">Stage ID</th><th scope="col" class="num">Probability</th><th scope="col">Class</th></tr></thead><tbody>' +
+      m.stages.map(function (s) {
+        return '<tr><td>' + A.esc(s.pipelineLabel) + '</td><td>' + A.esc(s.label) + '</td><td>' + code(s.id) + '</td><td class="num">' + (s.probability === null ? '' : Math.round(s.probability * 100) + '%') + '</td><td>' +
+          (m.wonStageIds.indexOf(s.id) >= 0 ? 'Closed won' : m.lostStageIds.indexOf(s.id) >= 0 ? 'Closed lost' : 'Open') + '</td></tr>';
+      }).join('') + '</tbody></table>');
+
+    var w = m.weighting;
+    h += sec('Weighted pipeline', dl([
+      ['Method', A.esc(w.formula)],
+      ['Coverage', A.int(w.stageWeightedCount) + ' open deals stage-weighted · ' + A.int(w.unavailableCount) + ' without a usable stage probability (shown blank, not imputed)'],
+      ['Total', A.usd2(w.weightedTotal)],
+      ['HubSpot stored value', A.int(w.hubspotStoredCount) + ' deals have ' + code(m.fields.weighted_stored) + ' populated, totaling ' + A.usd2(w.hubspotStoredAmount) + '. Reference only.'],
+      ['Definition', A.esc(w.notion)]
+    ]));
+
+    var d = m.definitions;
+    h += sec('Forecast definitions', dl(['commit', 'gut', 'best_case'].map(function (k) {
+      return [d[k].label, A.esc(d[k].confidence) + (d[k].note ? '<div class="muted">' + A.esc(d[k].note) + '</div>' : '')];
+    }).concat([['Nesting rule', A.esc(d.nesting_rule)], ['Incremental', A.esc(d.incremental)],
+               ['Implied landing', 'Closed Won YTD at the time of the snapshot + the forecast value']])));
+
+    var c = m.cutoff;
+    h += sec('Cutoff and official submissions', dl([
+      ['Weekly cutoff', A.esc(c.weekday) + ' ' + A.esc(c.time_et) + ' ET (America/New_York, DST aware)'],
+      ['Late submissions', A.esc(c.late_rule_note)],
+      ['Resubmissions', 'Allowed until the cutoff. The last submission before the cutoff is official; earlier ones are kept and marked superseded.'],
+      ['Holidays', A.esc(c.holiday_note)]
+    ]));
+
+    var st = m.storage;
+    h += sec('Snapshots', dl([
+      ['Location', m.testMode ? '<span class="tag sun">Test mode</span> test folder ' + code(st.testFolderId) : 'Shared drive folder ' + code(st.productionFolderId || 'not configured')],
+      ['File name', code(st.snapshotPattern)],
+      ['Rollup', A.esc(st.rollup) + (m.testMode ? ' (TEST copy)' : '') + ', one row per submission with ' + code('is_official')],
+      ['Integrity', A.esc(st.immutable)]
+    ]));
+
+    h += sec('Forecast trend rules', '<ul>' + [
+      'Plots official submissions only: one point per AE per Friday.',
+      'A week with no official submission is a gap marked "Not submitted". It is never plotted as zero and the prior value is never carried forward.',
+      'Team = sum of the AEs who submitted that week; partial weeks are labeled with coverage. Team week-over-week change is shown only when every AE submitted both weeks.',
+      'Change table: Team Δ uses only AEs who submitted both weeks (like for like). Changes beyond ±' + Math.round(CFG.section3.delta_threshold_pct * 100) + '% are highlighted; a change from $0 is always highlighted.',
+      'Deal movement compares the builder tags saved in the two official snapshots. Commit includes Commit deals; Gut includes Commit and Gut; Best Case includes all three. Any part of the submitted change that tag movement does not explain is shown as unexplained.',
+      'If either week has no saved builder tags, deal movement is not inferred.',
+      'Covers the current fiscal year (calendar year).'
+    ].map(function (x) { return '<li>' + A.esc(x) + '</li>'; }).join('') + '</ul>');
+
+    var flags = m.flags;
+    h += sec('Known data quality caveats', (flags.length ? '<ul>' + flags.map(function (f) {
+      return '<li><span class="tag ' + (f.severity === 'high' ? 'coral' : f.severity === 'medium' ? 'sun' : 'neutral') + '">' + A.esc(f.severity.charAt(0).toUpperCase() + f.severity.slice(1)) + '</span> ' + A.esc(f.message) +
+        (f.amount ? ' (' + A.usd0(f.amount) + ')' : '') + '</li>';
+    }).join('') + '</ul>' : '<p>No data quality flags on the latest pull.</p>') +
+      (m.nonRoster.length ? '<p><strong>Owners not on the AE roster</strong> (in company totals, not in any AE row):</p><ul>' +
+        m.nonRoster.map(function (o) { return '<li>' + A.esc(o.name) + ': ' + A.esc(o.reason) + (o.status ? ' <span class="muted">(' + A.esc(o.status) + ')</span>' : '') + '</li>'; }).join('') + '</ul>' : '') +
+      '<p>Blank or null fields are shown blank and flagged; no values are imputed.</p>');
+
+    h += sec('Build', dl([
+      ['Config', 'gtm-dashboard config ' + code(m.config.gtmDashboardConfigVersion) + ' (sha256 ' + code(String(m.config.gtmDashboardConfigSha256).slice(0, 12)) + '…), roster ' + code(m.config.rosterVersion) + ', forecast settings ' + code(m.config.forecastVersion)],
+      ['Charts', 'Chart.js ' + A.esc(CFG.chartJs.version) + (window.__chartSource ? ' (' + (window.__chartSource === 'cdn' ? 'jsDelivr, SRI-verified' : 'bundled copy; CDN unavailable') + ')' : '')]
+    ]));
+    return h;
+  }
+
+  return { init: init };
+})();
+
+document.addEventListener('DOMContentLoaded', function () { Methodology.init(); });
+</script>

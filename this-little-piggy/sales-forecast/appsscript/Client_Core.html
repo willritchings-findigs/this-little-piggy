@@ -689,7 +689,226 @@ var ForecastCore = (function () {
     return t;
   }
 
+  // ------------------------------------------------------------------ Section 3: trend, change table, movement
+  var VALUE_KEYS = ['commit', 'gut', 'best_case'];
+
+  /** Every Friday from the first to the last week, inclusive (so a missing week is an explicit gap). */
+  function weekAxis(firstWeek, lastWeek) {
+    var out = [], w = firstWeek;
+    while (w <= lastWeek && out.length < 60) { out.push(w); w = addDays(w, 7); }
+    return out;
+  }
+
+  /**
+   * Trend series from rollup rows (one per submission).
+   * Official points only; a week without an official submission is null (a gap), never zero, never carried forward.
+   * mode 'implied_landing' adds the snapshot's own Closed Won YTD to each value; 'incremental' plots raw values.
+   * Team = sum over AEs who submitted that week, with coverage reported (n of N) so partial weeks are visible.
+   */
+  function trendSeries(rows, aes, opts) {
+    opts = opts || {};
+    var mode = opts.mode || 'implied_landing';
+    var official = rows.filter(function (r) { return r.is_official; });
+    var weeks = official.map(function (r) { return r.forecast_week; }).sort();
+    if (opts.throughWeek && weeks.length && opts.throughWeek > weeks[weeks.length - 1]) weeks.push(opts.throughWeek);
+    var axis = weeks.length ? weekAxis(weeks[0], weeks[weeks.length - 1]) : [];
+    function val(r, k) { if (!r) return null; var cw = r.closed_won_ytd || 0; return k === 'closed_won_ytd' ? cw : (mode === 'implied_landing' ? round2(cw + r[k]) : r[k]); }
+    var byAe = {};
+    aes.forEach(function (a) {
+      var pts = axis.map(function (w, i) {
+        var off = official.filter(function (r) { return r.ae_slug === a.slug && r.forecast_week === w; })[0] || null;
+        var all = rows.filter(function (r) { return r.ae_slug === a.slug && r.forecast_week === w; });
+        var p = { week: w, submitted: !!off, submittedAt: off ? off.submitted_at : null, submissions: all.length, resubmissions: Math.max(0, all.length - 1),
+                  overlay: all.filter(function (r) { return !r.is_official; }).map(function (r) {
+                    var o = { submittedAt: r.submitted_at }; VALUE_KEYS.forEach(function (k) { o[k] = val(r, k); }); return o; }) };
+        VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { p[k] = val(off, k); });
+        return p;
+      });
+      pts.forEach(function (p, i) {
+        var prev = i > 0 ? pts[i - 1] : null;
+        p.wow = {};
+        VALUE_KEYS.forEach(function (k) { p.wow[k] = prev && p[k] !== null && prev[k] !== null ? round2(p[k] - prev[k]) : null; });
+      });
+      byAe[a.slug] = pts;
+    });
+    var team = axis.map(function (w, i) {
+      var p = { week: w, coverage: 0, aeCount: aes.length, submissions: 0, resubmissions: 0 };
+      VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { p[k] = 0; });
+      aes.forEach(function (a) {
+        var x = byAe[a.slug][i];
+        p.submissions += x.submissions; p.resubmissions += x.resubmissions;
+        if (x.submitted) { p.coverage++; VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { p[k] += x[k]; }); }
+      });
+      if (!p.coverage) VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { p[k] = null; });
+      else VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { p[k] = round2(p[k]); });
+      p.submitted = p.coverage > 0; p.complete = p.coverage === aes.length;
+      return p;
+    });
+    team.forEach(function (p, i) {
+      var prev = i > 0 ? team[i - 1] : null; p.wow = {};
+      VALUE_KEYS.forEach(function (k) { p.wow[k] = prev && p[k] !== null && prev[k] !== null && p.complete && prev.complete ? round2(p[k] - prev[k]) : null; });
+    });
+    var weeksWithData = axis.filter(function (w, i) { return team[i].submitted; }).length;
+    var max = 0;
+    Object.keys(byAe).forEach(function (s) { byAe[s].forEach(function (p) { VALUE_KEYS.concat(['closed_won_ytd']).forEach(function (k) { if (p[k] !== null && p[k] > max) max = p[k]; }); }); });
+    return { mode: mode, weeks: axis, byAe: byAe, team: team, weeksWithData: weeksWithData, sharedAeMax: max,
+             trendAvailable: weeksWithData >= 2 };
+  }
+
+  /**
+   * Change table for a report week vs the week before (official submissions only).
+   * Highlight when |Δ%| exceeds the threshold, or when the prior value was 0 and the current one is not.
+   * Team uses like-for-like AEs (both weeks) for its deltas, like Section 1.
+   */
+  function changeTable(rows, aes, reportWeek, threshold) {
+    var prevWeek = addDays(reportWeek, -7);
+    var off = function (slug, w) { return rows.filter(function (r) { return r.is_official && r.ae_slug === slug && r.forecast_week === w; })[0] || null; };
+    function cells(cur, prev) {
+      var o = {};
+      VALUE_KEYS.forEach(function (k) {
+        var c = cur ? cur[k] : null, p = prev ? prev[k] : null;
+        var d = c !== null && p !== null ? round2(c - p) : null, pct = d !== null && p !== 0 ? d / p : null;
+        o[k] = { current: c, prior: p, delta: d, pct: pct,
+                 highlight: d !== null && ((pct !== null && Math.abs(pct) > threshold + 1e-12) || (p === 0 && c !== 0)) };
+      });
+      return o;
+    }
+    var aeRows = aes.map(function (a) {
+      var cur = off(a.slug, reportWeek), prev = off(a.slug, prevWeek);
+      return { key: a.slug, name: a.name, submittedCurrent: !!cur, submittedPrior: !!prev, values: cells(cur, prev) };
+    });
+    var both = aeRows.filter(function (r) { return r.submittedCurrent && r.submittedPrior; });
+    var sum = function (list, which, k) { return list.length ? round2(list.reduce(function (s, r) { return s + r.values[k][which]; }, 0)) : null; };
+    var teamVals = {};
+    VALUE_KEYS.forEach(function (k) {
+      var c = sum(aeRows.filter(function (r) { return r.submittedCurrent; }), 'current', k);
+      var p = sum(aeRows.filter(function (r) { return r.submittedPrior; }), 'prior', k);
+      var lc = sum(both, 'current', k), lp = sum(both, 'prior', k);
+      var d = both.length ? round2(lc - lp) : null, pct = d !== null && lp !== 0 ? d / lp : null;
+      teamVals[k] = { current: c, prior: p, delta: d, pct: pct, likeForLike: both.length,
+                      highlight: d !== null && ((pct !== null && Math.abs(pct) > threshold + 1e-12) || (lp === 0 && lc !== 0)) };
+    });
+    return { reportWeek: reportWeek, priorWeek: prevWeek, threshold: threshold, rows: aeRows,
+             team: { values: teamVals, submittedCurrent: aeRows.filter(function (r) { return r.submittedCurrent; }).length,
+                     submittedPrior: aeRows.filter(function (r) { return r.submittedPrior; }).length, likeForLike: both.length, aeCount: aes.length } };
+  }
+
+  /** Report week for the Monday review: the most recent week whose cutoff has passed, unless only the open week has data. */
+  function defaultReportWeek(rows, nowWeek) {
+    var closed = addDays(nowWeek, -7);
+    var weeks = rows.filter(function (r) { return r.is_official; }).map(function (r) { return r.forecast_week; });
+    if (weeks.some(function (w) { return w <= closed; })) return weeks.filter(function (w) { return w <= closed; }).sort().pop();
+    return weeks.length ? weeks.sort().pop() : nowWeek;
+  }
+
+  var LEVEL_MEMBERS = { commit: ['commit'], gut: ['commit', 'gut'], best_case: ['commit', 'gut', 'best_case'] };
+
+  /**
+   * Forecast movement between two snapshots of the same AE (prior → current), from their builder tags.
+   * Lists deals added to / removed from each tag, tag changes (with before/after amounts), deals that left or
+   * joined the open pipeline, and reconciles tag movement against the submitted $ change for each nested value.
+   * Any unexplained difference is reported, never hidden. If either week saved no builder tags, no movement is inferred.
+   */
+  function movementDrilldown(prev, cur) {
+    var out = { priorWeek: prev ? prev.forecast_week : null, currentWeek: cur ? cur.forecast_week : null };
+    if (!prev || !cur) { out.status = 'missing_snapshot'; out.message = !prev ? 'No official submission the prior week to compare against.' : 'No official submission this week.'; return out; }
+    var ps = prev.builder && prev.builder.saved, cs = cur.builder && cur.builder.saved;
+    if (!ps || !cs) {
+      out.status = 'no_builder_tags';
+      out.message = (!cs && !ps ? 'No Forecast Builder tags were saved in either week' : !cs ? 'No Forecast Builder tags were saved this week' : 'No Forecast Builder tags were saved the prior week') +
+                    '. Deal movement is not inferred.';
+      out.submittedDelta = {}; VALUE_KEYS.forEach(function (k) { out.submittedDelta[k] = round2(cur.forecast[k] - prev.forecast[k]); });
+      return out;
+    }
+    var P = {}, Cm = {};
+    prev.builder.deals.forEach(function (d) { P[d.deal_id] = d; });
+    cur.builder.deals.forEach(function (d) { Cm[d.deal_id] = d; });
+    var ids = {}; Object.keys(P).concat(Object.keys(Cm)).forEach(function (k) { ids[k] = 1; });
+    var added = {}, removed = {}; TAGS.forEach(function (t) { added[t] = []; removed[t] = []; });
+    var changed = [], leftPipeline = [], joinedPipeline = [], amountChanges = [];
+    Object.keys(ids).sort().forEach(function (id) {
+      var a = P[id], b = Cm[id], ta = a ? (a.tag || 'none') : null, tb = b ? (b.tag || 'none') : null;
+      var base = { deal_id: id, deal_name: (b || a).deal_name, before: a ? { tag: ta, amount: a.amount, stage: a.stage } : null, after: b ? { tag: tb, amount: b.amount, stage: b.stage } : null };
+      if (a && !b) { leftPipeline.push(base); if (ta !== 'none') removed[ta].push(base); return; }
+      if (!a && b) { joinedPipeline.push(base); if (tb !== 'none') added[tb].push(base); return; }
+      if (ta !== tb) { changed.push(base); if (ta !== 'none') removed[ta].push(base); if (tb !== 'none') added[tb].push(base); }
+      else if ((a.amount || 0) !== (b.amount || 0) && ta !== 'none') amountChanges.push(base);
+    });
+    var recon = {};
+    VALUE_KEYS.forEach(function (k) {
+      var m = LEVEL_MEMBERS[k], r = { entered: 0, exited: 0, amountChange: 0, byCategory: { retaggedIn: 0, retaggedOut: 0, joinedPipeline: 0, leftPipeline: 0 } };
+      Object.keys(ids).forEach(function (id) {
+        var a = P[id], b = Cm[id], inA = !!a && m.indexOf(a.tag || 'none') >= 0, inB = !!b && m.indexOf(b.tag || 'none') >= 0;
+        var aa = a ? (a.amount || 0) : 0, bb = b ? (b.amount || 0) : 0;
+        if (inB && !inA) { r.entered += bb; r.byCategory[a ? 'retaggedIn' : 'joinedPipeline'] += bb; }
+        else if (inA && !inB) { r.exited -= aa; r.byCategory[b ? 'retaggedOut' : 'leftPipeline'] -= aa; }
+        else if (inA && inB) r.amountChange += bb - aa;
+      });
+      var builderPrev = k === 'commit' ? prev.builder.totals.commit : k === 'gut' ? prev.builder.totals.gut_cumulative : prev.builder.totals.best_case_cumulative;
+      var builderCur = k === 'commit' ? cur.builder.totals.commit : k === 'gut' ? cur.builder.totals.gut_cumulative : cur.builder.totals.best_case_cumulative;
+      var explained = round2(r.entered + r.exited + r.amountChange);
+      var submittedDelta = round2(cur.forecast[k] - prev.forecast[k]);
+      var unexplained = round2(submittedDelta - explained);
+      recon[k] = { submittedPrior: prev.forecast[k], submittedCurrent: cur.forecast[k], submittedDelta: submittedDelta,
+                   builderPrior: builderPrev, builderCurrent: builderCur, tagMovement: explained,
+                   entered: round2(r.entered), exited: round2(r.exited), amountChange: round2(r.amountChange),
+                   byCategory: { retaggedIn: round2(r.byCategory.retaggedIn), retaggedOut: round2(r.byCategory.retaggedOut),
+                                 joinedPipeline: round2(r.byCategory.joinedPipeline), leftPipeline: round2(r.byCategory.leftPipeline) },
+                   unexplained: unexplained, reconciles: Math.abs(unexplained) <= 0.01 };
+    });
+    out.status = 'ok'; out.added = added; out.removed = removed; out.changed = changed; out.leftPipeline = leftPipeline;
+    out.joinedPipeline = joinedPipeline; out.amountChanges = amountChanges; out.reconciliation = recon;
+    out.allReconcile = VALUE_KEYS.every(function (k) { return recon[k].reconciles; });
+    return out;
+  }
+
+  /**
+   * Deterministic synthetic history for TEST MODE ONLY (Phase 4 verification): per AE, a few weeks of official
+   * submissions with builder tags drawn from their real open deals. Scenarios are chosen to exercise the trend rules:
+   * a missing week (gap), intra-week resubmissions, a week with no builder tags, and one week whose submitted change
+   * deliberately does not reconcile to tag movement.
+   */
+  function syntheticHistory(aes, openDealsByOwner, weeks, cwYtdByOwner) {
+    var out = [], seedTimes = ['T10:15:00.000-04:00', 'T11:05:00.000-04:00'];
+    var plan = {
+      'phil-aroian': { skip: [], resub: [], noTags: [], mismatch: [], drift: [0, 0.04, 0.06, 0.02] },
+      'spencer-wuthrich': { skip: [1], resub: [], noTags: [], mismatch: [], drift: [0, 0, 0.05, 0.05] },
+      'ian-mclaughlin': { skip: [], resub: [2, 3], noTags: [], mismatch: [], drift: [0, 0.1, 0.15, 0.2] },
+      'ben-de-winter': { skip: [], resub: [], noTags: [2], mismatch: [], drift: [0, -0.1, -0.2, -0.3] },
+      'matt-lynch': { skip: [], resub: [1], noTags: [], mismatch: [3], drift: [0, 0.05, 0.25, 0.4] }
+    };
+    aes.forEach(function (a, ai) {
+      var pl = plan[a.slug] || { skip: [], resub: [], noTags: [], mismatch: [], drift: [0, 0, 0, 0] };
+      var deals = (openDealsByOwner[String(a.hubspot_owner_id)] || []).slice().sort(function (x, y) { return (x.amount || 0) - (y.amount || 0); });
+      weeks.forEach(function (w, wi) {
+        if (pl.skip.indexOf(wi) >= 0) return;
+        // Tag the deals in bands; the bands shift a little each week so tags move between weeks.
+        var n = deals.length, shift = wi % Math.max(1, n);
+        var tags = {};
+        deals.forEach(function (d, i) {
+          var j = (i + shift) % Math.max(1, n);
+          tags[d.id] = { tag: j < Math.ceil(n * 0.15) ? 'commit' : j < Math.ceil(n * 0.3) ? 'gut' : j < Math.ceil(n * 0.5) ? 'best_case' : j < Math.ceil(n * 0.6) ? 'lost' : 'none' };
+        });
+        var s = builderSummary(deals, tags, fiscalYearOf(w) + '-12-31');
+        var saved = pl.noTags.indexOf(wi) < 0;
+        var v = { commit: s.cumulative.commit.amount, gut: s.cumulative.gut.amount, best_case: s.cumulative.best_case.amount };
+        if (!saved || pl.mismatch.indexOf(wi) >= 0) { var f = 1 + pl.drift[wi % pl.drift.length]; v = { commit: round2(v.commit * f), gut: round2(v.gut * f), best_case: round2(v.best_case * f) }; }
+        var cw = round2((cwYtdByOwner[String(a.hubspot_owner_id)] || 0) * (0.7 + 0.1 * wi));
+        var times = pl.resub.indexOf(wi) >= 0 ? seedTimes : [seedTimes[1]];
+        times.forEach(function (t, ti) {
+          var date = addDays(w, -1), submittedAt = date + t, last = ti === times.length - 1;
+          var vals = last ? v : { commit: round2(v.commit * 0.9), gut: round2(v.gut * 0.9), best_case: round2(v.best_case * 0.9) };
+          out.push({ ae: a, week: w, submittedAt: submittedAt, values: vals, closedWonYtd: cw, deals: deals, tags: saved ? tags : {}, saved: saved,
+                     isOfficial: last, seq: ti + 1, scenario: { skip: false, noTags: !saved, mismatch: pl.mismatch.indexOf(wi) >= 0, resub: times.length > 1 } });
+        });
+      });
+    });
+    return out;
+  }
+
   return {
+    weekAxis: weekAxis, trendSeries: trendSeries, changeTable: changeTable, defaultReportWeek: defaultReportWeek,
+    movementDrilldown: movementDrilldown, syntheticHistory: syntheticHistory,
     DOW: DOW, forecastWeekFor: forecastWeekFor, forecastPeriodFor: forecastPeriodFor, parseUsd: parseUsd,
     validateForecast: validateForecast, snapshotFileName: snapshotFileName, buildSnapshot: buildSnapshot,
     officialAssignments: officialAssignments, submissionStatus: submissionStatus, sectionOneRow: sectionOneRow, sectionOneTeam: sectionOneTeam,

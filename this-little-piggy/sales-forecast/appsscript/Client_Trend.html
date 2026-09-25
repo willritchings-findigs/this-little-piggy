@@ -1,0 +1,464 @@
+<script>
+/*
+ * Section 3: Forecast trend. Data = official rollup rows (apiGetTrend); every number is computed by
+ * ForecastCore.trendSeries / changeTable, the same code the Node tests run. Charts are Chart.js 4.4.4
+ * (jsDelivr with SRI, falling back to the copy bundled in the app). A missing week is a gap, never zero.
+ */
+var Trend = (function () {
+  'use strict';
+  var A = App, C = ForecastCore, CFG = CLIENT_CONFIG;
+  var K = ['commit', 'gut', 'best_case'];
+  var COL = CFG.seriesColors;
+  var LABEL = { commit: 'Commit', gut: 'Gut', best_case: 'Best Case', closed_won_ytd: 'Closed Won YTD' };
+  var INK = { fg1: '#212B14', fg2: '#666563', grid: '#EBE9E4', axis: '#DBDAD5', sand: '#FDFBF7' };
+  var S = { data: null, view: CFG.section3.default_view, axis: CFG.section3.default_axis, ae: 'all', overlay: false, week: null, charts: [], bound: false };
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ------------------------------------------------------------------ Chart.js loading (CDN, then bundled fallback)
+  var chartP = null;
+  function ensureChart() {
+    if (chartP) return chartP;
+    chartP = new Promise(function (resolve, reject) {
+      var done = false;
+      function ok(src) { if (done) return; done = true; window.__chartSource = src; configureChart(); resolve(window.Chart); }
+      function fallback() {
+        if (done) return;
+        if (window.Chart) return ok('cdn');
+        done = true;
+        A.rpc('apiGetChartJs').then(function (code) {
+          var s = document.createElement('script'); s.text = code; document.head.appendChild(s);
+          if (!window.Chart) return reject(new Error('The chart library could not be loaded.'));
+          window.__chartSource = 'bundled'; configureChart(); resolve(window.Chart);
+        }, reject);
+      }
+      if (window.Chart) return ok('cdn');
+      var tag = $('chartjs-cdn');
+      if (!tag || window.__chartCdnFailed) return fallback();
+      tag.addEventListener('load', function () { window.Chart ? ok('cdn') : fallback(); });
+      tag.addEventListener('error', fallback);
+      setTimeout(fallback, 8000);
+    });
+    return chartP;
+  }
+  function configureChart() {
+    var D = window.Chart.defaults;
+    D.font.family = getComputedStyle(document.body).fontFamily; D.font.size = 12; D.color = INK.fg2;
+  }
+
+  // ------------------------------------------------------------------ formatting
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  function compact(v) {
+    if (v === null || v === undefined) return '';
+    var a = Math.abs(v), s = a >= 1e6 ? (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : a >= 1e3 ? Math.round(a / 1e3) + 'K' : String(Math.round(a));
+    return (v < 0 ? '−$' : '$') + s;
+  }
+  function signed(v) { return v === null || v === undefined ? '' : (v > 0 ? '+' : '') + A.usd0(v); }
+  function pct(v) { return v === null || v === undefined ? '' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v * 100).toFixed(1) + '%'; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function shortDate(d) { var a = d.split('-'); return MON[+a[1] - 1] + ' ' + (+a[2]); }
+  function isOpenWeek(w) { return S.data && w >= S.data.week.forecastWeek; }
+  function gapText(w) { return isOpenWeek(w) ? 'Not yet submitted' : 'Not submitted'; }
+  function aeName(slug) { var a = S.data.aes.filter(function (x) { return x.slug === slug; })[0]; return a ? a.name : slug; }
+
+  // ------------------------------------------------------------------ load + controls
+  function init() {
+    $('t-notes').innerHTML = '<div class="note">Loading forecast history…</div>';
+    A.rpc('apiGetTrend').then(function (d) {
+      S.data = d; S.week = d.reportWeek;
+      if (d.testMode) A.banner('warn', '<strong>Test mode.</strong> Submissions, tags, and the rollup Sheet are written to the test folder, not the production 2026 folder.', 'testmode-banner');
+      bind(); render();
+    }).catch(function (e) {
+      $('t-notes').innerHTML = '';
+      A.banner('error', A.esc(e.message), 'trend-load-error');
+    });
+  }
+
+  function bind() {
+    if (S.bound) return; S.bound = true;
+    var sel = $('t-ae');
+    sel.innerHTML = '<option value="all">All AEs</option>' + S.data.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '">' + A.esc(a.name) + '</option>'; }).join('');
+    sel.addEventListener('change', function () { S.ae = sel.value; render(); });
+    document.querySelectorAll('#t-controls [data-view]').forEach(function (b) { b.addEventListener('click', function () { S.view = b.getAttribute('data-view'); render(); }); });
+    document.querySelectorAll('#t-controls [data-axis]').forEach(function (b) { b.addEventListener('click', function () { S.axis = b.getAttribute('data-axis'); render(); }); });
+    $('t-overlay').addEventListener('change', function (e) { S.overlay = e.target.checked; render(); });
+    $('t-week').addEventListener('change', function (e) { S.week = e.target.value; renderChange(); });
+    $('tab-trend').addEventListener('click', function (e) {
+      var mv = e.target.closest('[data-move]');
+      if (mv) { var p = mv.getAttribute('data-move').split('|'); openDrill(p[0], p[1]); return; }
+      var cp = e.target.closest('[data-copy]');
+      if (cp) copyCsv(cp);
+      if (e.target.closest('[data-close-drill]')) { $('t-drill').hidden = true; $('t-drill').innerHTML = ''; }
+    });
+  }
+
+  function syncControls() {
+    document.querySelectorAll('#t-controls [data-view]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-view') === S.view ? 'true' : 'false'); });
+    document.querySelectorAll('#t-controls [data-axis]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-axis') === S.axis ? 'true' : 'false');
+      b.disabled = S.ae !== 'all';
+    });
+  }
+
+  /** Rows as plotted/compared in the current view (Implied landing adds each snapshot's own Closed Won YTD). */
+  function viewRows() {
+    if (S.view !== 'implied_landing') return S.data.rows;
+    return S.data.rows.map(function (r) {
+      var o = {}; Object.keys(r).forEach(function (k) { o[k] = r[k]; });
+      K.forEach(function (k) { o[k] = C.round2((r.closed_won_ytd || 0) + r[k]); });
+      return o;
+    });
+  }
+
+  function series() {
+    var d = S.data, closed = d.week.previousWeek;
+    var hasOfficial = d.rows.some(function (r) { return r.is_official; });
+    return C.trendSeries(d.rows, d.aes, { mode: S.view, throughWeek: hasOfficial ? closed : null });
+  }
+
+  // ------------------------------------------------------------------ render
+  function render() {
+    syncControls();
+    var d = S.data, s = series();
+    S.series = s;
+    var notes = [];
+    if (d.syntheticRows) notes.push('<div class="note">' + A.icon('science') + ' Includes ' + d.syntheticRows + ' synthetic test submissions seeded for verification. They exist only in the test folder.</div>');
+    if (!s.weeks.length) {
+      $('t-notes').innerHTML = notes.join('') + '<div class="note">No official submissions yet. The trend starts after the first Friday cutoff with a submission.</div>';
+      $('t-team').innerHTML = ''; $('t-grid').innerHTML = ''; $('t-legend').innerHTML = ''; renderChange(); return;
+    }
+    if (!s.trendAvailable) notes.push('<div class="note" id="t-single">' + A.icon('info') + ' Trend requires 2+ submissions. Only one forecast week has data, so points are shown without lines.</div>');
+    $('t-notes').innerHTML = notes.join('');
+    renderLegend();
+    destroyCharts();
+    ensureChart().then(function () {
+      drawCard($('t-team'), { title: 'Team', team: true, points: s.team, weeks: s.weeks, big: true });
+      var grid = $('t-grid'); grid.innerHTML = ''; grid.classList.toggle('single', S.ae !== 'all');
+      var aes = S.ae === 'all' ? d.aes : d.aes.filter(function (a) { return a.slug === S.ae; });
+      var yMax = S.axis === 'shared' && S.ae === 'all' ? niceMax(s.sharedAeMax) : null;
+      aes.forEach(function (a) {
+        var host = document.createElement('div'); grid.appendChild(host);
+        drawCard(host, { title: a.name, slug: a.slug, points: s.byAe[a.slug], weeks: s.weeks, yMax: yMax, big: S.ae !== 'all' });
+      });
+    }).catch(function (e) {
+      $('t-team').innerHTML = '<div class="note error">' + A.icon('error') + ' Charts unavailable: ' + A.esc(e.message) + ' The tables below still show every value.</div>';
+      var grid = $('t-grid'); grid.innerHTML = '';
+      (S.ae === 'all' ? d.aes : d.aes.filter(function (a) { return a.slug === S.ae; })).forEach(function (a) {
+        var host = document.createElement('div'); host.className = 'card chart-card'; grid.appendChild(host);
+        host.innerHTML = '<div class="card-head"><h3>' + A.esc(a.name) + '</h3></div>' + tableHtml(s.byAe[a.slug], s.weeks, false, a.slug);
+      });
+    });
+    renderChange();
+  }
+
+  function niceMax(v) {
+    if (!v) return undefined;
+    var p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+  }
+
+  function renderLegend() {
+    var sw = function (k, dashed) { return '<span class="lg-item"><span class="lg-line' + (dashed ? ' dashed' : '') + '" style="--swatch:' + COL[k] + '"></span>' + LABEL[k] + '</span>'; };
+    $('t-legend').innerHTML = sw('best_case') + sw('gut') + sw('commit') + sw('closed_won_ytd', true) +
+      '<span class="lg-item"><span class="lg-band" style="--swatch:' + rgba(COL.best_case, 0.18) + '"></span>Commit to Best Case range</span>' +
+      (S.overlay ? '<span class="lg-item"><span class="lg-ring"></span>Earlier submission that week (superseded)</span>' : '') +
+      '<span class="lg-item"><span class="lg-gap"></span>Not submitted</span>' +
+      '<span class="lg-mode muted">' + (S.view === 'implied_landing' ? 'Implied landing = Closed Won YTD at the snapshot + forecast value' : 'Incremental = forecast value only (Closed Won YTD line shown for reference)') + '</span>';
+  }
+
+  function destroyCharts() { S.charts.forEach(function (c) { c.destroy(); }); S.charts = []; }
+
+  function drawCard(host, o) {
+    var submittedWeeks = o.points.filter(function (p) { return p.submitted; }).length;
+    var meta = o.team
+      ? 'Sum of AEs who submitted each week' + (S.overlay ? ' · resubmission overlay applies to AE charts' : '')
+      : submittedWeeks + ' of ' + o.points.length + (o.points.length === 1 ? ' week' : ' weeks') + ' submitted';
+    host.className = 'card chart-card' + (o.big ? ' big' : '');
+    host.setAttribute('data-card', o.team ? 'team' : o.slug);
+    host.innerHTML = '<div class="card-head"><h3>' + A.esc(o.title) + '</h3><span class="muted">' + A.esc(meta) + '</span></div>' +
+      (!o.team && submittedWeeks < 2 ? '<p class="card-note">Trend requires 2+ submissions</p>' : '') +
+      '<div class="chart-box"><canvas role="img" aria-label="' + A.esc(o.title + ' forecast by week. Values are listed in the table below.') + '"></canvas></div>' +
+      '<details class="as-table"><summary>View as table</summary>' + tableHtml(o.points, o.weeks, o.team, o.slug) + '</details>';
+    S.charts.push(new window.Chart(host.querySelector('canvas'), chartConfig(o)));
+  }
+
+  // ------------------------------------------------------------------ chart
+  function chartConfig(o) {
+    var pts = o.points, ds = [];
+    K.forEach(function (k, i) {
+      ds.push({ label: LABEL[k], key: k, data: pts.map(function (p) { return p[k]; }), borderColor: COL[k], backgroundColor: COL[k],
+                borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: COL[k], pointBorderColor: INK.sand, pointBorderWidth: 1.5,
+                spanGaps: false, tension: 0, order: 3 - i,
+                fill: k === 'best_case' ? { target: 0, above: rgba(COL.best_case, 0.12), below: rgba(COL.best_case, 0.12) } : false });
+    });
+    ds.push({ label: LABEL.closed_won_ytd, key: 'closed_won_ytd', data: pts.map(function (p) { return p.closed_won_ytd; }), borderColor: COL.closed_won_ytd,
+              backgroundColor: COL.closed_won_ytd, borderWidth: 2, borderDash: [6, 4], pointRadius: 3, pointHoverRadius: 5, pointStyle: 'rectRot',
+              spanGaps: false, tension: 0, fill: false, order: 4 });
+    var weeks = o.weeks;
+    return {
+      type: 'line',
+      data: { labels: weeks, datasets: ds },
+      plugins: [gapPlugin, overlayPlugin, crosshairPlugin],
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 22, right: 8 } },
+        scales: {
+          x: { offset: weeks.length < 2, grid: { display: false }, border: { color: INK.axis }, ticks: { color: INK.fg2, maxRotation: 0, autoSkipPadding: 12, callback: function (v, i) { return shortDate(weeks[i]); } } },
+          y: { beginAtZero: true, max: o.yMax, grid: { color: INK.grid, lineWidth: 1 }, border: { display: false },
+               ticks: { color: INK.fg2, maxTicksLimit: o.big ? 7 : 5, callback: function (v) { return compact(v); } } }
+        },
+        plugins: {
+          legend: { display: false },
+          gapMarkers: { points: pts, team: !!o.team },
+          resubOverlay: { points: S.overlay && !o.team ? pts : null },
+          tooltip: {
+            backgroundColor: INK.sand, borderColor: INK.axis, borderWidth: 1, titleColor: INK.fg1, bodyColor: INK.fg1, footerColor: INK.fg2,
+            padding: 10, boxPadding: 4, usePointStyle: true, titleFont: { weight: '700' }, footerFont: { weight: '400' },
+            itemSort: function (a, b) { return a.dataset.order - b.dataset.order; },
+            callbacks: {
+              title: function (items) { return 'Week of ' + A.date(weeks[items[0].dataIndex]) + (isOpenWeek(weeks[items[0].dataIndex]) ? ' (open until cutoff)' : ''); },
+              label: function (it) { return ' ' + it.dataset.label + '   ' + A.usd0(it.parsed.y); },
+              labelColor: function (it) { return { borderColor: it.dataset.borderColor, backgroundColor: it.dataset.borderColor }; },
+              labelPointStyle: function (it) { return { pointStyle: it.dataset.key === 'closed_won_ytd' ? 'rectRot' : 'circle', rotation: 0 }; },
+              footer: function (items) { return footerLines(pts[items[0].dataIndex], o.team); }
+            }
+          }
+        },
+        onHover: function (e, els, chart) { if (!o.team) chart.canvas.style.cursor = els.length ? 'pointer' : 'default'; },
+        onClick: function (e, els, chart) {
+          if (o.team) return;
+          var hit = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, false);
+          if (!hit.length) return;
+          var p = pts[hit[0].index];
+          if (p && p.submitted) openDrill(o.slug, p.week);
+        }
+      }
+    };
+  }
+
+  function footerLines(p, team) {
+    if (!p) return [];
+    var out = [];
+    var wow = K.filter(function (k) { return p.wow[k] !== null; });
+    if (wow.length) { out.push('Week over week'); wow.slice().reverse().forEach(function (k) { out.push('  ' + LABEL[k] + ' ' + signed(p.wow[k])); }); }
+    else if (team && p.submitted) out.push('Week over week: not shown (not every AE submitted both weeks)');
+    else if (p.submitted) out.push('Week over week: no prior-week submission');
+    if (team) {
+      out.push(p.coverage + ' of ' + p.aeCount + ' AEs submitted');
+      out.push('Resubmissions: ' + p.resubmissions);
+    } else if (p.submitted) {
+      out.push('Submitted ' + A.stamp(p.submittedAt));
+      out.push('Resubmissions: ' + p.resubmissions);
+      if (S.overlay) p.overlay.forEach(function (x) { out.push('Superseded ' + A.stamp(x.submittedAt)); K.slice().reverse().forEach(function (k) { out.push('  ' + LABEL[k] + ' ' + A.usd0(x[k])); }); });
+      out.push('Click for deal movement');
+    }
+    return out;
+  }
+
+  /** Dashed marker + label on weeks with no official submission; coverage label on partial team weeks. */
+  var gapPlugin = {
+    id: 'gapMarkers',
+    afterDatasetsDraw: function (chart, args, opt) {
+      if (!opt || !opt.points) return;
+      var ctx = chart.ctx, xs = chart.scales.x, area = chart.chartArea, weeks = chart.data.labels;
+      ctx.save();
+      ctx.font = '11px ' + window.Chart.defaults.font.family; ctx.textBaseline = 'bottom';
+      opt.points.forEach(function (p, i) {
+        var x = xs.getPixelForValue(i), text = null;
+        if (!p.submitted) {
+          ctx.strokeStyle = INK.fg2; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+          ctx.beginPath(); ctx.moveTo(x, area.top); ctx.lineTo(x, area.bottom); ctx.stroke(); ctx.setLineDash([]);
+          text = opt.team ? 'No submissions' : gapText(weeks[i]);
+        } else if (opt.team && !p.complete) text = p.coverage + ' of ' + p.aeCount + ' AEs';
+        if (!text) return;
+        var w = ctx.measureText(text).width, tx = Math.min(Math.max(x - w / 2, area.left), area.right - w);
+        ctx.fillStyle = INK.sand; ctx.fillRect(tx - 2, area.top - 17, w + 4, 15);
+        ctx.fillStyle = INK.fg2; ctx.fillText(text, tx, area.top - 3);
+      });
+      ctx.restore();
+    }
+  };
+  /** Superseded same-week submissions as hollow rings (drawn, not a dataset, so tooltip indexing stays one point per week). */
+  var overlayPlugin = {
+    id: 'resubOverlay',
+    afterDatasetsDraw: function (chart, args, opt) {
+      if (!opt || !opt.points) return;
+      var ctx = chart.ctx, xs = chart.scales.x, ys = chart.scales.y;
+      ctx.save(); ctx.lineWidth = 2;
+      opt.points.forEach(function (p, i) {
+        (p.overlay || []).forEach(function (x) {
+          K.forEach(function (k) {
+            if (x[k] === null || x[k] === undefined) return;
+            ctx.beginPath(); ctx.arc(xs.getPixelForValue(i), ys.getPixelForValue(x[k]), 5, 0, Math.PI * 2);
+            ctx.fillStyle = INK.sand; ctx.fill(); ctx.strokeStyle = COL[k]; ctx.stroke();
+          });
+        });
+      });
+      ctx.restore();
+    }
+  };
+  var crosshairPlugin = {
+    id: 'crosshair',
+    afterDatasetsDraw: function (chart) {
+      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+      if (!act.length) return;
+      var x = act[0].element.x, a = chart.chartArea, ctx = chart.ctx;
+      ctx.save(); ctx.strokeStyle = INK.axis; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, a.top); ctx.lineTo(x, a.bottom); ctx.stroke(); ctx.restore();
+    }
+  };
+
+  // ------------------------------------------------------------------ table view + CSV
+  function tableHtml(pts, weeks, team, slug) {
+    var head = ['Week'].concat(K.map(function (k) { return LABEL[k]; }), [LABEL.closed_won_ytd, team ? 'AEs submitted' : 'Submitted at', 'Resubmissions']);
+    var rows = pts.map(function (p) {
+      var cells = [A.date(p.week)];
+      K.concat(['closed_won_ytd']).forEach(function (k) { cells.push(p[k] === null ? '' : A.usd0(p[k])); });
+      cells.push(team ? p.coverage + ' of ' + p.aeCount : p.submitted ? A.stamp(p.submittedAt) : gapText(p.week));
+      cells.push(String(p.resubmissions));
+      return { cells: cells, p: p };
+    });
+    var csv = [head].concat(rows.map(function (r) {
+      var c = [r.p.week]; K.concat(['closed_won_ytd']).forEach(function (k) { c.push(r.p[k] === null ? '' : r.p[k]); });
+      c.push(team ? r.p.coverage + ' of ' + r.p.aeCount : r.p.submitted ? r.p.submittedAt : gapText(r.p.week)); c.push(r.p.resubmissions); return c;
+    })).map(function (c) { return c.map(function (v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\n');
+    return '<div class="tbl-actions"><button type="button" class="btn small" data-copy="' + A.esc(csv) + '">' + A.icon('content_copy') + ' Copy CSV</button><span class="copy-status muted" aria-live="polite"></span></div>' +
+      '<div class="table-wrap wide"><table class="deals trend-table"><thead><tr>' +
+      head.map(function (h, i) { return '<th scope="col"' + (i >= 1 && i <= 4 ? ' class="num"' : '') + '>' + A.esc(h) + '</th>'; }).join('') + (team ? '' : '<th scope="col"><span class="sr-only">Movement</span></th>') +
+      '</tr></thead><tbody>' + rows.map(function (r) {
+        var p = r.p;
+        return '<tr' + (p.submitted ? '' : ' class="gap-row"') + '><th scope="row">' + A.esc(r.cells[0]) + '</th>' +
+          r.cells.slice(1).map(function (c, i) { return '<td class="' + (i < 4 ? 'num' : '') + (i < 4 && c === '' ? ' blank' : '') + '">' + A.esc(c) + '</td>'; }).join('') +
+          (team ? '' : '<td>' + (p.submitted ? '<button type="button" class="linkbtn" data-move="' + A.esc(slug + '|' + p.week) + '">Deal movement</button>' : '') + '</td>') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function copyCsv(btn) {
+    var text = btn.getAttribute('data-copy'), st = btn.parentNode.querySelector('.copy-status');
+    var done = function (ok) { st.textContent = ok ? 'Copied' : 'Copy blocked by the browser. Select the table and copy it instead.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(legacyCopy(text)); });
+    else done(legacyCopy(text));
+  }
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove(); return ok;
+  }
+
+  // ------------------------------------------------------------------ change table
+  function renderChange() {
+    var d = S.data, t = $('t-change'), sel = $('t-week');
+    var weeks = d.rows.filter(function (r) { return r.is_official; }).map(function (r) { return r.forecast_week; })
+      .filter(function (w, i, a) { return a.indexOf(w) === i; }).sort().reverse();
+    if (!weeks.length) { sel.innerHTML = ''; t.innerHTML = '<tbody><tr><td class="empty">No official submissions yet.</td></tr></tbody>'; $('t-change-note').textContent = ''; return; }
+    if (weeks.indexOf(S.week) < 0) S.week = weeks[0];
+    sel.innerHTML = weeks.map(function (w) { return '<option value="' + w + '"' + (w === S.week ? ' selected' : '') + '>Week of ' + A.date(w) + (isOpenWeek(w) ? ' (open)' : '') + '</option>'; }).join('');
+    var ct = C.changeTable(viewRows(), d.aes, S.week, d.threshold);
+    var th = Math.round(d.threshold * 100);
+    $('t-change-note').textContent = 'vs week of ' + A.date(ct.priorWeek) + ' · ' + (S.view === 'implied_landing' ? 'Implied landing values' : 'Incremental values') + ' · changes beyond ±' + th + '% are highlighted';
+    var cell = function (v, k, isTeam) {
+      var x = v[k], hl = x.highlight ? ' hl' : '', mark = x.highlight ? '<span class="sr-only"> (beyond ±' + th + '%)</span>' : '';
+      var pc = x.pct !== null ? pct(x.pct) : (x.delta !== null && x.delta !== 0 ? 'from $0' : x.delta === 0 ? '0.0%' : '');
+      return '<td class="num">' + (x.prior === null ? '<span class="muted">Not submitted</span>' : A.usd0(x.prior)) + '</td>' +
+             '<td class="num">' + (x.current === null ? '<span class="muted">' + (isOpenWeek(S.week) ? 'Not yet submitted' : 'Not submitted') + '</span>' : A.usd0(x.current)) + '</td>' +
+             '<td class="num delta' + hl + '">' + (x.delta === null ? '' : signed(x.delta)) + mark + '</td>' +
+             '<td class="num delta' + hl + '">' + pc + '</td>';
+    };
+    var html = '<thead><tr><th scope="col" rowspan="2">AE</th>' + K.map(function (k) {
+        return '<th scope="colgroup" colspan="4" class="grp"><span class="swatch" style="--swatch:' + COL[k] + '"></span> ' + LABEL[k] + '</th>'; }).join('') + '</tr><tr>' +
+      K.map(function () { return '<th scope="col" class="num">Prior</th><th scope="col" class="num">Current</th><th scope="col" class="num">Δ $</th><th scope="col" class="num">Δ %</th>'; }).join('') +
+      '</tr></thead><tbody>';
+    ct.rows.forEach(function (r) {
+      html += '<tr><th scope="row">' + A.esc(r.name) + (r.submittedCurrent ? '<div><button type="button" class="linkbtn" data-move="' + A.esc(r.key + '|' + S.week) + '">Deal movement</button></div>' : '') + '</th>' +
+        K.map(function (k) { return cell(r.values, k); }).join('') + '</tr>';
+    });
+    var tm = ct.team;
+    html += '<tr class="total"><th scope="row">Team<div class="lw muted">' + tm.submittedCurrent + ' of ' + tm.aeCount + ' AEs this week, ' + tm.submittedPrior + ' prior' +
+      (tm.likeForLike === 0 ? '; no AE submitted both weeks, so Δ is blank' : tm.likeForLike < tm.aeCount ? '; Δ uses the ' + tm.likeForLike + ' who submitted both weeks' : '') + '</div></th>' +
+      K.map(function (k) { return cell(tm.values, k, true); }).join('') + '</tr></tbody>';
+    t.innerHTML = '<caption class="sr-only">Week-over-week change by AE</caption>' + html;
+  }
+
+  // ------------------------------------------------------------------ movement drill-down
+  function openDrill(slug, week) {
+    var el = $('t-drill');
+    el.hidden = false;
+    el.innerHTML = '<div class="card-head"><h3>Deal movement · ' + A.esc(aeName(slug)) + '</h3><span class="muted">Week of ' + A.esc(A.date(week)) + '</span><span class="spacer"></span>' +
+      '<button type="button" class="btn small" data-close-drill>Close</button></div><div class="note">Loading snapshots…</div>';
+    el.scrollIntoView({ block: 'start' }); el.focus({ preventScroll: true });
+    A.rpc('apiGetMovement', slug, week).then(function (m) { el.innerHTML = drillHtml(m); })
+      .catch(function (e) { el.querySelector('.note').outerHTML = '<div class="note error">' + A.icon('error') + ' ' + A.esc(e.message) + '</div>'; });
+  }
+
+  function dealLink(x) { return '<a href="' + A.esc(C.dealUrl(CFG.portalId, x.deal_id)) + '" target="_blank" rel="noopener">' + A.esc(x.deal_name || x.deal_id) + '</a>'; }
+  function tagName(t) { return C.TAG_LABELS[t] || t; }
+  function sum(list, side) { return C.round2(list.reduce(function (s, x) { return s + ((x[side] && x[side].amount) || 0); }, 0)); }
+
+  function drillHtml(m) {
+    var h = '<div class="card-head"><h3>Deal movement · ' + A.esc(m.ae.name) + '</h3><span class="muted">Week of ' + A.esc(A.date(m.week)) + ' vs week of ' + A.esc(A.date(m.priorWeek)) + '</span>' +
+      (m.synthetic ? '<span class="tag sun">Synthetic test data</span>' : '') + '<span class="spacer"></span><button type="button" class="btn small" data-close-drill>Close</button></div>';
+    ['current', 'prior'].forEach(function (w) {
+      var s = m.integrity[w];
+      if (s === 'changed') h += '<div class="note error">' + A.icon('error') + ' The ' + (w === 'current' ? 'this-week' : 'prior-week') + ' snapshot file no longer matches the SHA-256 recorded in the rollup. Figures below come from the file as it is now.</div>';
+      if (s === 'missing') h += '<div class="note error">' + A.icon('error') + ' The ' + (w === 'current' ? 'this-week' : 'prior-week') + ' snapshot file could not be read from Drive.</div>';
+    });
+    h += '<p class="muted drill-basis">Amounts are incremental forecast values and deal amounts from each snapshot; Closed Won YTD is not included.</p>';
+    if (m.status !== 'ok') {
+      h += '<div class="note" data-status="' + A.esc(m.status) + '">' + A.icon('info') + ' ' + A.esc(m.message) + '</div>';
+      if (m.submittedDelta) h += '<table class="deals compact"><thead><tr><th scope="col">Value</th><th scope="col" class="num">Submitted change</th></tr></thead><tbody>' +
+        K.map(function (k) { return '<tr><th scope="row">' + LABEL[k] + '</th><td class="num">' + signed(m.submittedDelta[k]) + '</td></tr>'; }).join('') + '</tbody></table>';
+      return h;
+    }
+    var R = m.reconciliation;
+    if (!m.allReconcile) h += '<div class="note error" data-recon="mismatch">' + A.icon('error') + ' <strong>Does not reconcile.</strong> Builder tag movement does not explain the full change in the submitted forecast. The unexplained amount is shown below; nothing is adjusted or hidden.</div>';
+    else h += '<div class="note ok" data-recon="ok">' + A.icon('check_circle') + ' Tag movement explains the submitted change within $0.01 for all three values.</div>';
+    h += '<h4>Reconciliation</h4><div class="table-wrap wide"><table class="deals compact recon"><thead><tr><th scope="col">Value</th>' +
+      ['Prior submitted', 'Retagged in', 'Retagged out', 'Joined pipeline', 'Left pipeline', 'Amount changes', 'Expected', 'Current submitted', 'Unexplained'].map(function (x) { return '<th scope="col" class="num">' + x + '</th>'; }).join('') +
+      '<th scope="col">Status</th></tr></thead><tbody>' + K.map(function (k) {
+        var r = R[k], b = r.byCategory, expected = C.round2(r.submittedPrior + r.tagMovement);
+        return '<tr' + (r.reconciles ? '' : ' class="flagged"') + '><th scope="row"><span class="swatch" style="--swatch:' + COL[k] + '"></span> ' + LABEL[k] + '</th>' +
+          [A.usd0(r.submittedPrior), signed(b.retaggedIn), signed(b.retaggedOut), signed(b.joinedPipeline), signed(b.leftPipeline), signed(r.amountChange), A.usd0(expected), A.usd0(r.submittedCurrent)]
+            .map(function (v) { return '<td class="num">' + v + '</td>'; }).join('') +
+          '<td class="num' + (r.reconciles ? '' : ' hl') + '">' + signed(r.unexplained) + '</td>' +
+          '<td>' + (r.reconciles ? '<span class="tag jade">Reconciles</span>' : '<span class="tag danger">Does not reconcile</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    h += '<p class="recon-line">' + K.map(function (k) {
+      var r = R[k];
+      return LABEL[k] + ': ' + A.usd0(r.submittedPrior) + ' prior ' + (r.tagMovement >= 0 ? '+ ' : '− ') + A.usd0(Math.abs(r.tagMovement)) + ' tag movement = ' +
+        A.usd0(C.round2(r.submittedPrior + r.tagMovement)) + ' expected vs ' + A.usd0(r.submittedCurrent) + ' submitted' + (r.reconciles ? '' : ' (' + signed(r.unexplained) + ' unexplained)');
+    }).join('<br>') + '</p>';
+
+    h += '<h4>Added to and removed from each tag</h4><div class="tag-moves">' + ['commit', 'gut', 'best_case', 'lost'].map(function (t) {
+      var ad = m.added[t], rm = m.removed[t];
+      return '<div class="tm"><div class="tm-head">' + tagName(t) + '</div>' +
+        '<div class="tm-sub">Added ' + ad.length + (ad.length ? ' · ' + A.usd0(sum(ad, 'after')) : '') + '</div>' + listHtml(ad, 'after') +
+        '<div class="tm-sub">Removed ' + rm.length + (rm.length ? ' · ' + A.usd0(sum(rm, 'before')) : '') + '</div>' + listHtml(rm, 'before') + '</div>';
+    }).join('') + '</div>';
+
+    h += '<h4>Tag changes (' + m.changed.length + ')</h4>' + (m.changed.length ? '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">Deal</th><th scope="col">Before</th><th scope="col" class="num">Amount before</th><th scope="col">After</th><th scope="col" class="num">Amount after</th></tr></thead><tbody>' +
+      m.changed.map(function (x) {
+        return '<tr><td class="deal-name">' + dealLink(x) + '</td><td>' + tagName(x.before.tag) + '</td>' + amt(x.before.amount) + '<td>' + tagName(x.after.tag) + '</td>' + amt(x.after.amount) + '</tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="muted">No deals changed tag.</p>');
+
+    h += '<h4>Amount changes on tagged deals (' + m.amountChanges.length + ')</h4>' + (m.amountChanges.length ? '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">Deal</th><th scope="col">Tag</th><th scope="col" class="num">Amount before</th><th scope="col" class="num">Amount after</th></tr></thead><tbody>' +
+      m.amountChanges.map(function (x) { return '<tr><td class="deal-name">' + dealLink(x) + '</td><td>' + tagName(x.after.tag) + '</td>' + amt(x.before.amount) + amt(x.after.amount) + '</tr>'; }).join('') +
+      '</tbody></table></div>' : '<p class="muted">No amount changes on tagged deals.</p>');
+
+    h += '<div class="two-col"><div><h4>Left open pipeline (' + m.leftPipeline.length + ')</h4><p class="muted small">Closed, moved out of an in-scope pipeline, or reassigned since the prior snapshot.</p>' + listHtml(m.leftPipeline, 'before', true) + '</div>' +
+      '<div><h4>Joined open pipeline (' + m.joinedPipeline.length + ')</h4><p class="muted small">New, reopened, or reassigned to this AE since the prior snapshot.</p>' + listHtml(m.joinedPipeline, 'after', true) + '</div></div>';
+    return h;
+  }
+  function amt(v) { return v === null || v === undefined ? '<td class="num blank" title="Amount is blank in HubSpot"></td>' : '<td class="num">' + A.usd0(v) + '</td>'; }
+  function listHtml(list, side, withTag) {
+    if (!list.length) return '';
+    return '<ul class="deal-list">' + list.map(function (x) {
+      var s = x[side];
+      return '<li>' + dealLink(x) + ' <span class="muted">' + (s.amount === null || s.amount === undefined ? '<span class="tag coral">Missing amount</span>' : A.usd0(s.amount)) +
+        (withTag ? ' · ' + tagName(s.tag) : '') + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
+  return { init: init, ensureChart: ensureChart, _state: S };
+})();
+
+document.addEventListener('DOMContentLoaded', function () { App.onFirstShow('trend', Trend.init); });
+</script>

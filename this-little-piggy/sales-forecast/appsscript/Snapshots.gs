@@ -91,19 +91,7 @@ function writeSubmission_(v, rawValues, targetAe) {
     var file = folder.createFile(name, body, 'application/json');
     var sh = getRollup_(fy).getSheetByName('submissions');
     var existing = readSubmissions_(fy).filter(function (r) { return r.ae_slug === ae.slug && r.forecast_week === week.forecastWeek; });
-    var m = row.metrics, s = snapshot.builder.totals;
-    var rec = {
-      submission_id: snapshot.submission_id, forecast_week: "'" + week.forecastWeek, ae_slug: ae.slug, ae_name: ae.name, ae_email: ae.email,
-      owner_id: "'" + String(ae.hubspot_owner_id), submitted_at: "'" + submittedAt, commit: chk.values.commit, gut: chk.values.gut, best_case: chk.values.best_case,
-      closed_won_ytd: m.closedWonYtd.amount, gross_pipeline: m.grossOpen.amount, gross_pipeline_in_period: m.grossOpenInPeriod.amount,
-      weighted_pipeline: m.weightedOpen.amount, weighted_fallback_n: m.weightedOpen.fallbackCount,
-      is_official: true, resubmission_seq: existing.length + 1, builder_saved: snapshot.builder.saved,
-      builder_commit: s.commit, builder_gut_cum: s.gut_cumulative, builder_best_cum: s.best_case_cumulative,
-      warnings: warnings.map(function (w) { return w.code; }).join(','), tie_out_status: snapshot.context_at_submission.tie_out_status,
-      schema_version: snapshot.schema_version, drive_file_id: file.getId(), file_name: name, sha256: sha,
-      submitted_by: v.email, on_behalf: onBehalf
-    };
-    sh.appendRow(subCols_().map(function (c) { return rec[c]; }));
+    sh.appendRow(submissionRow_(snapshot, row.metrics, true, existing.length + 1, file.getId(), name, sha, onBehalf));
     // Supersede earlier submissions for the same AE and week: the only in-place edit this app makes.
     var col = colIndex_('is_official') + 1;
     existing.forEach(function (r) { if (r.is_official) sh.getRange(r._row, col).setValue(false); });
@@ -111,6 +99,24 @@ function writeSubmission_(v, rawValues, targetAe) {
              fileName: name, fileId: file.getId(), sha256: sha, resubmissionSeq: existing.length + 1, warnings: warnings, values: chk.values,
              aeName: ae.name, onBehalf: onBehalf, submittedBy: v.email };
   }, 'Another submission is being saved. Nothing was saved; please submit again in a few seconds.');
+}
+
+/** One rollup row, in subCols_() order, from a snapshot. Leading ' keeps dates and IDs as text in Sheets. */
+function submissionRow_(snapshot, m, isOfficial, seq, fileId, fileName, sha, onBehalf) {
+  var s = snapshot.builder.totals, f = snapshot.forecast;
+  var rec = {
+    submission_id: snapshot.submission_id, forecast_week: "'" + snapshot.forecast_week, ae_slug: snapshot.ae.slug, ae_name: snapshot.ae.name,
+    ae_email: snapshot.ae.email, owner_id: "'" + snapshot.ae.hubspot_owner_id, submitted_at: "'" + snapshot.submitted_at,
+    commit: f.commit, gut: f.gut, best_case: f.best_case,
+    closed_won_ytd: snapshot.context_at_submission.closed_won_ytd.amount, gross_pipeline: m.grossOpen.amount,
+    gross_pipeline_in_period: m.grossOpenInPeriod.amount, weighted_pipeline: m.weightedOpen.amount, weighted_fallback_n: m.weightedOpen.fallbackCount,
+    is_official: isOfficial, resubmission_seq: seq, builder_saved: snapshot.builder.saved,
+    builder_commit: s.commit, builder_gut_cum: s.gut_cumulative, builder_best_cum: s.best_case_cumulative,
+    warnings: snapshot.validation.warnings.join(','), tie_out_status: snapshot.context_at_submission.tie_out_status,
+    schema_version: snapshot.schema_version, drive_file_id: fileId, file_name: fileName, sha256: sha,
+    submitted_by: snapshot.submitted_by_email, on_behalf: onBehalf
+  };
+  return subCols_().map(function (c) { return rec[c]; });
 }
 
 /** Admin: re-hash every snapshot listed in the rollup and report any file that changed or disappeared. */
