@@ -322,6 +322,45 @@ table.hm td.tot .cell { background: transparent; color: var(--fg-1); font-weight
     </details>
   </section>
 
+  <section class="sec" id="sdr">
+    <div class="pg-head">
+      <div>
+        <h2>SDR pipeline generation</h2>
+        <div class="sub">New Logo pipeline only · SDR opportunity = <code>sdr_owner</code> populated, timestamped by create date · responds to the global filters above</div>
+      </div>
+    </div>
+
+    <div class="pg-kpis">
+      <button class="kpi" data-sk="booked30"><span class="l">Meetings booked (30d)</span><span class="vrow"><span class="v" id="sk-booked30"></span><span class="cmp" id="sk-booked30-cmp"></span></span><span class="s" id="sk-booked30-s"></span></button>
+      <button class="kpi" data-sk="held30"><span class="l">Meetings held (30d)</span><span class="vrow"><span class="v" id="sk-held30"></span><span class="cmp" id="sk-held30-cmp"></span></span><span class="s" id="sk-held30-s"></span></button>
+      <button class="kpi" data-sk="heldopp30"><span class="l">Held → opportunity (30d)</span><span class="vrow"><span class="v" id="sk-heldopp30"></span><span class="cmp" id="sk-heldopp30-cmp"></span></span><span class="s" id="sk-heldopp30-s"></span></button>
+      <button class="kpi" data-sk="opp30"><span class="l">Opportunities generated (30d)</span><span class="vrow"><span class="v" id="sk-opp30"></span><span class="cmp" id="sk-opp30-cmp"></span></span><span class="s" id="sk-opp30-s"></span></button>
+    </div>
+
+    <div class="chart-row" style="margin-top:var(--space-4)">
+      <div class="card"><h3>Meeting booked → held conversion, by segment</h3><div class="desc">Trailing 30 days, cohorted by <code>demo_booked__c</code> date. Held = <code>demo_completed__c</code> = "Yes" as of the as-of date, not required to also fall in the window.</div><div id="sdr-conv-seg"></div><div class="legend" id="sdr-conv-seg-leg"></div></div>
+      <div class="card"><h3>Opportunities generated per SDR</h3><div class="desc">Trailing 30 days on <code>createdate</code>. HubSpot's "Unassigned" placeholder owner is excluded from this per-SDR view (still counted in the headline tiles above).</div><div id="sdr-per-sdr"></div><div class="legend" id="sdr-per-sdr-leg"></div></div>
+    </div>
+
+    <div class="chart-row one">
+      <div class="card">
+        <h3>Pipeline generated vs. goal, by segment</h3>
+        <div class="desc">Σ <code>amount</code> of SDR opportunities created in the window, by segment (<code>units__c</code>-derived bands, same as the rest of this dashboard). Goal is never estimated — a segment with no confirmed quota shows "not configured," not $0 achievement.</div>
+        <div id="sdr-goal"></div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card"><h3>Channel mix — SDR opportunities</h3><div class="desc"><code>deal_source_group</code>, bucketed Outbound / Inbound (incl. referral) / Events. Independently set from <code>deal_source_drill_down</code> and <code>attribution_source_drill_down</code> — not a lookup of either.</div><div id="sdr-channel"></div><div class="legend" id="sdr-channel-leg"></div></div>
+      <div class="card"><h3>Stage progression by channel</h3><div class="desc">Current <code>dealstage</code> of every SDR opportunity, split by the same three channel buckets, including Closed Won / Closed Lost as terminal stages.</div><div id="sdr-stage"></div><div class="legend" id="sdr-stage-leg"></div></div>
+    </div>
+
+    <details class="meth" id="sdr-meth">
+      <summary><span>SDR section · sources and methodology <span class="dq-badge" id="sdr-dq-n"></span></span><span class="chev"><span class="c">Show</span><span class="o">Hide</span></span></summary>
+      <div class="body" id="sdr-meth-body"></div>
+    </details>
+  </section>
+
   <details class="meth" id="dq">
     <summary><span>Data quality flags <span class="dq-badge" id="dq-n"></span></span><span class="chev"><span class="c">Show</span><span class="o">Hide</span></span></summary>
     <div class="body" id="dq-body"></div>
@@ -838,6 +877,127 @@ function renderPG() {
   $('#pg-score-leg').innerHTML = `<span><span class="sw" style="background:${css('--viz-weighted')}"></span>Company has a Swan score</span><span><span class="sw" style="background:${css('--viz-gross')}"></span>No Swan score on associated company</span><span style="color:${css('--fg-3')}">Coverage: ${scored.length} of ${PGROWS.length} deals (${PGROWS.length ? (scored.length / PGROWS.length * 100).toFixed(0) : 0}%) · ${fmtUSD(sum(scored, d => d.amount))} of ${fmtUSD(sum(PGROWS, d => d.amount))} · observed values 3, 4, 5</span>`;
 }
 
+// ================= SDR pipeline generation =================
+const SDRM = META.sdr;
+const CHAN_COLOR = { Outbound: css('--viz-gross'), Inbound: css('--viz-weighted'), Events: css('--viz-actual'), Unassigned: css('--neutral-40') };
+function sdrCompute(rows) {
+  const opps = rows.filter(d => d.isSdrOpp);
+  const booked = rows.filter(d => d.demoBooked && d.demoBooked >= SDRM.window.start && d.demoBooked <= SDRM.window.end);
+  const held = booked.filter(d => d.demoHeld);
+  const heldOpp = held.filter(d => d.isSdrOpp);
+  const opp30 = opps.filter(d => d.created >= SDRM.window.start && d.created <= SDRM.window.end);
+  const bySeg = seg => booked.filter(d => d.seg === seg);
+  return { opps, booked, held, heldOpp, opp30, bySeg };
+}
+function renderSDRKPIs(k) {
+  const set = (id, v, s) => { $('#sk-'+id).textContent = v; $('#sk-'+id+'-s').innerHTML = s; };
+  set('booked30', fmtN(k.booked.length), `${fmtD(SDRM.window.start)} – ${fmtD(SDRM.window.end)} · demo_booked__c cohort`);
+  set('held30', fmtN(k.held.length), k.booked.length ? `${fmtPct(k.held.length / k.booked.length)} of booked cohort` : '<span class="gap">no booked meetings in window</span>');
+  set('heldopp30', k.held.length ? fmtPct(k.heldOpp.length / k.held.length) : '—', k.held.length ? `${k.heldOpp.length} of ${k.held.length} held meetings` : '<span class="gap">no held meetings in window</span>');
+  set('opp30', fmtN(k.opp30.length), `${fmtUSD(sum(k.opp30, d => d.amount))} · createdate cohort`);
+}
+function sdrConvBySegment(k) {
+  const data = SEGS.map(s => { const b = k.bySeg(s); const h = b.filter(d => d.demoHeld); return { label: s, n: b.length, pct: b.length ? h.length / b.length : null }; });
+  const W = 560, H = 220, m = { l: 46, r: 30, t: 20, b: 40 };
+  const colW = (W - m.l - m.r) / data.length, bw = Math.min(80, colW - 24);
+  const y0 = m.t + (H - m.t - m.b);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Meeting booked to held conversion by segment">`;
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => { const yy = m.t + (H-m.t-m.b) * (1-t); svg += `<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end">${(t*100).toFixed(0)}%</text>`; });
+  data.forEach((d, i) => {
+    const cx = m.l + i * colW + (colW - bw) / 2;
+    const h = d.pct == null ? 0 : (H-m.t-m.b) * d.pct;
+    svg += `<rect x="${cx}" y="${y0-h}" width="${bw}" height="${h}" rx="3" fill="${css('--viz-weighted')}"><title>${d.label}: ${d.n} booked${d.pct==null?'':', '+fmtPct(d.pct)+' held'}</title></rect>`;
+    svg += `<text class="val" x="${cx+bw/2}" y="${y0-h-6}" text-anchor="middle">${d.pct==null?'—':fmtPct(d.pct)}</text>`;
+    svg += `<text x="${cx+bw/2}" y="${H-14}" text-anchor="middle" style="fill:${css('--fg-1')};font-weight:500">${d.label}</text><text x="${cx+bw/2}" y="${H-2}" text-anchor="middle" style="font-size:10px">${d.n} booked</text>`;
+  });
+  svg += `<line class="axis" x1="${m.l}" x2="${W-m.r}" y1="${y0}" y2="${y0}"/></svg>`;
+  $('#sdr-conv-seg').innerHTML = data.some(d=>d.n) ? svg : '<div class="empty">No booked meetings in the window.</div>';
+  $('#sdr-conv-seg-leg').innerHTML = `<span style="color:${css('--fg-3')}">${k.booked.length} booked meetings in the trailing-30-day window, grouped by segment</span>`;
+}
+function sdrPerSDR(k) {
+  const real = k.opp30.filter(d => d.sdrOwnerId !== '8309346');
+  const names = [...new Set(real.map(d => d.sdrOwnerName))].sort();
+  const cats = names.map(n => ({ label: n, test: d => d.sdrOwnerName === n }));
+  pgHBars('sdr-per-sdr', null, cats, real, 'Opportunities generated, trailing 30d (deal count after dot)');
+  const excl = k.opp30.length - real.length;
+  $('#sdr-per-sdr-leg').innerHTML = `<span style="color:${css('--fg-3')}">${real.length} deals across ${names.length} SDRs${excl ? ` · ${excl} "Unassigned" deal(s) excluded from this view, counted in the headline tile` : ''}</span>`;
+}
+function sdrGoalTable(opps) {
+  const Q = SDRM.qtd, Y = SDRM.ytd;
+  const qRows = opps.filter(d => inWin(d.created, Q)), yRows = opps.filter(d => inWin(d.created, Y));
+  const bySeg = (arr, s) => sum(arr.filter(d => d.seg === s), d => d.amount);
+  const cell = (v, goal) => !goal ? '<span class="gap">not configured</span>' : `${fmtUSD(v)} of ${fmtUSD(goal)} (${fmtPct(v/goal)})`;
+  const rows = SEGS.map(s => `<tr><td>${s}</td><td class="num">${cell(bySeg(qRows, s), SDRM.goalBySegment[s])}</td><td class="num">${cell(bySeg(yRows, s), SDRM.goalBySegment[s])}</td></tr>`).join('');
+  $('#sdr-goal').innerHTML = `<table><thead><tr><th>Segment</th><th>QTD generated vs. goal</th><th>YTD generated vs. goal</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function sdrStageChart(opps) {
+  const stages = META.stages.filter(s => s.pipe === 'N');
+  const chans = ['Outbound', 'Inbound', 'Events'];
+  const data = stages.map(s => ({ s, v: chans.map(c => opps.filter(d => d.stageId === s.id && d.channel === c).length) }));
+  const W = 620, H = 320, m = { l: 50, r: 16, t: 18, b: 84 };
+  const maxV = niceMax(Math.max(1, ...data.flatMap(d => d.v)));
+  const gw = (W - m.l - m.r) / Math.max(1, data.length), bw = Math.min(22, (gw - 12) / chans.length);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / maxV);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="SDR opportunity stage progression by channel">`;
+  yTicks(maxV).forEach(t => svg += `<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}"/><text x="${m.l-8}" y="${y(t)+4}" text-anchor="end">${Math.round(t)}</text>`);
+  svg += `<line class="axis" x1="${m.l}" x2="${W-m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  data.forEach((d, i) => {
+    const gx = m.l + i * gw + (gw - bw * chans.length) / 2;
+    d.v.forEach((v, j) => { if (!v) return; const h = y(0) - y(v); svg += `<rect x="${gx + j*bw + 1}" y="${y(v)}" width="${bw-2}" height="${h}" rx="2" fill="${CHAN_COLOR[chans[j]]}"><title>${esc(d.s.label)} · ${chans[j]}: ${v}</title></rect>`; });
+    svg += `<text x="${m.l + i*gw + gw/2}" y="${H-m.b+14}" text-anchor="middle" transform="rotate(28 ${m.l + i*gw + gw/2} ${H-m.b+14})" style="fill:${css('--fg-1')};font-weight:500;font-size:10.5px">${esc(d.s.label)}</text>`;
+  });
+  svg += `<text class="axis-title" transform="translate(14 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">SDR opportunities (count)</text></svg>`;
+  $('#sdr-stage').innerHTML = data.some(d => d.v.some(v => v)) ? svg : '<div class="empty">No SDR opportunities match the active filters.</div>';
+  $('#sdr-stage-leg').innerHTML = chans.map(c => `<span><span class="sw" style="background:${CHAN_COLOR[c]}"></span>${c}</span>`).join('');
+}
+function renderSDRMeth() {
+  const c = SDRM.counts;
+  $('#sdr-dq-n').textContent = SDRM.dq.length + ' flags';
+  $('#sdr-meth-body').innerHTML = `
+    <h4>Scope</h4>
+    <ul>
+      <li>HubSpot object: <code>DEAL</code>, portal 243635806. New Logo pipeline <code>2313721535</code> only, createdate ≥ 2026-01-01 — the same population as Pipeline Generation, not a separate pull.</li>
+      <li>SDR opportunity = <code>sdr_owner</code> IS NOT NULL (includes HubSpot's "Unassigned" placeholder, id 8309346), timestamped by <code>createdate</code>. Deliberately broader than "reached a later pipeline stage." Confirmed 2026-09-23.</li>
+      <li>Meeting booked = <code>demo_booked__c</code> IS NOT NULL. Meeting held = <code>demo_completed__c</code> = "Yes". <code>demo_completed_date__c</code> is never used (see data quality flags).</li>
+      <li>Trailing 30 days = [as-of date − 29 days, as-of date], inclusive, ET: ${fmtD(SDRM.window.start)} – ${fmtD(SDRM.window.end)}. Cohorted by the triggering event's own date (<code>demo_booked__c</code> for booked/held, <code>createdate</code> for opportunities generated), tracked to whatever eventual outcome — not a point-in-time snapshot.</li>
+      <li>Segment = same <code>units__c</code>-derived SMB / Mid-Market / Enterprise bands as the rest of this dashboard.</li>
+      <li>Global filters (owner, stage, segment, amount, units, close date) apply to every component in this section, same as Pipeline Generation.</li>
+    </ul>
+    <h4>Fields</h4>
+    <table><thead><tr><th>Use</th><th>Property</th><th>Notes</th></tr></thead><tbody>
+      <tr><td>SDR owner</td><td><code>sdr_owner</code></td><td>Confirmed authoritative. <code>sdr_owner_new</code> not used — see data quality flags.</td></tr>
+      <tr><td>Meeting booked</td><td><code>demo_booked__c</code></td><td>Date-only property (UTC midnight = intended calendar date; not ET-shifted).</td></tr>
+      <tr><td>Meeting held</td><td><code>demo_completed__c</code></td><td>Enumeration Yes/No. Status flag, no reliable date.</td></tr>
+      <tr><td>Channel</td><td><code>deal_source_group</code></td><td>Independently set from <code>deal_source_drill_down</code> and <code>attribution_source_drill_down</code> — not a lookup of either. Bucketed Outbound / Inbound (incl. referral) / Events / Unassigned.</td></tr>
+      <tr><td>Segment basis</td><td><code>units__c</code></td><td>Same bands as the rest of this dashboard.</td></tr>
+    </tbody></table>
+    <h4>Validation tie-out (pulled records vs HubSpot reporting API)</h4>
+    <table><thead><tr><th>Measure</th><th>Pulled records</th><th>HubSpot reporting API</th><th>Delta</th></tr></thead><tbody>
+      ${SDRM.controls.map(t => `<tr><td>${t.m}</td><td>${t.a}</td><td>${t.b}</td><td>${t.d}</td></tr>`).join('')}
+    </tbody></table>
+    <h4>Data quality flags</h4>
+    <table><thead><tr><th style="width:60px">ID</th><th style="width:80px">Severity</th><th>Finding</th><th style="width:120px">Count</th><th>Handling</th></tr></thead><tbody>
+      ${SDRM.dq.map(f => `<tr><td>${f.id}</td><td><span class="sev ${f.sev[0].toLowerCase()}">${f.sev}</span></td><td>${f.text}</td><td>${f.n}</td><td>${f.handling}</td></tr>`).join('')}
+    </tbody></table>`;
+}
+let SDRROWS = [], SDRK = null;
+function renderSDR() {
+  SDRROWS = PGROWS.filter(d => d.isSdrOpp); SDRK = sdrCompute(PGROWS);
+  renderSDRKPIs(SDRK);
+  sdrConvBySegment(SDRK);
+  sdrPerSDR(SDRK);
+  sdrGoalTable(SDRROWS);
+  const chanCats = [
+    { label: 'Outbound', test: d => d.channel === 'Outbound', color: CHAN_COLOR.Outbound },
+    { label: 'Inbound', test: d => d.channel === 'Inbound', color: CHAN_COLOR.Inbound },
+    { label: 'Events', test: d => d.channel === 'Events', color: CHAN_COLOR.Events },
+    { label: 'Unassigned', test: d => d.channel === 'Unassigned', color: CHAN_COLOR.Unassigned, keep: true },
+  ];
+  pgHBars('sdr-channel', null, chanCats, SDRROWS, 'Σ amount (deal count after dot)');
+  $('#sdr-channel-leg').innerHTML = chanCats.map(c => `<span><span class="sw" style="background:${c.color}"></span>${c.label}</span>`).join('') + `<span style="color:${css('--fg-3')}">${SDRROWS.length} SDR opportunities</span>`;
+  sdrStageChart(SDRROWS);
+}
+
 // ================= historical KPI comparison (Compare vs) =================
 const HIST_NOW = HISTORY.length ? HISTORY[HISTORY.length - 1] : null;
 const HIST_PAST = HISTORY.slice(0, -1).reverse();
@@ -846,6 +1006,7 @@ const CMP_TILES = [
   ['k-nl', 'tier1', 'nl'], ['k-ue', 'tier1', 'ue'], ['k-gross', 'tier1', 'gross'], ['k-wtd', 'tier1', 'wtd'],
   ['k-fq', 'tier1', 'fq'], ['k-fy', 'tier1', 'fy'],
   ['pk-cqtd', 'pg', 'cqtd'], ['pk-cytd', 'pg', 'cytd'], ['pk-nqtd', 'pg', 'nqtd'], ['pk-nytd', 'pg', 'nytd'],
+  ['sk-booked30', 'sdr', 'booked30'], ['sk-held30', 'sdr', 'held30'], ['sk-heldopp30', 'sdr', 'heldopp30'], ['sk-opp30', 'sdr', 'opp30'],
 ];
 const fmtPct1 = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
 function cmpBadge(id, cur, base, asOfLabel) {
@@ -889,11 +1050,12 @@ function render() {
   hGroupedBars('c-own', 'c-own-leg', ownTot.map(x => ({ label: x.o, test: d => d.owner === x.o })), K, 'Deal owner');
   renderTable(ROWS);
   renderPG();
+  renderSDR();
 }
 $('#refreshed').textContent = META.refreshed;
 $('#asof').textContent = fmtD(META.asOf);
 buildFilterPops();
-renderMeth(); renderDQ(); renderPGMeth();
+renderMeth(); renderDQ(); renderPGMeth(); renderSDRMeth();
 render();
 initCompare();
 </script>

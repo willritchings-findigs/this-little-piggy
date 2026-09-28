@@ -163,9 +163,38 @@
   "1542312872": {
    "name": "Hayden Ashwill",
    "active": false
+  },
+  "1167601196": {
+   "name": "Charlie ODonoghue",
+   "active": true
+  },
+  "1229562943": {
+   "name": "Emma Kyber",
+   "active": true
+  },
+  "1326690751": {
+   "name": "Amos Brown",
+   "active": true
+  },
+  "166642714": {
+   "name": "Emma Ferer",
+   "active": true
+  },
+  "167140681": {
+   "name": "Liam Sirgo",
+   "active": true
+  },
+  "404749623": {
+   "name": "John Gallo",
+   "active": true
+  },
+  "8309346": {
+   "name": "Unassigned",
+   "active": true
   }
  },
  "notes": [
-  "Stage 3753890498 (Discovery / Demo, New Logo): 17 live deals show probability 0.2 (modal, matches prior snapshot) and 1 deal shows 0.15; modal probability used for the stage map, no stage-level change."
+  "Stage 3753890498 (Discovery / Demo, New Logo): 17 live deals show probability 0.2 (modal, matches prior snapshot) and 1 deal shows 0.15; modal probability used for the stage map, no stage-level change.",
+  "SDR section (2026-09-23 confirmed, built 2026-09-28): 7 sdr_owner IDs resolved via search_owners, none of which had previously appeared as a deal owner (hubspot_owner_id) in this dashboard — Charlie ODonoghue, Emma Kyber, Amos Brown, Emma Ferer, Liam Sirgo, John Gallo, and HubSpot's 'Unassigned' placeholder (id 8309346, counts as populated for the SDR-opportunity flag, excluded only from per-SDR breakdown rows)."
  ]
 }

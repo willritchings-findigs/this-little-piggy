@@ -122,6 +122,8 @@ if any(x["stageId"] not in WON_IDS for x in won): fail(3, "deals_won.json contai
 
 # ----------------------------------------------------------------------------- derive pipeline-generation deals
 SRC_GROUP = {"IB": "Inbound", "OB": "Outbound", "EV": "Event", "RE": "Referral", "DA": "Data provider", "UK": "Unknown"}
+date_only = lambda s: s[:10] if s else None  # HubSpot "date" properties are UTC midnight for the intended calendar date; never ET-shift them
+CHANNEL_BUCKET = {k: v for k, v in CFG["sdr_section"]["channel_buckets"].items() if k in ("Outbound", "Inbound", "Referral", "Event")}
 def derive_created(r):
     p = r["properties"]; sid = p["dealstage"]; st = stage_of(sid)
     if p["pipeline"] != NL_ID: fail(3, f"created deal {r['id']} not in New Logo pipeline")
@@ -138,11 +140,16 @@ def derive_created(r):
     sw = SWAN.get(str(r["id"]))
     src = p.get(F["source"])
     if not src: fail(3, f"created deal {r['id']} has null {F['source']} — the no-null assumption used to infer 'Outbound SDR' no longer holds; pull the field for every deal")
+    sdr_id = p.get(F["sdr_owner"]); is_sdr_opp = sdr_id is not None and sdr_id != ""
+    chan_raw = p.get(F["channel_source"]) or None
     return dict(id=str(r["id"]), name=p["dealname"], pipe="N", pipeLabel="New Logo", stageId=sid, stage=st["label"], owner=owner_name(p[F["owner"]]), ownerId=str(p[F["owner"]]),
                 amount=amt, units=int(units), seg=seg(units), close=et_date(p.get(F["close_date"])), created=et_date(p.get(F["create_date"])),
                 src=src, srcParent=parent, srcGroup=SRC_GROUP.get(parent[:2], "Unassigned"), recSrc=rs, migrated=(rs == CFG["migration"]["record_source_value"]),
                 hsScore=num(p.get("hs_deal_score")), swan=sw, band=("No Swan score" if sw is None else f"Swan {sw}"),
-                won=sid in WON_IDS, lost=sid in LOST_IDS, weighted=w, wtdFallback=fb, pastDue=False, migration=(rs == CFG["migration"]["record_source_value"]))
+                won=sid in WON_IDS, lost=sid in LOST_IDS, weighted=w, wtdFallback=fb, pastDue=False, migration=(rs == CFG["migration"]["record_source_value"]),
+                isSdrOpp=is_sdr_opp, sdrOwnerId=(str(sdr_id) if is_sdr_opp else None), sdrOwnerName=(owner_name(sdr_id) if is_sdr_opp else None),
+                demoBooked=date_only(p.get(F["demo_booked"])), demoHeld=(p.get(F["demo_completed"]) == "Yes"),
+                channelRaw=chan_raw, channel=(CHANNEL_BUCKET.get(chan_raw, "Unassigned") if is_sdr_opp else None))
 
 pg = [derive_created(r) for r in CREATED_RAW]
 
@@ -170,6 +177,15 @@ q3 = [x for x in pg if inw(x["created"], WIN["qtd"])]; q3_mig = [x for x in q3 i
 zero_amt = [x for x in pg if x["amount"] == 0]; scored = [x for x in pg if x["swan"] is not None]
 null_parent = [x for x in pg if x["srcParent"] == "Unassigned"]; no_close = [x for x in pg if not x["close"]]
 mig_dates = sorted(x["created"] for x in pg_mig); nat_dates = sorted(x["created"] for x in pg_nat)
+
+# ----------------------------------------------------------------------------- SDR section (confirmed 2026-09-23)
+sdr_window = {"start": iso(date.fromisoformat(AS_OF) - timedelta(days=29)), "end": AS_OF}
+sdr_opps = [x for x in pg if x["isSdrOpp"]]; sdr_total_amt = sum(x["amount"] for x in sdr_opps)
+sdr_booked = [x for x in pg if inw(x["demoBooked"], sdr_window)]
+sdr_held = [x for x in sdr_booked if x["demoHeld"]]
+sdr_held_opp = [x for x in sdr_held if x["isSdrOpp"]]
+sdr_opp30 = [x for x in sdr_opps if inw(x["created"], sdr_window)]
+sdr_goal = CFG["sdr_section"]["goal_by_segment"]
 
 # ----------------------------------------------------------------------------- tie-out (hard gate)
 tie = []
@@ -200,7 +216,21 @@ for k, v in CTL["created_by_drill_down"].items():
 for k, v in CTL["created_swan"].items():
     sub = [x for x in pg if (x["swan"] is None if k == "null" else x["swan"] == int(k))]
     pcheck(f"Swan score {k} count", len(sub), v["n"], fmt=str, money=False); pcheck(f"Swan score {k} Σ amount", sum(x["amount"] for x in sub), v["a"])
-failures = [t for t in tie + pg_tie if not t["ok"]]
+sdr_tie = []
+def scheck(label, ours, ctl, fmt=usd, money=True):
+    ok = (abs(ours - ctl) <= TOL) if money else (ours == ctl)
+    sdr_tie.append(dict(m=label, a=fmt(ours), b=fmt(ctl), d=("0.00 — reconciles" if ok and money else ("0 — reconciles" if ok else fmt(ours - ctl))), ok=ok))
+scheck("SDR opportunity count", len(sdr_opps), CTL["sdr_opp_count"], fmt=str, money=False)
+scheck("SDR opportunity Σ amount", sdr_total_amt, CTL["sdr_opp_amount"])
+for k, v in CTL["sdr_by_channel"].items():
+    sub = [x for x in sdr_opps if x["channelRaw"] == (None if k == "null" else k)]
+    scheck(f"deal_source_group = {k} count", len(sub), v["n"], fmt=str, money=False); scheck(f"deal_source_group = {k} Σ amount", sum(x["amount"] for x in sub), v["a"])
+scheck(f"Meeting booked, trailing 30d ({sdr_window['start']}..{sdr_window['end']})", len(sdr_booked), CTL["sdr_meeting_booked_30d"], fmt=str, money=False)
+scheck("Meeting held, trailing 30d (of booked cohort)", len(sdr_held), CTL["sdr_meeting_held_30d"], fmt=str, money=False)
+scheck("Held → opportunity, trailing 30d", len(sdr_held_opp), CTL["sdr_opp_from_held_30d"], fmt=str, money=False)
+scheck("Opportunities generated, trailing 30d (createdate)", len(sdr_opp30), CTL["sdr_opp_30d_count"], fmt=str, money=False)
+scheck("Opportunities generated Σ amount, trailing 30d", sum(x["amount"] for x in sdr_opp30), CTL["sdr_opp_30d_amount"])
+failures = [t for t in tie + pg_tie + sdr_tie if not t["ok"]]
 if failures:
     for t in failures: print(f"  MISMATCH  {t['m']}: pulled {t['a']} vs control {t['b']} (delta {t['d']})", file=sys.stderr)
     fail(2, f"{len(failures)} tie-out check(s) did not reconcile. Nothing written.")
@@ -256,6 +286,20 @@ meta = dict(
                         noClose=len(no_close), nullOwner=0, nullAmt=0, nullParentSrc=len(null_parent), nullParentSrcNames=[x["name"] for x in null_parent],
                         driftNote=" ".join(SNAP.get("notes", []))),
             controls=[{k: v for k, v in t.items() if k != "ok"} for t in pg_tie]),
+    sdr=dict(asOf=AS_OF, qtd=WIN["qtd"], ytd=WIN["ytd"], window=sdr_window, goalBySegment=sdr_goal,
+             counts=dict(total=len(sdr_opps), totalAmt=sdr_total_amt, booked=len(sdr_booked), held=len(sdr_held), heldOpp=len(sdr_held_opp),
+                         opp30=len(sdr_opp30), opp30Amt=sum(x["amount"] for x in sdr_opp30),
+                         nonSdrCount=len(pg) - len(sdr_opps), blankChannel=sum(1 for x in sdr_opps if x["channelRaw"] is None)),
+             controls=[{k: v for k, v in t.items() if k != "ok"} for t in sdr_tie],
+             dq=[
+                 dict(id="SDR-1", sev="Medium", text=f"<code>sdr_owner_new</code> exists alongside <code>sdr_owner</code> and diverges heavily from it on the same deals (a team-reassignment pattern, verified 2026-09-23). Every live currently-configured HubSpot saved report for SDR reporting ('Demos Booked by SDR', 'Opps Generated by SDR', 'SDR Outbound By Stage', 8 per-rep 'Quota Q3' reports) groups by <code>sdr_owner_new</code> instead; one of those tiles ('SDR Outbound By Stage') inconsistently filters on <code>sdr_owner</code> but charts by <code>sdr_owner_new</code>. Re-verified 2026-09-28: recent-deal (last 30 days) real-assignment rate favors <code>sdr_owner</code> (100% vs 88.7%).", n="7 distinct SDR owners resolved", handling="This dashboard follows the Notion-confirmed decision (<code>sdr_owner</code>). Not reconciled with the live HubSpot reports' choice of <code>sdr_owner_new</code> — flagged, not resolved."),
+                 dict(id="SDR-2", sev="Medium", text=f"Three source-bucketing fields exist: <code>deal_source_drill_down</code> (used elsewhere in this dashboard for Pipeline Generation source attribution), <code>attribution_source_drill_down</code> (used by the live 'SDR Outbound By Stage' HubSpot tile), and <code>deal_source_group</code> (used here, per the confirmed decision). Verified 2026-09-28: on the 759 New Logo deals (all-time) where <code>deal_source_drill_down</code> and <code>attribution_source_drill_down</code> are both populated, they disagree 100% of the time.", n="3 fields, not interchangeable", handling="This section uses only <code>deal_source_group</code>, set independently of either drill-down field, per the confirmed decision."),
+                 dict(id="SDR-3", sev="Low", text=f"The confirmed 'SDR opportunity' definition (<code>sdr_owner</code> populated, including HubSpot's 'Unassigned' placeholder) matches {len(sdr_opps)} of {len(pg)} New Logo FY deals ({len(sdr_opps)/len(pg)*100:.1f}%) — {len(pg)-len(sdr_opps)} deal(s) have a genuinely blank <code>sdr_owner</code>.", n=f"{len(pg)-len(sdr_opps)} non-SDR deal(s)", handling="Deliberately broad by confirmed decision; not narrowed to a later pipeline stage. Recorded here so the near-universal match rate is visible rather than assumed."),
+                 dict(id="SDR-4", sev="High", text="No pipeline quota/goal field or file exists in HubSpot for any segment. A FY2027 capacity/quota workbook exists in Drive (checked 2026-09-28) but does not apply here: it targets FY2027 (this dashboard's fiscal year is calendar 2026), is scenario-based (Base/Conservative/Moderate/Aggressive — four different targets, no single confirmed number), and uses a different segment taxonomy (SMB floor-excluded below 500 units, plus a separate Strategic tier) than this dashboard's governed 3-band segment_rule.", n="0 of 3 segments configured", handling="Confirmed placeholder: goal = 0 for every segment, treated as 'not configured' — never estimated, never shown as $0 achievement. Replace the config block wholesale once a quota workbook confirmed for calendar FY2026 and this dashboard's segment bands is supplied."),
+                 dict(id="SDR-5", sev="Low", text=f"Held → opportunity conversion in the trailing-30-day window is {len(sdr_held_opp)} of {len(sdr_held)} ({'100%' if sdr_held and len(sdr_held_opp)==len(sdr_held) else (str(round(len(sdr_held_opp)/len(sdr_held)*100,1))+'%' if sdr_held else 'no held meetings in window')}) — a near-mechanical consequence of SDR-3's near-universal <code>sdr_owner</code> population, not necessarily a meaningful efficiency signal.", n=f"{len(sdr_held_opp)} of {len(sdr_held)}", handling="Shown as confirmed; this flag exists so the tile isn't read as a meaningful efficiency metric without this context."),
+                 dict(id="SDR-6", sev="Low", text=f"<code>deal_source_group</code> is blank on {sum(1 for x in sdr_opps if x['channelRaw'] is None)} of {len(sdr_opps)} SDR opportunities in this FY2026 New Logo population — much lower than the ~72% blank rate observed 2026-09-28 across the full historical (all-time, all-pipeline) SDR-owned population; the field appears to be reliably populated on recent New Logo deals specifically.", n=f"{sum(1 for x in sdr_opps if x['channelRaw'] is None)} of {len(sdr_opps)}", handling="Bucketed as 'Unassigned', never estimated."),
+                 dict(id="SDR-7", sev="Low", text="<code>demo_completed_date__c</code> has 0 population on any deal created since 2026-08-01 (re-verified 2026-09-28) — dead field since the Salesforce migration cutover.", n="0 recent records", handling="Not used. 'Meeting held' is a status flag (<code>demo_completed__c</code> = 'Yes') with no reliable date of its own."),
+             ]),
 )
 
 # ----------------------------------------------------------------------------- Compare vs history (compact, no deal-level data)
@@ -264,7 +308,8 @@ hist_entry = dict(asOf=AS_OF, file=out_name,
                    tier1=dict(qtd=round(qtd_amt, 2), ytd=round(wa, 2), asp=asp, cycle=cycle, nl=round(nl_amt, 2), ue=round(ue_amt, 2),
                               gross=round(og, 2), wtd=round(ow, 2), fq=round(fq_amt, 2), fy=round(fy_amt, 2)),
                    pg=dict(cqtd=round(sum(x["amount"] for x in q3), 2), cytd=round(pg_total, 2), nqtd=len(q3), nytd=len(pg)),
-                   sdr=None)
+                   sdr=dict(booked30=len(sdr_booked), held30=len(sdr_held), opp30=len(sdr_opp30),
+                            heldopp30=(round(len(sdr_held_opp) / len(sdr_held), 4) if sdr_held else None)))
 HIST_PATH = P("data", "kpi_history.json")
 history = load("data/kpi_history.json") if os.path.exists(HIST_PATH) else []
 history = [h for h in history if h["asOf"] != AS_OF] + [hist_entry]
@@ -286,10 +331,13 @@ lines = [f"# Tie-out — as of {AS_OF} (pulled {SNAP['pulled_at_et']})", "",
          f"- Bookings QTD {usd(sum(x['amount'] for x in q_won))} ({len(q_won)}) · YTD {usd(wa)} ({len(won)})",
          f"- Gross open {usd(og)} · weighted {usd(ow)} (stored {usd(ow_stored)} on {len(open_)-len(fb)}, fallback {usd(ow_fb)} on {len(fb)})",
          f"- Forecast quarter {usd(sum(x['amount'] for x in q_won) + sum(x['weighted'] for x in q_open))} · year {usd(wa + sum(x['weighted'] for x in y_open))}",
-         f"- Pipeline created QTD {usd(sum(x['amount'] for x in q3))} ({len(q3)}) · YTD {usd(pg_total)} ({len(pg)})", "",
+         f"- Pipeline created QTD {usd(sum(x['amount'] for x in q3))} ({len(q3)}) · YTD {usd(pg_total)} ({len(pg)})",
+         f"- SDR opportunities {usd(sdr_total_amt)} ({len(sdr_opps)}) · trailing 30d: booked {len(sdr_booked)}, held {len(sdr_held)}, opportunities {len(sdr_opp30)}", "",
          "## Tier 1–3 tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in tie] + \
         ["", "## Pipeline generation tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in pg_tie] + \
+        ["", "## SDR section tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in sdr_tie] + \
         ["", "## Data quality flags", "| ID | Severity | Count |", "|---|---|---|"] + [f"| {d['id']} | {d['sev']} | {d['n']} |" for d in dq] + \
+        ["", "## SDR section data quality flags", "| ID | Severity | Count |", "|---|---|---|"] + [f"| {d['id']} | {d['sev']} | {d['n']} |" for d in meta['sdr']['dq']] + \
         ["", f"Output: `output/{out_name}`"]
 with open(P("output", "tieout.md"), "w", encoding="utf-8") as f: f.write("\n".join(lines) + "\n")
 
@@ -297,7 +345,8 @@ if not args.no_run_log:
     os.makedirs(P("runs"), exist_ok=True)
     run = dict(as_of=AS_OF, pulled=SNAP["pulled_at_et"], built=datetime.now(ET).strftime("%Y-%m-%d %H:%M ET"), open_n=len(open_), won_n=len(won), created_n=len(pg),
                open_gross=round(og, 2), open_weighted=round(ow, 2), weighted_fallback_n=len(fb), won_amount=round(wa, 2), created_amount=round(pg_total, 2),
-               past_due_n=len(past_due), swan_coverage=round(len(scored) / len(pg), 3) if pg else None, dq_high=sum(1 for d in dq if d["sev"] == "High"), output=out_name)
+               past_due_n=len(past_due), swan_coverage=round(len(scored) / len(pg), 3) if pg else None, dq_high=sum(1 for d in dq if d["sev"] == "High"),
+               sdr_opp_n=len(sdr_opps), sdr_opp_amount=round(sdr_total_amt, 2), sdr_booked_30d=len(sdr_booked), sdr_held_30d=len(sdr_held), output=out_name)
     with open(P("runs", "runs.jsonl"), "a", encoding="utf-8") as f: f.write(json.dumps(run) + "\n")
 
-print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {len(tie)+len(pg_tie)}/{len(tie)+len(pg_tie)} reconciled")
+print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)} sdr_opp={len(sdr_opps)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {len(tie)+len(pg_tie)+len(sdr_tie)}/{len(tie)+len(pg_tie)+len(sdr_tie)} reconciled")
