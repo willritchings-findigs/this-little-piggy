@@ -1,0 +1,13 @@
+{
+  "name": "findigs-sales-forecast",
+  "private": true,
+  "description": "Weekly AE forecast tool (Google Apps Script web app). No runtime npm dependencies.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "test": "node scripts/build.mjs --check && node --test tests/*.test.mjs",
+    "preview": "node scripts/preview.mjs 8787",
+    "verify:phase1": "node scripts/verify_phase1.mjs verification/2026-09-25 ben-de-winter"
+  },
+  "engines": { "node": ">=20" }
+}

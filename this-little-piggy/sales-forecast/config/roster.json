@@ -1,0 +1,35 @@
+{
+  "_about": "Forecast roster. Owner IDs, emails and isActive verified live against HubSpot owners/users 2026-09-25. The app re-validates isActive and user seat on every data pull and flags any drift.",
+  "version": "2026-09-25b",
+  "fiscal_year": 2026,
+  "roles": {
+    "ae": "Edits own row in Section 1 and own builder in Section 2. Reads every row, builder, and trend (decision 2026-09-25: full transparency).",
+    "ae_leader": "Same as ae (edits own row and builder only).",
+    "leadership": "Reads everything. No edits.",
+    "admin": "Leadership access plus editing any AE's builder tags, submitting on behalf of any AE, and editor-run admin functions (installTriggers, refreshDataTrigger, debugSampleAe, verifySnapshots, seedSyntheticSnapshots in test mode)."
+  },
+  "aes": [
+    { "name": "Phil Aroian",      "slug": "phil-aroian",      "email": "phil.aroian@findigs.com",      "hubspot_owner_id": "1053057926", "role": "ae_leader", "admin": true, "_note": "Decision 2026-09-25: edits own row, sees all rows. Admin (decision P5-4): may also edit any AE's builder tags and submit on behalf of any AE." },
+    { "name": "Spencer Wuthrich", "slug": "spencer-wuthrich", "email": "spencer.wuthrich@findigs.com", "hubspot_owner_id": "167857460",  "role": "ae" },
+    { "name": "Ian McLaughlin",   "slug": "ian-mclaughlin",   "email": "ian.mclaughlin@findigs.com",   "hubspot_owner_id": "26451111",   "role": "ae" },
+    { "name": "Ben de Winter",    "slug": "ben-de-winter",    "email": "ben.dewinter@findigs.com",     "hubspot_owner_id": "2111244871", "role": "ae" },
+    { "name": "Matt Lynch",       "slug": "matt-lynch",       "email": "matt.lynch@findigs.com",       "hubspot_owner_id": "1032502194", "role": "ae" }
+  ],
+  "leadership": [
+    { "name": "Alexander Schaper", "email": "alexander.schaper@findigs.com" },
+    { "name": "Asaf Raz",          "email": "asaf.raz@findigs.com" }
+  ],
+  "_leadership_note": "Decision 2026-09-25: leadership = Brian Korchin, Alex Schaper, Asaf Raz, plus Phil Aroian (via ae_leader role above). P5-4: Brian moved to admins; Phil carries admin: true on his AE entry.",
+  "admins": [
+    { "name": "Will Ritchings", "email": "will.ritchings@findigs.com", "_note": "Script owner and core owner of the tool (decisions 2026-09-25)." },
+    { "name": "Brian Korchin",  "email": "brian.korchin@findigs.com",  "_note": "CRO per HubSpot user title. Moved from leadership to admin (decision P5-4)." }
+  ],
+  "non_roster_owners": {
+    "_about": "Owners holding in-scope open or closed-won-YTD deals who do not submit forecasts. Shown read-only in a reconciliation row so Section 1 column totals tie to company totals.",
+    "owners": [
+      { "name": "Reese Ryan",      "hubspot_owner_id": "663611618",  "reason": "Not on the roster pending role confirmation" },
+      { "name": "Clay Stapleford", "hubspot_owner_id": "686754956",  "reason": "No HubSpot user seat; accounts pending reassignment" },
+      { "name": "Hayden Ashwill",  "hubspot_owner_id": "1542312872", "reason": "Inactive in HubSpot; closed-won this year, no open deals" }
+    ]
+  }
+}

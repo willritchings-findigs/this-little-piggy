@@ -1,0 +1,165 @@
+/**
+ * Web app entry. Identity = Google SSO email of the viewer (Session.getActiveUser, same-domain,
+ * deployment "Execute as: me", "Access: anyone within findigs.com"). The client never asserts identity:
+ * every endpoint re-resolves the viewer server-side and checks what they may read or write.
+ */
+function currentViewer_() {
+  var email = Session.getActiveUser().getEmail();
+  var v = ForecastCore.resolveViewer(email, FORECAST_CONFIG.roster);
+  if (!v) throw new Error(email ? 'Access denied: ' + email + ' is not on the forecast roster or leadership list.'
+                                : 'Access denied: could not determine your Google account. Open the app signed in with your findigs.com account.');
+  return v;
+}
+
+function doGet() {
+  try { currentViewer_(); }
+  catch (e) {
+    return HtmlService.createHtmlOutput('<p style="font-family:sans-serif;padding:24px">' + escapeHtml_(e.message) + '</p>').setTitle('Sales forecast');
+  }
+  return HtmlService.createTemplateFromFile('Index').evaluate()
+    .setTitle('Sales forecast').addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
+}
+
+/** HtmlService include: <?!= include('Styles') ?> */
+function include(name) { return HtmlService.createHtmlOutputFromFile(name).getContent(); }
+
+function escapeHtml_(s) {
+  return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+
+function rosterAeBySlug_(slug) {
+  return FORECAST_CONFIG.roster.aes.filter(function (a) { return a.slug === slug; })[0] || null;
+}
+
+/** Which AE's data the viewer asked for, after permission checks. Defaults to the viewer's own AE. */
+function targetAe_(v, slug) {
+  if (!slug) {
+    if (v.ae) return v.ae;
+    return FORECAST_CONFIG.roster.aes.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; })[0];
+  }
+  var ae = rosterAeBySlug_(slug);
+  if (!ae) throw new Error('Unknown AE: ' + slug);
+  if (!v.canViewAll && (!v.ae || v.ae.slug !== slug)) throw new Error('Access denied: you can only view your own forecast builder.');
+  return ae;
+}
+
+/**
+ * google.script.run endpoint: data for the viewer. AEs receive only their own row and deals;
+ * leadership / ae_leader / admin receive all rows. Deal lists for other owners are never sent to an AE.
+ */
+function apiGetData(forceRefresh) {
+  var v = currentViewer_();
+  // A forced refresh costs ~40 HubSpot calls (independent tie-out path), so only view-all roles may trigger it.
+  var ds = getDataset_(!!forceRefresh && v.canRefresh);
+  var m = ds.metrics, ownRow = v.ae ? m.rows.filter(function (r) { return r.ownerId === String(v.ae.hubspot_owner_id); }) : [];
+  var out = {
+    viewer: viewerOut_(v),
+    pulledAt: ds.pulledAt, asOf: ds.asOf, period: ds.period,
+    rows: v.canViewAll ? m.rows : ownRow,
+    team: v.canViewAll ? m.team : null, nonRoster: v.canViewAll ? m.nonRoster : null, company: v.canViewAll ? m.company : null,
+    tieOut: ds.tieOut ? { ok: ds.tieOut.ok, method: ds.tieOut.method, mismatches: ds.tieOut.mismatches } : null,
+    // Company-wide flags carry other owners' deal IDs, so an AE gets only flags scoped to their own owner ID.
+    flags: v.canViewAll ? m.flags : m.flags.filter(function (f) { return v.ae && f.ownerId === String(v.ae.hubspot_owner_id); }),
+    stages: ds.stageMap.stages
+  };
+  return JSON.parse(JSON.stringify(out));
+}
+
+function viewerOut_(v) {
+  var cfg = FORECAST_CONFIG.forecast;
+  return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, canRefresh: !!v.canRefresh, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null,
+           rollover: v.isAdmin ? ForecastCore.rolloverStatus(todayEt_(), cfg.drive.folders_by_fiscal_year, cfg.cutoff) : null };
+}
+
+/**
+ * Section 2 data for one AE: open deals and saved tags. Read-only unless the viewer is that AE.
+ * Only currently open deals are returned (decision 2026-09-25): a tagged deal that closes or is reassigned
+ * simply drops out; closed-won shows up in Closed Won YTD instead.
+ */
+function apiGetBuilder(aeSlug) {
+  var v = currentViewer_(), ae = targetAe_(v, aeSlug);
+  var ds = getDataset_(false);
+  var deals = ds.metrics.openDealsByOwner[String(ae.hubspot_owner_id)] || [];
+  var tags = readTags_(ae.email);
+  var aes = v.canViewAll ? FORECAST_CONFIG.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; })
+                         : [{ slug: ae.slug, name: ae.name }];
+  var own = !!(v.ae && v.ae.slug === ae.slug);
+  return JSON.parse(JSON.stringify({
+    viewer: viewerOut_(v),
+    ae: { slug: ae.slug, name: ae.name, email: ae.email, ownerId: String(ae.hubspot_owner_id) },
+    readOnly: !(own || v.isAdmin), onBehalf: !own && v.isAdmin, editors: editorNames_(tags),
+    aes: aes, deals: deals, tags: tags, tagsSavedAt: tagsSavedAt_(tags),
+    pulledAt: ds.pulledAt, asOf: ds.asOf, period: ds.period,
+    tieOutOk: ds.tieOut ? ds.tieOut.ok : null
+  }));
+}
+
+/** Save tag changes for the viewer's own builder. Never writes to HubSpot. */
+/** Save tags for an AE: the AE themselves, or an admin on their behalf (P5-4). updated_by records who set each tag. */
+function apiSaveTags(aeSlug, changes) {
+  var v = currentViewer_();
+  var ae = rosterAeBySlug_(aeSlug);
+  if (!ae) throw new Error('Unknown AE: ' + aeSlug);
+  if (!(v.ae && v.ae.slug === aeSlug) && !v.isAdmin) throw new Error('Read-only: you can only edit your own forecast builder.');
+  var ds = getDataset_(false);
+  var openIds = (ds.metrics.openDealsByOwner[String(ae.hubspot_owner_id)] || []).map(function (d) { return d.id; });
+  var chk = ForecastCore.validateTagChanges(changes, openIds);
+  if (!chk.ok) throw new Error('Not saved: ' + chk.errors.join('; '));
+  var savedAt = writeTags_(ae.email, chk.clean, v.email);
+  var tags = readTags_(ae.email);
+  return JSON.parse(JSON.stringify({ savedAt: savedAt, tags: tags, tagsSavedAt: tagsSavedAt_(tags), editors: editorNames_(tags) }));
+}
+
+/** {email: display name} for everyone who set one of these tags (roster names; unknown emails shown as-is). */
+function editorNames_(tags) {
+  var r = FORECAST_CONFIG.roster, byEmail = {}, out = {};
+  r.aes.concat(r.leadership, r.admins || []).forEach(function (p) { byEmail[p.email.toLowerCase()] = p.name; });
+  Object.keys(tags).forEach(function (id) { var e = String(tags[id].updatedBy || '').toLowerCase(); if (e) out[e] = byEmail[e] || e; });
+  return out;
+}
+
+/**
+ * Section 1 data. Everyone gets every roster row, Team Total, the non-roster rows, and the company total.
+ * actingSlug: which AE's row is editable. AEs always act for themselves; an admin picks any AE (on behalf).
+ */
+function apiGetSubmission(actingSlug) {
+  var v = currentViewer_(), cfg = FORECAST_CONFIG;
+  var allowed = ForecastCore.submittableSlugs(v, cfg.roster);
+  // Admins (incl. Phil via admin: true) may act for any AE; a plain AE always acts for themselves.
+  var acting = v.isAdmin && actingSlug ? actingSlug : (v.ae ? v.ae.slug : (actingSlug || null));
+  if (acting && allowed.indexOf(acting) < 0) throw new Error('You cannot submit for ' + acting + '.');
+  var ds = getDataset_(false), m = ds.metrics;
+  var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
+  var subs = submissionsForWeek_(week);
+  var all = m.rows.map(function (r) { return ForecastCore.sectionOneRow(r, subs, week); });
+  var history = acting ? subs.filter(function (r) { return r.ae_slug === acting && r.forecast_week === week.forecastWeek; })
+    .map(function (r) { return { submittedAt: r.submitted_at, commit: r.commit, gut: r.gut, best_case: r.best_case, isOfficial: r.is_official, fileName: r.file_name,
+                                 submittedBy: r.submitted_by || r.ae_email, onBehalf: r.on_behalf === true || String(r.on_behalf).toUpperCase() === 'TRUE' }; }) : [];
+  return JSON.parse(JSON.stringify({
+    viewer: viewerOut_(v), testMode: isTestMode_(),
+    week: { forecastWeek: week.forecastWeek, cutoffAt: week.cutoffAt, previousWeek: week.previousWeek },
+    period: ForecastCore.forecastPeriodFor(ForecastCore.etDate(nowMs_()), week.forecastWeek),
+    pulledAt: ds.pulledAt, tieOutOk: ds.tieOut ? ds.tieOut.ok : null,
+    rows: all,
+    editableSlug: acting, editableSlugs: allowed, onBehalf: !!acting && !(v.ae && v.ae.slug === acting),
+    aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+    team: { metrics: m.team, forecast: ForecastCore.sectionOneTeam(all) },
+    nonRoster: m.nonRoster,
+    company: m.company,
+    history: history
+  }));
+}
+
+/**
+ * Submit a forecast. AEs submit their own; admins may submit on behalf of any AE (aeSlug required).
+ * Values are validated again server-side; the client is never trusted.
+ */
+function apiSubmitForecast(values, aeSlug) {
+  var v = currentViewer_(), allowed = ForecastCore.submittableSlugs(v, FORECAST_CONFIG.roster);
+  if (v.ae && aeSlug && aeSlug !== v.ae.slug && !v.isAdmin) throw new Error('You can only submit your own forecast.');
+  var slug = aeSlug || (v.ae ? v.ae.slug : null);
+  if (!slug || allowed.indexOf(slug) < 0) throw new Error(v.isAdmin ? 'Choose the AE you are submitting for.' : 'Only AEs on the forecast roster, or an admin on their behalf, can submit a forecast.');
+  var res = writeSubmission_(v, values || {}, rosterAeBySlug_(slug));
+  return JSON.parse(JSON.stringify({ result: res, view: apiGetSubmission(slug) }));
+}

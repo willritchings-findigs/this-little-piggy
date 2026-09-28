@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+  <?!= include('Styles') ?>
+</head>
+<body>
+  <header class="app-header">
+    <img class="logo" src="https://media.findigs.com/static/logos/findigs-horizontal-light.svg" alt="Findigs" height="28">
+    <span class="app-title">Sales forecast</span>
+    <span class="spacer"></span>
+    <span id="data-status" class="data-status" aria-live="polite"></span>
+    <span id="viewer" class="viewer"></span>
+  </header>
+
+  <div id="banner-area" class="banner-area" aria-live="polite"></div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tabbtn-submission" aria-controls="tab-submission" data-tab="submission">Forecast submission</button>
+    <button role="tab" id="tabbtn-builder" aria-controls="tab-builder" data-tab="builder">Forecast builder</button>
+    <button role="tab" id="tabbtn-trend" aria-controls="tab-trend" data-tab="trend">Forecast trend</button>
+  </nav>
+
+  <main>
+    <section id="tab-submission" role="tabpanel" aria-labelledby="tabbtn-submission" hidden>
+      <div class="section-head">
+        <h2>Forecast submission</h2>
+        <p class="sub">Forecast the incremental closed-won dollars you will book from today through the end of the forecast period, on top of what has already closed won this year.</p>
+      </div>
+      <div id="s-week" class="weekbar"></div>
+      <div id="s-readonly"></div>
+      <div class="table-wrap wide">
+        <table class="deals forecast" id="s-table">
+          <caption class="sr-only">Forecast submission by AE</caption>
+          <thead><tr>
+            <th scope="col">AE</th>
+            <th scope="col" class="num">Closed Won YTD</th>
+            <th scope="col" class="num">Gross open pipeline</th>
+            <th scope="col" class="num">Weighted open pipeline</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-commit)"></span> Commit</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-gut)"></span> Gut</th>
+            <th scope="col" class="num"><span class="swatch" style="--swatch:var(--series-best)"></span> Best Case</th>
+            <th scope="col">Last submitted</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Implied landing<div class="lw muted">CW YTD + Gut</div></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="s-history"></div>
+    </section>
+
+    <section id="tab-builder" role="tabpanel" aria-labelledby="tabbtn-builder" hidden>
+      <div class="section-head">
+        <h2>Forecast builder</h2>
+        <p class="sub">Tag open deals to see which ones make up each forecast value. Tags are saved as you go and never change anything in HubSpot.</p>
+      </div>
+
+      <div id="b-summary" class="summary" aria-live="polite"></div>
+
+      <div class="controls">
+        <label class="field">AE
+          <select id="b-ae" aria-label="AE"></select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="b-showall"> <span id="b-showall-label">Show all open deals</span></label>
+        <span id="b-count" class="muted"></span>
+        <span class="spacer"></span>
+        <span id="b-save" class="save-status" aria-live="polite"></span>
+      </div>
+
+      <div id="b-notes"></div>
+
+      <div class="table-wrap">
+        <table class="deals" id="b-table">
+          <caption class="sr-only">Open deals for the selected AE</caption>
+          <thead><tr>
+            <th scope="col" data-sort="tag">Forecast tag</th>
+            <th scope="col" data-sort="name">Deal name</th>
+            <th scope="col" data-sort="stage">Stage</th>
+            <th scope="col" data-sort="amount" class="num">Amount</th>
+            <th scope="col" data-sort="units" class="num">Units</th>
+            <th scope="col" data-sort="closeDate">Close date</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-trend" role="tabpanel" aria-labelledby="tabbtn-trend" hidden>
+      <div class="section-head">
+        <h2>Forecast trend</h2>
+        <p class="sub">How each official Friday forecast has moved week over week. Only the last submission before each cutoff is plotted; a missed week is a gap, never zero.</p>
+      </div>
+      <div id="t-notes"></div>
+      <div class="controls" id="t-controls">
+        <div class="seg" role="group" aria-label="Values">
+          <button type="button" data-view="implied_landing">Implied landing</button>
+          <button type="button" data-view="incremental">Incremental</button>
+        </div>
+        <label class="field" hidden>Year
+          <select id="t-fy" aria-label="Fiscal year"></select>
+        </label>
+        <label class="field">AE
+          <select id="t-ae" aria-label="AE filter"></select>
+        </label>
+        <div class="seg" role="group" aria-label="Y-axis for AE charts">
+          <button type="button" data-axis="shared">Shared axis</button>
+          <button type="button" data-axis="independent">Independent axes</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="t-overlay"> Show resubmissions</label>
+      </div>
+      <div id="t-legend" class="legend" aria-hidden="true"></div>
+      <div id="t-team"></div>
+      <div id="t-grid" class="multiples"></div>
+      <div id="t-drill" class="drill" hidden tabindex="-1" aria-live="polite"></div>
+      <div class="card" id="t-change-card">
+        <div class="card-head">
+          <h3>Week-over-week change</h3>
+          <label class="field">Week
+            <select id="t-week" aria-label="Report week"></select>
+          </label>
+          <span id="t-change-note" class="muted"></span>
+        </div>
+        <div class="table-wrap wide">
+          <table class="deals change" id="t-change"><caption class="sr-only">Week-over-week change by AE</caption></table>
+        </div>
+      </div>
+    </section>
+
+    <details id="methodology" class="meth">
+      <summary>Sources &amp; methodology</summary>
+      <div id="meth-body" class="meth-body">Loading…</div>
+    </details>
+  </main>
+
+  <?!= include('Client_Config') ?>
+  <?!= include('Client_Core') ?>
+  <?!= include('Client_App') ?>
+  <?!= include('Client_Builder') ?>
+  <?!= include('Client_Submission') ?>
+  <?!= include('Client_ChartLoader') ?>
+  <?!= include('Client_Trend') ?>
+  <?!= include('Client_Methodology') ?>
+</body>
+</html>

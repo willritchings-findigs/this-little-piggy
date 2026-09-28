@@ -1,0 +1,77 @@
+{
+ "_source": "MCP search_owners (isActive) + MCP users object search (user seat), 2026-09-25. Shaped like GET /crm/v3/owners results; archived = !isActive; userId null = no user seat found.",
+ "results": [
+  {
+   "id": "1053057926",
+   "firstName": "Phil",
+   "lastName": "Aroian",
+   "email": "phil.aroian@findigs.com",
+   "userId": "165844141",
+   "archived": false
+  },
+  {
+   "id": "167857460",
+   "firstName": "Spencer",
+   "lastName": "Wuthrich",
+   "email": "spencer.wuthrich@findigs.com",
+   "userId": "167857460",
+   "archived": false
+  },
+  {
+   "id": "26451111",
+   "firstName": "Ian",
+   "lastName": "McLaughlin",
+   "email": "ian.mclaughlin@findigs.com",
+   "userId": "165844140",
+   "archived": false
+  },
+  {
+   "id": "2111244871",
+   "firstName": "Ben",
+   "lastName": "de Winter",
+   "email": "ben.dewinter@findigs.com",
+   "userId": "165844131",
+   "archived": false
+  },
+  {
+   "id": "1032502194",
+   "firstName": "Matt",
+   "lastName": "Lynch",
+   "email": "matt.lynch@findigs.com",
+   "userId": "165844133",
+   "archived": false
+  },
+  {
+   "id": "663611618",
+   "firstName": "Reese",
+   "lastName": "Ryan",
+   "email": "reese.ryan@findigs.com",
+   "userId": "165844139",
+   "archived": false
+  },
+  {
+   "id": "686754956",
+   "firstName": "Clay",
+   "lastName": "Stapleford",
+   "email": "",
+   "userId": null,
+   "archived": false
+  },
+  {
+   "id": "1542312872",
+   "firstName": "Hayden",
+   "lastName": "Ashwill",
+   "email": "",
+   "userId": null,
+   "archived": true
+  },
+  {
+   "id": "981129967",
+   "firstName": "Grace",
+   "lastName": "Doering",
+   "email": "",
+   "userId": null,
+   "archived": false
+  }
+ ]
+}

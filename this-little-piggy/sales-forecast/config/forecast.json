@@ -1,0 +1,61 @@
+{
+  "_about": "Forecast motion settings. HubSpot definitions (pipelines, stage IDs, fields, weighting) are NOT here; they come from gtm-dashboard/config.json via scripts/build.mjs.",
+  "version": "2026-09-25b",
+  "schema_version": "1.1",
+  "timezone": "America/New_York",
+  "cutoff": {
+    "weekday": "Friday",
+    "time_et": "17:00",
+    "time_note": "Decision P5-5 (2026-09-25): moved from 12:00 to 17:00 ET so the Friday 2:00-3:00 PM ET Weekly Pipeline / Forecast call happens before the cutoff and changes made on the call count for that week.",
+    "late_rule": "next_week",
+    "late_rule_note": "Decision 2026-09-25: a submission at or after the Friday cutoff (5:00 PM ET) counts toward the following Friday's forecast week.",
+    "holiday_overrides": {},
+    "holiday_note": "Decision 2026-09-25: no holiday adjustments. A missed holiday week renders as a gap."
+  },
+  "forecast_period": {
+    "end_rule": "Dec 31 of the forecast_week's calendar year",
+    "start_rule": "max(submission date ET, Jan 1 of that year)"
+  },
+  "drive": {
+    "shared_drive": true,
+    "folders_by_fiscal_year": {
+      "2026": "1WGzeVVLMlfTHpU9S5GKVB45EDRx84I_P"
+    },
+    "missing_folder_behavior": "block_submission",
+    "test_folder_id": "17CBtW0XTcMq-GO3OsXlbRArf9olSHnIg",
+    "test_folder_note": "Sales Forecasts/_test (Sales Forecast tool test mode), created 2026-09-25. Runtime test mode is switched on by Script Property FORECAST_TEST_FOLDER_ID = this ID; delete the property to go live. Also used for Phase 4 synthetic snapshots. Never the production folder."
+  },
+  "definitions": {
+    "commit": { "label": "Commit (Worst Case)", "confidence": "High confidence", "note": "Decision 2026-09-25: broadened from 99% to High Confidence. Operating definition (Notion, 2026-09-18): verbal commitment received from the customer, even with residual contract-negotiation risk." },
+    "gut": { "label": "Gut (Expected Case)", "confidence": "75%" },
+    "best_case": { "label": "Best Case", "confidence": "Maximum if every toss-up deal closes won" },
+    "nesting_rule": "Commit ⊆ Gut ⊆ Best Case, so submitted values must satisfy Commit ≤ Gut ≤ Best Case.",
+    "incremental": "All values are incremental closed-won USD between submission date and forecast period end, on top of Closed Won YTD."
+  },
+  "section1": {
+    "gross_pipeline_headline": "all_open",
+    "gross_pipeline_subline": "in_period",
+    "best_case_warning_basis": "in_period",
+    "_note": "Decision 2026-09-25 (Q4): headline = all open stages and close dates (ties to gtm-dashboard); sub-line = close date ≤ period end incl. past-due; Best Case warning compares to in-period."
+  },
+  "section3": {
+    "delta_threshold_pct": 0.10,
+    "default_view": "implied_landing",
+    "default_axis": "shared"
+  },
+  "weighting": {
+    "method": "stage_probability",
+    "formula": "amount × pipeline stage probability (GET /crm/v3/pipelines/deals metadata.probability)",
+    "hubspot_weighted_amount": "pulled for reference only; never used in any total",
+    "decision": "2026-09-25: only 4 of 49 populated weighted_amount values equal amount × stage probability; stored values total $4.20M vs $5.96M stage-weighted on the same deals. Stage probability used for every open deal.",
+    "notion_definition": "Method B: Notion Data Definitions rows 'Weighted deal value (stage probability)' and 'Weighted open pipeline (stage probability)' (Used by: Sales forecast tool, confirmed 2026-09-25). gtm-dashboard uses Method A ('Weighted deal value'). Both are approved and interchangeable per tool, so weighted pipeline intentionally differs between the two tools."
+  },
+  "data_refresh_minutes": 30,
+  "series_colors": {
+    "_about": "Validated 2026-09-25 with the dataviz palette validator (light mode, 4 slots, order commit/gut/best_case/closed_won_ytd): lightness band, chroma floor, CVD separation, normal-vision floor, contrast ≥3:1 all PASS. Derived from Findigs Jade, Key-green, Sky, and Sun families (the 60-step anchors failed contrast/lightness). Used identically in Sections 1-3.",
+    "commit": "#0F7A50",
+    "gut": "#7A9A1F",
+    "best_case": "#3B6FB8",
+    "closed_won_ytd": "#8A5A00"
+  }
+}
