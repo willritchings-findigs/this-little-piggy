@@ -1,127 +1,45 @@
 {
- "open_count": 117,
- "open_gross": 90193356.68,
- "open_hs_projected_amount": 17975274.348,
- "open_weighted_amount_stored": 10772534.045,
- "won_count": 71,
- "won_amount": 3896085.32,
- "won_units": 77104,
- "won_acv": 228661.44,
- "created_count": 644,
- "created_amount": 155082260.07,
- "created_by_record_source": {
-  "SALESFORCE": {
-   "n": 512,
-   "a": 102041444.99999999
+  "open_count": 109,
+  "open_gross": 71762742.13,
+  "open_hs_projected_amount": 11477202.088,
+  "open_weighted_amount_stored": 4203336.27,
+  "won_count": 73,
+  "won_amount": 7571305.12,
+  "won_units": 131295,
+  "won_acv": 3903881.24,
+  "created_count": 662,
+  "created_amount": 156722414.27,
+  "created_by_record_source": {
+    "SALESFORCE": {"n": 512, "a": 95548234.80},
+    "CRM_UI": {"n": 149, "a": 60942259.47},
+    "MOBILE_IOS": {"n": 1, "a": 231920}
   },
-  "CRM_UI": {
-   "n": 131,
-   "a": 52808895.07
+  "created_by_drill_down": {
+    "Bing Ads": {"n": 1, "a": 20865},
+    "Bing Organic": {"n": 7, "a": 3728134.55},
+    "Chatgpt": {"n": 1, "a": 98490},
+    "Conferences Bizdev": {"n": 25, "a": 1829067.33},
+    "Customer Referral": {"n": 1, "a": 11823.5},
+    "Direct Traffic": {"n": 59, "a": 4960199.45},
+    "Facebook Organic": {"n": 1, "a": 150228},
+    "Google Ads": {"n": 2, "a": 455552.5},
+    "Google Organic": {"n": 38, "a": 20280283.95},
+    "LinkedIn Ads": {"n": 3, "a": 150010.01},
+    "Meta Ads": {"n": 37, "a": 2720256.5},
+    "Outbound AE": {"n": 18, "a": 7174296.1},
+    "Outbound SDR": {"n": 343, "a": 75946890.89},
+    "Referral": {"n": 1, "a": 187785},
+    "Referral Website": {"n": 3, "a": 265889.25},
+    "Rental History Questionnaire": {"n": 11, "a": 199999.15},
+    "SalesIntel": {"n": 8, "a": 906072.5},
+    "Yahoo Organic": {"n": 1, "a": 56730.24},
+    "Zoominfo": {"n": 101, "a": 37151840.35},
+    "Bisnow": {"n": 1, "a": 428000}
   },
-  "MOBILE_IOS": {
-   "n": 1,
-   "a": 231920
+  "created_swan": {
+    "3": {"n": 115, "a": 26835906.83},
+    "4": {"n": 21, "a": 7821924.65},
+    "5": {"n": 2, "a": 534225},
+    "null": {"n": 524, "a": 121530357.79}
   }
- },
- "created_by_drill_down": {
-  "Outbound SDR": {
-   "n": 329,
-   "a": 72839188.49
-  },
-  "Zoominfo": {
-   "n": 100,
-   "a": 35354240.35
-  },
-  "Direct Traffic": {
-   "n": 59,
-   "a": 4960199.45
-  },
-  "Google Organic": {
-   "n": 38,
-   "a": 23060694.15
-  },
-  "Meta Ads": {
-   "n": 35,
-   "a": 2627244.5
-  },
-  "Conferences Bizdev": {
-   "n": 24,
-   "a": 1687827.33
-  },
-  "Outbound AE": {
-   "n": 18,
-   "a": 7869796.1
-  },
-  "Rental History Questionnaire": {
-   "n": 11,
-   "a": 199999.15
-  },
-  "SalesIntel": {
-   "n": 8,
-   "a": 929562.5
-  },
-  "Bing Organic": {
-   "n": 7,
-   "a": 3728134.55
-  },
-  "LinkedIn Ads": {
-   "n": 3,
-   "a": 150010.01
-  },
-  "Referral Website": {
-   "n": 3,
-   "a": 265889.25
-  },
-  "Google Ads": {
-   "n": 2,
-   "a": 455552.5
-  },
-  "Bing Ads": {
-   "n": 1,
-   "a": 20865
-  },
-  "Bisnow": {
-   "n": 1,
-   "a": 428000
-  },
-  "Chatgpt": {
-   "n": 1,
-   "a": 98490
-  },
-  "Customer Referral": {
-   "n": 1,
-   "a": 11823.5
-  },
-  "Facebook Organic": {
-   "n": 1,
-   "a": 150228
-  },
-  "Referral": {
-   "n": 1,
-   "a": 187785
-  },
-  "Yahoo Organic": {
-   "n": 1,
-   "a": 56730.24
-  }
- },
- "created_swan": {
-  "3": {
-   "n": 111,
-   "a": 23567066.83
-  },
-  "4": {
-   "n": 12,
-   "a": 2638269.75
-  },
-  "5": {
-   "n": 2,
-   "a": 534225
-  },
-  "null": {
-   "n": 519,
-   "a": 128342698.49
-  }
- },
- "_note": "Outbound SDR and swan 4 adjusted by one deal (Newport Pacific, created after the base snapshot) so controls match the snapshot population."
 }
