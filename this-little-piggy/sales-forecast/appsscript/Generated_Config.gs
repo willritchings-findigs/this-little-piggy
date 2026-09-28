@@ -233,6 +233,8 @@ var FORECAST_CONFIG = {
       "notion_definition": "Method B: Notion Data Definitions rows 'Weighted deal value (stage probability)' and 'Weighted open pipeline (stage probability)' (Used by: Sales forecast tool, confirmed 2026-09-25). gtm-dashboard uses Method A ('Weighted deal value'). Both are approved and interchangeable per tool, so weighted pipeline intentionally differs between the two tools."
     },
     "data_refresh_minutes": 30,
+    "docs_url": "https://app.notion.com/p/3e6335d59add81d5a4cbf00d5170c841",
+    "docs_note": "Notion: Revenue Operations → Pipeline Forecasting → Sales Forecast Tool. Linked from invite emails and the Admin tab.",
     "series_colors": {
       "_about": "Validated 2026-09-25 with the dataviz palette validator (light mode, 4 slots, order commit/gut/best_case/closed_won_ytd): lightness band, chroma floor, CVD separation, normal-vision floor, contrast ≥3:1 all PASS. Derived from Findigs Jade, Key-green, Sky, and Sun families (the 60-step anchors failed contrast/lightness). Used identically in Sections 1-3.",
       "commit": "#0F7A50",

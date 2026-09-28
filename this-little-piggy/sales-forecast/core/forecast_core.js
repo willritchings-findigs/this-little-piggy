@@ -166,6 +166,253 @@ var ForecastCore = (function () {
     return viewer.ae ? [viewer.ae.slug] : [];
   }
 
+  // ------------------------------------------------------------------ roster administration (admin panel)
+  var ACCESS_LEVELS = ['ae', 'ae_leader', 'leadership', 'admin'];
+  var ACCESS_LABELS = { ae: 'AE', ae_leader: 'AE and leadership', leadership: 'Leadership (view only)', admin: 'Admin' };
+  function isActive_(p) { return p.active !== false; }
+  function clone_(x) { return JSON.parse(JSON.stringify(x)); }
+
+  /**
+   * The roster as the app uses it at runtime: only active people can sign in or submit, and a deactivated AE's
+   * HubSpot owner moves to "Other owners" (their deals stay in the company total; their history stays in the trend).
+   */
+  function activeRoster(roster) {
+    var r = clone_(roster);
+    var inactiveAes = r.aes.filter(function (a) { return !isActive_(a); });
+    r.aes = r.aes.filter(isActive_);
+    r.leadership = (r.leadership || []).filter(isActive_);
+    r.admins = (r.admins || []).filter(isActive_);
+    r.non_roster_owners = r.non_roster_owners || { owners: [] };
+    r.non_roster_owners.owners = r.non_roster_owners.owners || [];
+    var listed = {};
+    r.non_roster_owners.owners.forEach(function (o) { listed[String(o.hubspot_owner_id)] = true; });
+    inactiveAes.forEach(function (a) {
+      var oid = String(a.hubspot_owner_id);
+      if (listed[oid] || r.aes.some(function (x) { return String(x.hubspot_owner_id) === oid; })) return;
+      r.non_roster_owners.owners.push({ name: a.name, hubspot_owner_id: oid, reason: 'Deactivated in the forecast tool' + (a.deactivated_at ? ' on ' + String(a.deactivated_at).slice(0, 10) : '') });
+      listed[oid] = true;
+    });
+    return r;
+  }
+
+  /** One flat, display-ready list of everyone on the roster (active and inactive), for the admin panel. */
+  function rosterUsers(roster, owners) {
+    owners = owners || {};
+    var out = [];
+    function ownerInfo(oid) { var o = owners[String(oid)]; return o ? { name: o.name, email: o.email, status: !o.isActive ? 'inactive' : (!o.hasUserSeat ? 'no_user_seat' : 'active') } : null; }
+    roster.aes.forEach(function (a) {
+      out.push({ email: a.email, name: a.name, access: a.role, admin: a.admin === true, isAe: true, slug: a.slug,
+                 hubspotOwnerId: String(a.hubspot_owner_id), hubspotOwner: ownerInfo(a.hubspot_owner_id), active: isActive_(a),
+                 invitedAt: a.invited_at || null, invitedBy: a.invited_by || null, deactivatedAt: a.deactivated_at || null });
+    });
+    (roster.leadership || []).forEach(function (l) {
+      out.push({ email: l.email, name: l.name, access: 'leadership', admin: false, isAe: false, active: isActive_(l),
+                 invitedAt: l.invited_at || null, invitedBy: l.invited_by || null, deactivatedAt: l.deactivated_at || null });
+    });
+    (roster.admins || []).forEach(function (l) {
+      out.push({ email: l.email, name: l.name, access: 'admin', admin: true, isAe: false, active: isActive_(l),
+                 invitedAt: l.invited_at || null, invitedBy: l.invited_by || null, deactivatedAt: l.deactivated_at || null });
+    });
+    // An AE moved to leadership/admin keeps an inactive AE record for history; show the person once, active record first.
+    var seen = {}, dedup = [];
+    out.sort(function (a, b) { return (b.active - a.active) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0); })
+       .forEach(function (u) { var k = u.email.toLowerCase(); if (seen[k]) { seen[k].priorAeSlug = seen[k].priorAeSlug || (u.isAe ? u.slug : null); return; } seen[k] = u; dedup.push(u); });
+    return dedup;
+  }
+
+  function slugify_(name) { return String(name).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function activeAdminCount_(r) {
+    return r.aes.filter(function (a) { return isActive_(a) && a.admin === true; }).length + (r.admins || []).filter(isActive_).length;
+  }
+
+  /**
+   * Apply one admin change to the roster. Pure: returns { roster, target, summary, before, after } or throws a
+   * user-facing Error. ctx: { owners (normalizeOwners map), now (ET ISO), actor (email) }.
+   *   invite       { email, name, access, admin?, ownerId? }
+   *   update       { email, name?, access?, admin?, ownerId? }
+   *   deactivate   { email }            reactivate { email }
+   *   nonroster_set { ownerId, name?, reason }   nonroster_remove { ownerId }
+   * Guardrails: findigs.com emails only; one active entry per email; an AE needs a HubSpot owner that exists and is not
+   * already another AE's; AE slugs never change (they name snapshot files); the last active admin cannot be removed;
+   * an admin cannot deactivate or demote themselves (another admin must do it).
+   */
+  function applyRosterChange(roster, change, ctx) {
+    ctx = ctx || {};
+    var r = clone_(roster), owners = ctx.owners || {}, now = ctx.now || null, actor = String(ctx.actor || '').toLowerCase();
+    r.leadership = r.leadership || []; r.admins = r.admins || [];
+    r.non_roster_owners = r.non_roster_owners || { owners: [] }; r.non_roster_owners.owners = r.non_roster_owners.owners || [];
+    var c = change || {}, action = c.action;
+    var email = String(c.email || '').trim().toLowerCase(), name = String(c.name || '').trim();
+    function err(m) { throw new Error(m); }
+    function findAll(e) {
+      return { ae: r.aes.filter(function (a) { return a.email.toLowerCase() === e; }),
+               lead: r.leadership.filter(function (a) { return a.email.toLowerCase() === e; }),
+               adm: r.admins.filter(function (a) { return a.email.toLowerCase() === e; }) };
+    }
+    function activeEntry(e) {
+      var f = findAll(e);
+      return f.ae.filter(isActive_)[0] ? { kind: 'ae', rec: f.ae.filter(isActive_)[0] }
+           : f.lead.filter(isActive_)[0] ? { kind: 'leadership', rec: f.lead.filter(isActive_)[0] }
+           : f.adm.filter(isActive_)[0] ? { kind: 'admin', rec: f.adm.filter(isActive_)[0] } : null;
+    }
+    function anyEntry(e) {
+      var a = activeEntry(e); if (a) return a;
+      var f = findAll(e);
+      return f.ae[0] ? { kind: 'ae', rec: f.ae[0] } : f.lead[0] ? { kind: 'leadership', rec: f.lead[0] } : f.adm[0] ? { kind: 'admin', rec: f.adm[0] } : null;
+    }
+    function describe(e) { var x = anyEntry(e); if (!x) return null; var u = clone_(x.rec); u.kind = x.kind; return u; }
+    function checkOwner(oid, exceptEmail) {
+      oid = String(oid || '').trim();
+      if (!/^\d+$/.test(oid)) err('Choose the HubSpot owner for this AE.');
+      if (!owners[oid]) err('HubSpot owner ' + oid + ' was not found. Refresh data and try again.');
+      var clash = r.aes.filter(function (a) { return String(a.hubspot_owner_id) === oid && a.email.toLowerCase() !== exceptEmail; })[0];
+      if (clash) err('HubSpot owner ' + owners[oid].name + ' is already assigned to ' + clash.name + (isActive_(clash) ? '' : ' (inactive)') + '.');
+      if (r.non_roster_owners.owners.some(function (o) { return String(o.hubspot_owner_id) === oid; }))
+        r.non_roster_owners.owners = r.non_roster_owners.owners.filter(function (o) { return String(o.hubspot_owner_id) !== oid; });
+      return oid;
+    }
+    function placeAs(access, rec, isAdminFlag, ownerId) {
+      // Put an active entry for this person in the right list. AE records are reused (never recreated) so the slug holds.
+      if (access === 'ae' || access === 'ae_leader') {
+        var existing = r.aes.filter(function (a) { return a.email.toLowerCase() === rec.email; })[0];
+        var oid = checkOwner(ownerId || (existing && existing.hubspot_owner_id), rec.email);
+        if (existing) {
+          existing.name = rec.name; existing.role = access; existing.hubspot_owner_id = oid; existing.active = true; delete existing.deactivated_at;
+          if (isAdminFlag) existing.admin = true; else delete existing.admin;
+        } else {
+          var slug = slugify_(rec.name), base = slug, n = 2;
+          if (!slug) err('Enter the person\'s name.');
+          while (r.aes.some(function (a) { return a.slug === slug; })) slug = base + '-' + n++;
+          var ae = { name: rec.name, slug: slug, email: rec.email, hubspot_owner_id: oid, role: access };
+          if (isAdminFlag) ae.admin = true;
+          if (rec.invited_at) { ae.invited_at = rec.invited_at; ae.invited_by = rec.invited_by; }
+          r.aes.push(ae);
+        }
+      } else {
+        var list = access === 'admin' ? r.admins : r.leadership;
+        var e2 = { name: rec.name, email: rec.email };
+        if (rec.invited_at) { e2.invited_at = rec.invited_at; e2.invited_by = rec.invited_by; }
+        list.push(e2);
+      }
+    }
+    function retire(entry) {
+      // Leave the current active entry. AEs are kept inactive (history); leadership/admin entries are removed.
+      if (entry.kind === 'ae') { entry.rec.active = false; entry.rec.deactivated_at = now; }
+      else if (entry.kind === 'leadership') r.leadership = r.leadership.filter(function (x) { return x !== entry.rec; });
+      else r.admins = r.admins.filter(function (x) { return x !== entry.rec; });
+    }
+    function guardAdmins(msg) { if (activeAdminCount_(r) < 1) err(msg || 'At least one active admin is required.'); }
+
+    var before = email ? describe(email) : null, summary, target = email;
+    if (action === 'invite') {
+      if (!/^[a-z0-9._%+\-]+@findigs\.com$/.test(email)) err('Use a findigs.com email address.');
+      if (!name) err('Enter the person\'s name.');
+      if (ACCESS_LEVELS.indexOf(c.access) < 0) err('Choose an access level.');
+      if (activeEntry(email)) err(email + ' already has access. Change their access instead.');
+      if (anyEntry(email)) err(email + ' is on the roster but inactive. Reactivate them instead.');
+      placeAs(c.access, { email: email, name: name, invited_at: now, invited_by: actor }, c.admin === true, c.ownerId);
+      summary = 'Invited ' + name + ' as ' + ACCESS_LABELS[c.access] + (c.admin === true && c.access !== 'admin' ? ' + admin' : '');
+    } else if (action === 'update') {
+      var cur = activeEntry(email);
+      if (!cur) err(email + ' is not an active user.');
+      var curAccess = cur.kind === 'ae' ? cur.rec.role : cur.kind;
+      var access = c.access || curAccess;
+      if (ACCESS_LEVELS.indexOf(access) < 0) err('Choose an access level.');
+      var newName = name || cur.rec.name;
+      var isAe = access === 'ae' || access === 'ae_leader';
+      var adminFlag = access === 'admin' ? true : (isAe ? (c.admin === undefined ? cur.rec.admin === true : c.admin === true) : false);
+      var wasAdmin = cur.kind === 'admin' || cur.rec.admin === true;
+      if (email === actor && wasAdmin && !adminFlag) err('You can\'t remove your own admin access. Ask another admin.');
+      if ((cur.kind === 'ae') === isAe && cur.kind !== 'leadership' && cur.kind !== 'admin') {
+        // AE stays an AE: edit in place
+        cur.rec.name = newName; cur.rec.role = access;
+        if (c.ownerId && String(c.ownerId) !== String(cur.rec.hubspot_owner_id)) cur.rec.hubspot_owner_id = checkOwner(c.ownerId, email);
+        if (adminFlag) cur.rec.admin = true; else delete cur.rec.admin;
+      } else if (!isAe && cur.kind === access) {
+        cur.rec.name = newName;                      // leadership→leadership / admin→admin: rename only
+      } else {
+        retire(cur);
+        placeAs(access, { email: email, name: newName }, adminFlag, c.ownerId);
+      }
+      guardAdmins('That change would leave no active admin.');
+      summary = 'Changed ' + newName + ' to ' + ACCESS_LABELS[access] + (adminFlag && access !== 'admin' ? ' + admin' : '');
+    } else if (action === 'deactivate') {
+      var d = activeEntry(email);
+      if (!d) err(email + ' is not an active user.');
+      if (email === actor) err('You can\'t deactivate yourself. Ask another admin.');
+      retire(d);
+      guardAdmins('You can\'t deactivate the last active admin.');
+      summary = 'Deactivated ' + d.rec.name + (d.kind === 'ae' ? ' (forecast history kept)' : '');
+    } else if (action === 'reactivate') {
+      if (activeEntry(email)) err(email + ' is already active.');
+      var ia = r.aes.filter(function (a) { return a.email.toLowerCase() === email && !isActive_(a); })[0];
+      if (!ia) err(email + ' was not found. Invite them instead.');
+      checkOwner(ia.hubspot_owner_id, email);
+      ia.active = true; delete ia.deactivated_at;
+      summary = 'Reactivated ' + ia.name;
+    } else if (action === 'nonroster_set') {
+      var oid = String(c.ownerId || '').trim();
+      if (!/^\d+$/.test(oid)) err('Choose a HubSpot owner.');
+      if (r.aes.some(function (a) { return isActive_(a) && String(a.hubspot_owner_id) === oid; })) err('That owner is an active AE on the roster.');
+      var reason = String(c.reason || '').trim();
+      if (!reason) err('Enter a reason (shown in Sources & methodology and the Other owners row).');
+      var nm = name || (owners[oid] ? owners[oid].name : 'Owner ' + oid);
+      var ex = r.non_roster_owners.owners.filter(function (o) { return String(o.hubspot_owner_id) === oid; })[0];
+      before = ex ? clone_(ex) : null;
+      if (ex) { ex.reason = reason; ex.name = nm; } else r.non_roster_owners.owners.push({ name: nm, hubspot_owner_id: oid, reason: reason });
+      target = oid; summary = (ex ? 'Updated' : 'Added') + ' other owner ' + nm;
+    } else if (action === 'nonroster_remove') {
+      var rid = String(c.ownerId || '');
+      var rx = r.non_roster_owners.owners.filter(function (o) { return String(o.hubspot_owner_id) === rid; })[0];
+      if (!rx) err('That owner is not on the Other owners list.');
+      before = clone_(rx);
+      r.non_roster_owners.owners = r.non_roster_owners.owners.filter(function (o) { return o !== rx; });
+      target = rid; summary = 'Removed other owner ' + rx.name + ' (they still appear under Other owners, with a default reason, while they hold deals)';
+    } else err('Unknown admin action: ' + action);
+
+    var after = action.indexOf('nonroster') === 0
+      ? (r.non_roster_owners.owners.filter(function (o) { return String(o.hubspot_owner_id) === target; })[0] || null)
+      : describe(email);
+    return { roster: r, target: target, action: action, summary: summary, before: before, after: after ? clone_(after) : null };
+  }
+
+  /** Invite email (subject, plain text, HTML). Plain wording; the link is the production web app URL. */
+  function inviteMessage(o) {
+    var t = String((o.cutoff && o.cutoff.time_et) || '17:00').split(':'), h = +t[0];
+    var cutoff = ((o.cutoff && o.cutoff.weekday) || 'Friday') + ' ' + ((h % 12) || 12) + ':' + t[1] + (h >= 12 ? ' PM' : ' AM') + ' ET';
+    var isAe = o.access === 'ae' || o.access === 'ae_leader';
+    var can = isAe
+      ? ['Submit your weekly Commit, Gut, and Best Case forecast before ' + cutoff + '.', 'Tag your open HubSpot deals in the Forecast builder.', 'See every AE\'s forecast and the team trend.']
+      : ['See every AE\'s forecast, builder, and the week-over-week trend.'];
+    if (o.admin || o.access === 'admin') can.push('As an admin: edit any AE\'s tags, submit on an AE\'s behalf, and manage users in the Admin tab.');
+    var first = String(o.name || '').split(' ')[0] || 'there';
+    var subject = 'You now have access to the Findigs Sales Forecast Tool';
+    var lines = ['Hi ' + first + ',', '', (o.invitedBy || 'An admin') + ' added you to the Findigs Sales Forecast Tool as ' + ACCESS_LABELS[o.access] + (o.admin && o.access !== 'admin' ? ' + admin' : '') + '.', '',
+                 'What you can do:'].concat(can.map(function (x) { return '- ' + x; })).concat(['',
+                 'Open the tool: ' + (o.appUrl || '(link will be shared separately)'), 'Sign in with your findigs.com Google account.']);
+    if (o.docsUrl) lines.push('', 'How it works (5-minute read): ' + o.docsUrl);
+    if (isAe) lines.push('', 'Weekly deadline: ' + cutoff + '. Your last submission before then is your official number for the week.');
+    lines.push('', 'Questions: reply to this email.');
+    var esc = function (x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#212B14">' +
+      '<p>Hi ' + esc(first) + ',</p><p>' + esc(o.invitedBy || 'An admin') + ' added you to the <strong>Findigs Sales Forecast Tool</strong> as <strong>' + esc(ACCESS_LABELS[o.access] + (o.admin && o.access !== 'admin' ? ' + admin' : '')) + '</strong>.</p>' +
+      '<p>What you can do:</p><ul>' + can.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      (o.appUrl ? '<p><a href="' + esc(o.appUrl) + '" style="background:#8EDE65;color:#212B14;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block">Open the Sales Forecast Tool</a></p>' : '<p>The link to the tool will be shared separately.</p>') +
+      '<p>Sign in with your findigs.com Google account.</p>' +
+      (o.docsUrl ? '<p>How it works (5-minute read): <a href="' + esc(o.docsUrl) + '">Sales Forecast Tool guide</a></p>' : '') +
+      (isAe ? '<p><strong>Weekly deadline: ' + esc(cutoff) + '.</strong> Your last submission before then is your official number for the week.</p>' : '') +
+      '<p>Questions: reply to this email.</p></div>';
+    return { subject: subject, text: lines.join('\n'), html: html };
+  }
+
+  /** Runtime Drive folder map: config folders plus any years an admin added in the panel (config wins on conflict). */
+  function mergeFolders(configFolders, addedFolders) {
+    var out = {};
+    Object.keys(addedFolders || {}).forEach(function (y) { out[y] = addedFolders[y]; });
+    Object.keys(configFolders || {}).forEach(function (y) { out[y] = configFolders[y]; });
+    return out;
+  }
+
   // ------------------------------------------------------------------ deals
   var HS_RECORD_URL = 'https://app.hubspot.com/contacts/{portal}/record/0-3/{id}';
   function dealUrl(portalId, id) { return HS_RECORD_URL.replace('{portal}', portalId).replace('{id}', id); }
@@ -939,6 +1186,7 @@ var ForecastCore = (function () {
     num: num, round2: round2, etOffsetMinutes: etOffsetMinutes, etParts: etParts, etDate: etDate, etIso: etIso,
     etToUtcMs: etToUtcMs, addDays: addDays, fiscalYearOf: fiscalYearOf, periodFor: periodFor,
     buildStageMap: buildStageMap, normalizeOwners: normalizeOwners, resolveViewer: resolveViewer, submittableSlugs: submittableSlugs, dealUrl: dealUrl,
+    ACCESS_LEVELS: ACCESS_LEVELS, ACCESS_LABELS: ACCESS_LABELS, activeRoster: activeRoster, rosterUsers: rosterUsers, applyRosterChange: applyRosterChange, mergeFolders: mergeFolders, inviteMessage: inviteMessage,
     deriveOpenDeal: deriveOpenDeal, deriveWonDeal: deriveWonDeal, classifyDeals: classifyDeals,
     computeMetrics: computeMetrics, summarizeForTieOut: summarizeForTieOut, tieOut: tieOut, diffDealSets: diffDealSets
   };

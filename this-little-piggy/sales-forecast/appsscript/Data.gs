@@ -28,7 +28,7 @@ function pullData_(opts) {
   var wonRaw = hsSearchDeals_(hsWonFilter_(hs, period.fyStart, asOf), hs.pullProperties).results;
 
   var metrics = ForecastCore.computeMetrics({ openRaw: openRaw, wonRaw: wonRaw, stageMap: stageMap, owners: owners,
-    roster: cfg.roster, hs: hs, portalId: cfg.portalId, asOf: asOf });
+    roster: runtimeRoster_(), hs: hs, portalId: cfg.portalId, asOf: asOf });
 
   var tie = null;
   if (!opts.skipIndependent) tie = runIndependentTieOut_(metrics, stageMap, owners, asOf);

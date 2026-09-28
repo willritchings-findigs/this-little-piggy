@@ -5,7 +5,7 @@
  */
 function currentViewer_() {
   var email = Session.getActiveUser().getEmail();
-  var v = ForecastCore.resolveViewer(email, FORECAST_CONFIG.roster);
+  var v = ForecastCore.resolveViewer(email, runtimeRoster_());
   if (!v) throw new Error(email ? 'Access denied: ' + email + ' is not on the forecast roster or leadership list.'
                                 : 'Access denied: could not determine your Google account. Open the app signed in with your findigs.com account.');
   return v;
@@ -28,15 +28,17 @@ function escapeHtml_(s) {
   return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
 }
 
-function rosterAeBySlug_(slug) {
-  return FORECAST_CONFIG.roster.aes.filter(function (a) { return a.slug === slug; })[0] || null;
+/** Roster AE by slug. Active AEs only, unless includeInactive (history views: trend, movement). */
+function rosterAeBySlug_(slug, includeInactive) {
+  var list = includeInactive ? roster_().aes : runtimeRoster_().aes;
+  return list.filter(function (a) { return a.slug === slug; })[0] || null;
 }
 
 /** Which AE's data the viewer asked for, after permission checks. Defaults to the viewer's own AE. */
 function targetAe_(v, slug) {
   if (!slug) {
     if (v.ae) return v.ae;
-    return FORECAST_CONFIG.roster.aes.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; })[0];
+    return runtimeRoster_().aes.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; })[0];
   }
   var ae = rosterAeBySlug_(slug);
   if (!ae) throw new Error('Unknown AE: ' + slug);
@@ -69,7 +71,7 @@ function apiGetData(forceRefresh) {
 function viewerOut_(v) {
   var cfg = FORECAST_CONFIG.forecast;
   return { name: v.name, email: v.email, role: v.role, canViewAll: v.canViewAll, canRefresh: !!v.canRefresh, isAdmin: v.isAdmin, slug: v.ae ? v.ae.slug : null,
-           rollover: v.isAdmin ? ForecastCore.rolloverStatus(todayEt_(), cfg.drive.folders_by_fiscal_year, cfg.cutoff) : null };
+           rollover: v.isAdmin ? ForecastCore.rolloverStatus(todayEt_(), foldersByFy_(), cfg.cutoff) : null };
 }
 
 /**
@@ -82,7 +84,7 @@ function apiGetBuilder(aeSlug) {
   var ds = getDataset_(false);
   var deals = ds.metrics.openDealsByOwner[String(ae.hubspot_owner_id)] || [];
   var tags = readTags_(ae.email);
-  var aes = v.canViewAll ? FORECAST_CONFIG.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; })
+  var aes = v.canViewAll ? runtimeRoster_().aes.map(function (a) { return { slug: a.slug, name: a.name }; })
                          : [{ slug: ae.slug, name: ae.name }];
   var own = !!(v.ae && v.ae.slug === ae.slug);
   return JSON.parse(JSON.stringify({
@@ -113,7 +115,7 @@ function apiSaveTags(aeSlug, changes) {
 
 /** {email: display name} for everyone who set one of these tags (roster names; unknown emails shown as-is). */
 function editorNames_(tags) {
-  var r = FORECAST_CONFIG.roster, byEmail = {}, out = {};
+  var r = roster_(), byEmail = {}, out = {};
   r.aes.concat(r.leadership, r.admins || []).forEach(function (p) { byEmail[p.email.toLowerCase()] = p.name; });
   Object.keys(tags).forEach(function (id) { var e = String(tags[id].updatedBy || '').toLowerCase(); if (e) out[e] = byEmail[e] || e; });
   return out;
@@ -125,7 +127,7 @@ function editorNames_(tags) {
  */
 function apiGetSubmission(actingSlug) {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
-  var allowed = ForecastCore.submittableSlugs(v, cfg.roster);
+  var allowed = ForecastCore.submittableSlugs(v, runtimeRoster_());
   // Admins (incl. Phil via admin: true) may act for any AE; a plain AE always acts for themselves.
   var acting = v.isAdmin && actingSlug ? actingSlug : (v.ae ? v.ae.slug : (actingSlug || null));
   if (acting && allowed.indexOf(acting) < 0) throw new Error('You cannot submit for ' + acting + '.');
@@ -143,7 +145,7 @@ function apiGetSubmission(actingSlug) {
     pulledAt: ds.pulledAt, tieOutOk: ds.tieOut ? ds.tieOut.ok : null,
     rows: all,
     editableSlug: acting, editableSlugs: allowed, onBehalf: !!acting && !(v.ae && v.ae.slug === acting),
-    aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+    aes: runtimeRoster_().aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
     team: { metrics: m.team, forecast: ForecastCore.sectionOneTeam(all) },
     nonRoster: m.nonRoster,
     company: m.company,
@@ -156,7 +158,7 @@ function apiGetSubmission(actingSlug) {
  * Values are validated again server-side; the client is never trusted.
  */
 function apiSubmitForecast(values, aeSlug) {
-  var v = currentViewer_(), allowed = ForecastCore.submittableSlugs(v, FORECAST_CONFIG.roster);
+  var v = currentViewer_(), allowed = ForecastCore.submittableSlugs(v, runtimeRoster_());
   if (v.ae && aeSlug && aeSlug !== v.ae.slug && !v.isAdmin) throw new Error('You can only submit your own forecast.');
   var slug = aeSlug || (v.ae ? v.ae.slug : null);
   if (!slug || allowed.indexOf(slug) < 0) throw new Error(v.isAdmin ? 'Choose the AE you are submitting for.' : 'Only AEs on the forecast roster, or an admin on their behalf, can submit a forecast.');

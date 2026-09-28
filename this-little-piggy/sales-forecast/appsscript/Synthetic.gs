@@ -21,7 +21,7 @@ function seedSyntheticSnapshots() {
   existing.forEach(function (r) { taken[r.ae_slug + '|' + r.forecast_week] = true; });
   var cwByOwner = {};
   ds.metrics.rows.forEach(function (r) { cwByOwner[r.ownerId] = r.metrics.closedWonYtd.amount; });
-  var hist = ForecastCore.syntheticHistory(cfg.roster.aes, ds.metrics.openDealsByOwner, weeks, cwByOwner).filter(function (h) {
+  var hist = ForecastCore.syntheticHistory(runtimeRoster_().aes, ds.metrics.openDealsByOwner, weeks, cwByOwner).filter(function (h) {
     var k = h.ae.slug + '|' + h.week;
     if (!taken[k]) return true;
     if (skipped.indexOf(k) < 0) skipped.push(k);
