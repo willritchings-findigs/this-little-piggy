@@ -158,6 +158,13 @@ q_open = [x for x in open_ if inw(x["close"], WIN["qtd"])]; y_open = [x for x in
 q_won = [x for x in won if inw(x["close"], WIN["qtd"])]
 top8 = sorted(open_, key=lambda x: -x["amount"])[:8]; top8_amt = sum(x["amount"] for x in top8)
 
+qtd_amt = sum(x["amount"] for x in q_won)
+asp = round(wa / len(won), 2) if won else None
+cycle_days = [(date.fromisoformat(x["close"]) - date.fromisoformat(x["created"])).days for x in won if x["close"] and x["created"]]
+cycle = round(sum(cycle_days) / len(cycle_days), 1) if cycle_days else None
+nl_amt = sum(x["amount"] for x in won if x["pipe"] == "N"); ue_amt = sum(x["amount"] for x in won if x["pipe"] == "U")
+fq_amt = qtd_amt + sum(x["weighted"] for x in q_open); fy_amt = wa + sum(x["weighted"] for x in y_open)
+
 pg_total = sum(x["amount"] for x in pg); pg_mig = [x for x in pg if x["migrated"]]; pg_nat = [x for x in pg if not x["migrated"]]
 q3 = [x for x in pg if inw(x["created"], WIN["qtd"])]; q3_mig = [x for x in q3 if x["migrated"]]
 zero_amt = [x for x in pg if x["amount"] == 0]; scored = [x for x in pg if x["swan"] is not None]
@@ -251,13 +258,25 @@ meta = dict(
             controls=[{k: v for k, v in t.items() if k != "ok"} for t in pg_tie]),
 )
 
+# ----------------------------------------------------------------------------- Compare vs history (compact, no deal-level data)
+out_name = CFG["distribution"]["file_name_pattern"].format(as_of=AS_OF)
+hist_entry = dict(asOf=AS_OF, file=out_name,
+                   tier1=dict(qtd=round(qtd_amt, 2), ytd=round(wa, 2), asp=asp, cycle=cycle, nl=round(nl_amt, 2), ue=round(ue_amt, 2),
+                              gross=round(og, 2), wtd=round(ow, 2), fq=round(fq_amt, 2), fy=round(fy_amt, 2)),
+                   pg=dict(cqtd=round(sum(x["amount"] for x in q3), 2), cytd=round(pg_total, 2), nqtd=len(q3), nytd=len(pg)),
+                   sdr=None)
+HIST_PATH = P("data", "kpi_history.json")
+history = load("data/kpi_history.json") if os.path.exists(HIST_PATH) else []
+history = [h for h in history if h["asOf"] != AS_OF] + [hist_entry]
+history.sort(key=lambda h: h["asOf"])
+with open(HIST_PATH, "w", encoding="utf-8") as f: json.dump(history, f, ensure_ascii=False, separators=(",", ":"))
+
 # ----------------------------------------------------------------------------- render
 with open(P("template.html"), encoding="utf-8") as f: tpl = f.read()
-payload = "const DEALS = " + json.dumps(deals, ensure_ascii=False, separators=(",", ":")) + ";\nconst PG = " + json.dumps(pg, ensure_ascii=False, separators=(",", ":")) + ";\nconst META = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";"
+payload = "const DEALS = " + json.dumps(deals, ensure_ascii=False, separators=(",", ":")) + ";\nconst PG = " + json.dumps(pg, ensure_ascii=False, separators=(",", ":")) + ";\nconst META = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";\nconst HISTORY = " + json.dumps(history, ensure_ascii=False, separators=(",", ":")) + ";"
 if "/*__DATA__*/" not in tpl: fail(3, "template.html is missing the /*__DATA__*/ placeholder")
 html = tpl.replace("/*__DATA__*/", payload)
 os.makedirs(P("output"), exist_ok=True)
-out_name = CFG["distribution"]["file_name_pattern"].format(as_of=AS_OF)
 with open(P("output", out_name), "w", encoding="utf-8") as f: f.write(html)
 
 # tieout.md

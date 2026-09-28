@@ -87,6 +87,11 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: none
 .kpi:hover { border-color: var(--border-default); }
 .kpi .l { font-size: 12px; color: var(--fg-2); }
 .kpi .v { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.kpi .vrow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.kpi .cmp { display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi .cmp.up { color: var(--fg-success); } .kpi .cmp.down { color: var(--fg-danger); } .kpi .cmp.flat, .kpi .cmp.na { color: var(--fg-3); font-weight: 500; }
+.kpi .cmp:empty { display: none; }
+#cmp-wrap:has(select:empty), #cmp-wrap.hidden { display: none; }
 .kpi .s { font-size: 12px; color: var(--fg-3); margin-top: auto; }
 .kpi .gap { display: inline-block; background: var(--coral-60); color: var(--fg-on-brand); border-radius: var(--r-xs); padding: 1px 6px; font-size: 11px; font-weight: 500; }
 .kpi .warn { display: inline-block; background: var(--sun-60); color: var(--fg-on-brand); border-radius: var(--r-xs); padding: 1px 6px; font-size: 11px; font-weight: 500; }
@@ -218,6 +223,7 @@ table.hm td.tot .cell { background: transparent; color: var(--fg-1); font-weight
     <div class="f-range"><span class="l">Amount $</span><input type="number" id="f-amt-min" placeholder="min" min="0" step="1000"><span class="l">to</span><input type="number" id="f-amt-max" placeholder="max" min="0" step="1000"></div>
     <div class="f-range"><span class="l">Units</span><input type="number" id="f-u-min" placeholder="min" min="0" step="100"><span class="l">to</span><input type="number" id="f-u-max" placeholder="max" min="0" step="100"></div>
     <div class="f-range"><span class="l">Close date</span><input type="date" id="f-d-min"><span class="l">to</span><input type="date" id="f-d-max"></div>
+    <div class="f-range" id="cmp-wrap"><span class="l">Compare vs</span><select id="cmp-select"></select></div>
     <button class="btn-reset" id="reset">Reset filters</button>
   </div>
 
@@ -227,21 +233,21 @@ table.hm td.tot .cell { background: transparent; color: var(--fg-1); font-weight
       <div class="kpi-group won">
         <h3>Closed-won bookings</h3>
         <div class="kpi-grid">
-          <button class="kpi" data-k="qtd"><span class="l">Bookings QTD</span><span class="v" id="k-qtd"></span><span class="s" id="k-qtd-s"></span></button>
-          <button class="kpi" data-k="ytd"><span class="l">Bookings YTD</span><span class="v" id="k-ytd"></span><span class="s" id="k-ytd-s"></span></button>
-          <button class="kpi" data-k="asp"><span class="l">Average sales price</span><span class="v" id="k-asp"></span><span class="s" id="k-asp-s"></span></button>
-          <button class="kpi" data-k="cycle"><span class="l">Average sales cycle</span><span class="v" id="k-cycle"></span><span class="s" id="k-cycle-s"></span></button>
-          <button class="kpi" data-k="nl"><span class="l">New Logo bookings YTD</span><span class="v" id="k-nl"></span><span class="s" id="k-nl-s"></span></button>
-          <button class="kpi" data-k="ue"><span class="l">Upsell / Expansion bookings YTD</span><span class="v" id="k-ue"></span><span class="s" id="k-ue-s"></span></button>
+          <button class="kpi" data-k="qtd"><span class="l">Bookings QTD</span><span class="vrow"><span class="v" id="k-qtd"></span><span class="cmp" id="k-qtd-cmp"></span></span><span class="s" id="k-qtd-s"></span></button>
+          <button class="kpi" data-k="ytd"><span class="l">Bookings YTD</span><span class="vrow"><span class="v" id="k-ytd"></span><span class="cmp" id="k-ytd-cmp"></span></span><span class="s" id="k-ytd-s"></span></button>
+          <button class="kpi" data-k="asp"><span class="l">Average sales price</span><span class="vrow"><span class="v" id="k-asp"></span><span class="cmp" id="k-asp-cmp"></span></span><span class="s" id="k-asp-s"></span></button>
+          <button class="kpi" data-k="cycle"><span class="l">Average sales cycle</span><span class="vrow"><span class="v" id="k-cycle"></span><span class="cmp" id="k-cycle-cmp"></span></span><span class="s" id="k-cycle-s"></span></button>
+          <button class="kpi" data-k="nl"><span class="l">New Logo bookings YTD</span><span class="vrow"><span class="v" id="k-nl"></span><span class="cmp" id="k-nl-cmp"></span></span><span class="s" id="k-nl-s"></span></button>
+          <button class="kpi" data-k="ue"><span class="l">Upsell / Expansion bookings YTD</span><span class="vrow"><span class="v" id="k-ue"></span><span class="cmp" id="k-ue-cmp"></span></span><span class="s" id="k-ue-s"></span></button>
         </div>
       </div>
       <div class="kpi-group pipe">
         <h3>Sales pipeline</h3>
         <div class="kpi-grid">
-          <button class="kpi" data-k="gross"><span class="l">Gross open pipeline</span><span class="v" id="k-gross"></span><span class="s" id="k-gross-s"></span></button>
-          <button class="kpi" data-k="wtd"><span class="l">Weighted open pipeline</span><span class="v" id="k-wtd"></span><span class="s" id="k-wtd-s"></span></button>
-          <button class="kpi" data-k="fq"><span class="l">Current-quarter forecast</span><span class="v" id="k-fq"></span><span class="s" id="k-fq-s"></span></button>
-          <button class="kpi" data-k="fy"><span class="l">Current-year forecast</span><span class="v" id="k-fy"></span><span class="s" id="k-fy-s"></span></button>
+          <button class="kpi" data-k="gross"><span class="l">Gross open pipeline</span><span class="vrow"><span class="v" id="k-gross"></span><span class="cmp" id="k-gross-cmp"></span></span><span class="s" id="k-gross-s"></span></button>
+          <button class="kpi" data-k="wtd"><span class="l">Weighted open pipeline</span><span class="vrow"><span class="v" id="k-wtd"></span><span class="cmp" id="k-wtd-cmp"></span></span><span class="s" id="k-wtd-s"></span></button>
+          <button class="kpi" data-k="fq"><span class="l">Current-quarter forecast</span><span class="vrow"><span class="v" id="k-fq"></span><span class="cmp" id="k-fq-cmp"></span></span><span class="s" id="k-fq-s"></span></button>
+          <button class="kpi" data-k="fy"><span class="l">Current-year forecast</span><span class="vrow"><span class="v" id="k-fy"></span><span class="cmp" id="k-fy-cmp"></span></span><span class="s" id="k-fy-s"></span></button>
         </div>
       </div>
     </div>
@@ -282,10 +288,10 @@ table.hm td.tot .cell { background: transparent; color: var(--fg-1); font-weight
     </div>
 
     <div class="pg-kpis">
-      <button class="kpi" data-pk="cqtd"><span class="l">Gross pipeline created QTD</span><span class="v" id="pk-cqtd"></span><span class="s" id="pk-cqtd-s"></span></button>
-      <button class="kpi" data-pk="cytd"><span class="l">Gross pipeline created YTD</span><span class="v" id="pk-cytd"></span><span class="s" id="pk-cytd-s"></span></button>
-      <button class="kpi" data-pk="nqtd"><span class="l">Deals created QTD</span><span class="v" id="pk-nqtd"></span><span class="s" id="pk-nqtd-s"></span></button>
-      <button class="kpi" data-pk="nytd"><span class="l">Deals created YTD</span><span class="v" id="pk-nytd"></span><span class="s" id="pk-nytd-s"></span></button>
+      <button class="kpi" data-pk="cqtd"><span class="l">Gross pipeline created QTD</span><span class="vrow"><span class="v" id="pk-cqtd"></span><span class="cmp" id="pk-cqtd-cmp"></span></span><span class="s" id="pk-cqtd-s"></span></button>
+      <button class="kpi" data-pk="cytd"><span class="l">Gross pipeline created YTD</span><span class="vrow"><span class="v" id="pk-cytd"></span><span class="cmp" id="pk-cytd-cmp"></span></span><span class="s" id="pk-cytd-s"></span></button>
+      <button class="kpi" data-pk="nqtd"><span class="l">Deals created QTD</span><span class="vrow"><span class="v" id="pk-nqtd"></span><span class="cmp" id="pk-nqtd-cmp"></span></span><span class="s" id="pk-nqtd-s"></span></button>
+      <button class="kpi" data-pk="nytd"><span class="l">Deals created YTD</span><span class="vrow"><span class="v" id="pk-nytd"></span><span class="cmp" id="pk-nytd-cmp"></span></span><span class="s" id="pk-nytd-s"></span></button>
     </div>
 
     <div class="chart-row" style="margin-top:var(--space-4)">
@@ -628,7 +634,9 @@ function renderMeth(k) {
     ${m.tieout.map(t => `<tr><td>${t.m}</td><td>${t.a}</td><td>${t.b}</td><td>${t.d}</td></tr>`).join('')}
     </tbody></table>
     <h4>Rendering</h4>
-    <p>Single self-contained HTML file. Data embedded as JSON; charts are inline SVG with no external libraries, so the file works with no network access. The Findigs Sans webfont and logo reference the Findigs CDN and fall back to system fonts and a text wordmark when offline. No values are estimated or imputed; where a computation has no qualifying records the tile shows a data-gap marker.</p>`;
+    <p>Single self-contained HTML file. Data embedded as JSON; charts are inline SVG with no external libraries, so the file works with no network access. The Findigs Sans webfont and logo reference the Findigs CDN and fall back to system fonts and a text wordmark when offline. No values are estimated or imputed; where a computation has no qualifying records the tile shows a data-gap marker.</p>
+    <h4>Compare vs (period-over-period)</h4>
+    <p>Every Tier 1 and Pipeline Generation KPI tile carries a ▲/▼ badge showing percent change against a prior snapshot, picked from the "Compare vs" dropdown (defaults to the most recent prior refresh — week-over-week on this dashboard's weekly cadence). Each refresh appends its own unfiltered headline totals (never full deal-level data) to a small running history table, so the file stays self-contained and its size does not grow with history. The badge compares the current unfiltered totals against the selected snapshot's; it does not recompute against the live owner/stage/segment/date filters above, since prior-snapshot deal-level data is not retained. A badge reads "new" when the prior snapshot was exactly zero and the current value is not, and reads blank when either side has no comparable data (e.g. the earliest snapshot in history, which has nothing before it to compare against).</p>`;
 }
 function renderDQ() {
   const flags = META.dq;
@@ -830,6 +838,45 @@ function renderPG() {
   $('#pg-score-leg').innerHTML = `<span><span class="sw" style="background:${css('--viz-weighted')}"></span>Company has a Swan score</span><span><span class="sw" style="background:${css('--viz-gross')}"></span>No Swan score on associated company</span><span style="color:${css('--fg-3')}">Coverage: ${scored.length} of ${PGROWS.length} deals (${PGROWS.length ? (scored.length / PGROWS.length * 100).toFixed(0) : 0}%) · ${fmtUSD(sum(scored, d => d.amount))} of ${fmtUSD(sum(PGROWS, d => d.amount))} · observed values 3, 4, 5</span>`;
 }
 
+// ================= historical KPI comparison (Compare vs) =================
+const HIST_NOW = HISTORY.length ? HISTORY[HISTORY.length - 1] : null;
+const HIST_PAST = HISTORY.slice(0, -1).reverse();
+const CMP_TILES = [
+  ['k-qtd', 'tier1', 'qtd'], ['k-ytd', 'tier1', 'ytd'], ['k-asp', 'tier1', 'asp'], ['k-cycle', 'tier1', 'cycle'],
+  ['k-nl', 'tier1', 'nl'], ['k-ue', 'tier1', 'ue'], ['k-gross', 'tier1', 'gross'], ['k-wtd', 'tier1', 'wtd'],
+  ['k-fq', 'tier1', 'fq'], ['k-fy', 'tier1', 'fy'],
+  ['pk-cqtd', 'pg', 'cqtd'], ['pk-cytd', 'pg', 'cytd'], ['pk-nqtd', 'pg', 'nqtd'], ['pk-nytd', 'pg', 'nytd'],
+];
+const fmtPct1 = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+function cmpBadge(id, cur, base, asOfLabel) {
+  const el = $('#' + id + '-cmp');
+  if (!el) return;
+  if (cur == null || base == null) { el.textContent = ''; el.className = 'cmp na'; el.title = 'No comparable data on that date'; return; }
+  if (base === 0) {
+    el.textContent = cur === 0 ? '' : 'new'; el.className = 'cmp flat';
+    el.title = cur === 0 ? '' : `0 on ${asOfLabel}`;
+    return;
+  }
+  const pct = (cur - base) / Math.abs(base);
+  const dir = pct > 0.0005 ? 'up' : pct < -0.0005 ? 'down' : 'flat';
+  const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '–';
+  el.textContent = dir === 'flat' ? `${arrow} 0.0%` : `${arrow} ${fmtPct1(pct)}`;
+  el.className = 'cmp ' + dir;
+  el.title = `vs ${asOfLabel}`;
+}
+function renderCompare() {
+  if (!HIST_PAST.length || !HIST_NOW) { $('#cmp-wrap').classList.add('hidden'); return; }
+  const sel = HIST_PAST[+$('#cmp-select').value];
+  const label = fmtD(sel.asOf);
+  CMP_TILES.forEach(([id, grp, key]) => cmpBadge(id, HIST_NOW[grp] ? HIST_NOW[grp][key] : null, sel[grp] ? sel[grp][key] : null, label));
+}
+function initCompare() {
+  if (!HIST_PAST.length) { $('#cmp-wrap').classList.add('hidden'); return; }
+  $('#cmp-select').innerHTML = HIST_PAST.map((h, i) => `<option value="${i}">${esc(fmtD(h.asOf))}${i === 0 ? ' (most recent)' : ''}</option>`).join('');
+  $('#cmp-select').addEventListener('change', renderCompare);
+  renderCompare();
+}
+
 // ---------- main ----------
 function render() {
   ROWS = filtered(); K = compute(ROWS);
@@ -848,6 +895,7 @@ $('#asof').textContent = fmtD(META.asOf);
 buildFilterPops();
 renderMeth(); renderDQ(); renderPGMeth();
 render();
+initCompare();
 </script>
 </body>
 </html>
