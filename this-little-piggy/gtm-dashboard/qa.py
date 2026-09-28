@@ -38,7 +38,9 @@ except ImportError:
     print("\n".join(notes)); print("QA PASS (syntax only)" if not fails else "QA FAIL"); sys.exit(4 if fails else 0)
 
 with sync_playwright() as p:
-    b = p.chromium.launch(); pg = b.new_page(viewport={"width": 1440, "height": 1000}); errs = []
+    _pinned_chromium = "/opt/pw-browsers/chromium"
+    _launch_kwargs = {"executable_path": _pinned_chromium} if os.path.exists(_pinned_chromium) else {}
+    b = p.chromium.launch(**_launch_kwargs); pg = b.new_page(viewport={"width": 1440, "height": 1000}); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto("file://" + os.path.abspath(path)); pg.wait_for_timeout(800)
     if errs: fails.append("page errors: " + "; ".join(errs)[:400])
@@ -46,7 +48,8 @@ with sync_playwright() as p:
     for k, exp in (("gross", exp_gross), ("wtd", exp_wtd), ("ytd", exp_ytd)):
         if tile(k) != compact(exp): fails.append(f"tile {k}: rendered {tile(k)} vs expected {compact(exp)}")
     if pg.inner_text("#scope-n").strip() != str(len(deals)): fails.append("scope count mismatch")
-    if pg.inner_text("#pk-nytd").strip() != f"{len(json.loads(re.search(r'const PG = (\[.*?\]);\nconst META', html, re.S).group(1))):,}": fails.append("pipeline-generation YTD count mismatch")
+    pg_n = len(json.loads(re.search(r'const PG = (\[.*?\]);\nconst META', html, re.S).group(1)))
+    if pg.inner_text("#pk-nytd").strip() != f"{pg_n:,}": fails.append("pipeline-generation YTD count mismatch")
     # filter smoke: uncheck every owner but the first, expect scope to drop, then reset restores
     pg.click("#f-owner summary")
     n_before = int(pg.inner_text("#scope-n"))
