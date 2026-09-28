@@ -1,14 +1,8 @@
 {
  "portal": "243635806",
  "timezone": "America/New_York",
- "as_of": "2026-09-14",
- "pulled_at_et": "Sep 14, 2026 11:10 AM ET",
- "supplemental_pulled_at_et": "Sep 14, 2026 5:10 PM ET",
- "supplemental_fields": [
-  "weighted_amount",
-  "deal_source_drill_down",
-  "company.swan_score"
- ],
+ "as_of": "2026-09-28",
+ "pulled_at_et": "Sep 28, 2026 8:16 AM ET",
  "stages": [
   {
    "id": "3753890497",
@@ -154,10 +148,6 @@
    "name": "Matt Lynch",
    "active": true
   },
-  "981129967": {
-   "name": "Grace Doering",
-   "active": true
-  },
   "686754956": {
    "name": "Clay Stapleford",
    "active": true
@@ -176,6 +166,6 @@
   }
  },
  "notes": [
-  "1 New Logo deal (Newport Pacific - New Deal, $1,163,432.40) was created between the base and supplemental pulls and is excluded from this snapshot."
+  "Stage 3753890498 (Discovery / Demo, New Logo): 17 live deals show probability 0.2 (modal, matches prior snapshot) and 1 deal shows 0.15; modal probability used for the stage map, no stage-level change."
  ]
 }
