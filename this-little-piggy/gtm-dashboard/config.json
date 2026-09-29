@@ -164,8 +164,9 @@
   },
   "tie_out_tolerance_usd": 0.01,
   "distribution": {
-    "gdrive_folder_id": "1rFO4rDgvUZuf03NHeSdzDJT4MCEVy0Tb",
-    "gdrive_folder_path": "Revenue Operations / Reporting & Analytics",
+    "gdrive_folder_id": "1uxooqagOt5pmyOKYjrH3ZLf9wjhNRuoX",
+    "gdrive_folder_path": "Shared Drive / Reports & Analytics / GTM Leadership Dashboard",
+    "gdrive_folder_note": "Confirmed 2026-09-29: moved from a My Drive folder (1rFO4rDgvUZuf03NHeSdzDJT4MCEVy0Tb) to this Shared Drive folder. Any future service-account upload (see publish.py spec) needs the service account added as a member of the Shared Drive, not just this folder — Shared Drive permissions don't inherit from a personal share.",
     "file_name_pattern": "findigs_gtm_executive_dashboard_{as_of}.html",
     "slack_channel": "#gtm_leadership",
     "slack_channel_id": "C0C1P09SPFF",
