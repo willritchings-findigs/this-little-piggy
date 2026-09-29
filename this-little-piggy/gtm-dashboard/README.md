@@ -11,13 +11,16 @@ gtm-dashboard/
 ├── README.md          this file
 ├── config.json        confirmed decisions (mirror of Notion Data Definitions)
 ├── schema.md          exact shape of every file in data/
-├── build.py           data/*.json → output/*.html + tieout.md; exits non-zero on tie-out failure
+├── build.py           data/*.json → output/*.html + tieout.md + slack_post.txt; exits non-zero on tie-out failure
 ├── qa.py              headless render check of the built file
 ├── template.html      dashboard shell — brand tokens, inline SVG charts, filters, drilldowns, methodology blocks
 ├── data/              written by each refresh (ships with the 2026-09-14 snapshot as a working example)
-├── runs/runs.jsonl    one line per successful build — counts and totals for drift review
-└── output/            built dashboard(s), tieout.md, qa_screenshot.png
+├── runs/runs.jsonl    one line per build *attempt* — counts and totals for drift review (append-only, not deduped)
+└── output/            built dashboard(s), tieout.md, slack_post.txt, qa_screenshot.png
+    └── diagnostic/    scratch output from `build.py --diagnostic` — gitignored, never touches data/kpi_history.json or runs/runs.jsonl
 ```
+
+`build.py --diagnostic` (added 2026-09-29) is for "why does this say X" / "how does this compare to last week" questions: it writes the HTML, `tieout.md`, and `slack_post.txt` under `output/diagnostic/` and skips both history writes entirely, so answering a question never pollutes the Compare vs baseline or the audit log. `data/kpi_history.json` already dedupes by `as_of` on every write (a same-day re-run replaces that date's entry, never adds a second one); `runs/runs.jsonl` intentionally is not deduped — it's an audit log of every attempt, including re-runs. `build.py` also caps embedded Compare vs history to `config.compare_vs.history_window_weeks` (26 by default) — measured 2026-09-29: this has negligible effect on file size (~700 bytes/history entry vs. the ~450KB embedded pipeline-generation deal array, which is the real driver of the file's size — see Known limitations).
 
 ## Refresh — the short version
 
@@ -49,13 +52,18 @@ It runs weekly as a Claude Code Routine (Mondays 08:00 ET). The manual procedure
 
 **3. Pull.** Three `search_crm_objects` pulls with the full `pull_properties` list, paginated to `total` → `deals_open.json`, `deals_won.json`, `deals_created.json` (the SDR section reads its population out of `deals_created.json` — no separate pull). One `query_crm_data` for `company.swan_score IS NOT NULL` → `swan_scores.json`. Write `snapshot.json`, including any newly-resolved `sdr_owner` names from step 1. Returned count ≠ reported `total` → stop.
 
-**4. Build.** `python build.py`. Exit 0 = reconciled and written. Exit 2 = tie-out miss — the stderr lines name the measure; the usual cause is a record created or edited between steps 2 and 3 (re-run 2 and 3 together). Exit 3 = schema problem (unknown stage or owner, null amount) — the message says which.
+**4. Build.** `python build.py`. Exit 0 = reconciled and written (also writes `output/slack_post.txt` — see step 6). Exit 2 = tie-out miss — the stderr lines name the measure; the usual cause is a record created or edited between steps 2 and 3 (re-run 2 and 3 together). Exit 3 = schema problem (unknown stage or owner, null amount) — the message says which.
 
-**5. QA.** `python qa.py`. Needs Playwright for the render checks; without it you get a syntax check only and a note saying so.
+**5. QA.** `python qa.py`. Needs Playwright for the render checks; without it you get a syntax check only and a note saying so. In an unattended (Routine) run, a missing Playwright install is itself a stop — see the skill's stop rules; on demand it can still fall back to syntax-only with a chat note.
 
-**6. Deliver — success only.** Upload `output/findigs_gtm_executive_dashboard_<as_of>.html` to Google Drive folder `1uxooqagOt5pmyOKYjrH3ZLf9wjhNRuoX` (Shared Drive / Reports & Analytics / GTM Leadership Dashboard — moved here 2026-09-29 from the prior My Drive folder `1rFO4rDgvUZuf03NHeSdzDJT4MCEVy0Tb`). **Known limitation, confirmed 2026-09-28:** the file (500KB+, growing with each new section and each week of Compare-vs history) is too large for the Drive connector's `create_file` tool — its content must pass through a single model-generated tool call, and this file exceeds that call's practical size ceiling. There is no chunked/resumable/path-based upload in the available Drive toolset. If the upload fails for this reason, do not keep retrying it — tell Will directly and give him the file's path in this repo/branch so he can upload it himself; this is a standing, structural limitation, not a transient error to work around. Once uploaded (by either path), post to `#gtm_leadership` (`C0C1P09SPFF`) with the file link and the headline numbers from `tieout.md` (now including the SDR section's), and send Will a short success DM. Commit `data/`, `runs/`, `output/tieout.md` to the repo (the HTML is large; commit it only if you want the history).
+**6. Deliver — in this order: upload, then commit, then post.**
 
-**If any step 0–5 stops the run, none of the above happens.** Instead, DM Will (`U0BQ5AZK284`) the failure note — see the skill's "Failure note format" section. `#gtm_leadership` never receives a failure, an error, or a partial run; it only ever sees a working dashboard. If Slack itself is unreachable, fall back to the Routine log / chat response, since there's no DM to send.
+1. Upload `output/findigs_gtm_executive_dashboard_<as_of>.html` to Google Drive folder `1uxooqagOt5pmyOKYjrH3ZLf9wjhNRuoX` (Shared Drive / Reports & Analytics / GTM Leadership Dashboard — moved here 2026-09-29 from the prior My Drive folder `1rFO4rDgvUZuf03NHeSdzDJT4MCEVy0Tb`). **Known limitation, confirmed 2026-09-28, re-measured 2026-09-29:** the file (664KB as of the SDR section — 68% of that is the embedded pipeline-generation deal array, 15% the template shell, 13% the Tier 1–3 deal array; Compare vs history is under 1%) is too large for the Drive connector's `create_file` tool, whose content has to pass through a single model-generated tool call. There is no chunked/resumable/path-based upload in the available Drive toolset. This is a standing, structural limitation, not a transient error — do not keep retrying it. The real fix is a service-account-based resumable upload outside any model tool call; spec'd but not yet built (see `publish_spec.md`).
+2. **Commit `data/`, `runs/runs.jsonl`, `output/tieout.md`, `output/slack_post.txt` to the repo, regardless of whether the upload in step 1 succeeded** — a reconciled build is worth persisting even if delivery failed. Commit it too if the repo owner has asked for HTML file history. **A failed commit is always a stop** — DM Will, do not proceed to post.
+3. If the upload in step 1 succeeded: post `output/slack_post.txt` **verbatim** to `#gtm_leadership` (`C0C1P09SPFF`), with its `<DRIVE_LINK>` placeholder replaced by the real Drive link — every number in it already matches `tieout.md` exactly, so nothing here is typed by the model. Then send Will a short success DM.
+4. If the upload in step 1 failed (the size limitation above, or any other Drive error): **do not post to `#gtm_leadership`.** Instead DM Will the "built but not published" note: the file's path on this repo/branch, and the full contents of `output/slack_post.txt` (with `<DRIVE_LINK>` replaced by that repo path, not a Drive link) ready for him to paste once he's uploaded it himself.
+
+**If any step 0–5 stops the run, or the commit in step 6.2 fails, none of the delivery above happens.** Instead, DM Will (`U0BQ5AZK284`) the failure note — see the skill's "Failure note format" section. `#gtm_leadership` never receives a failure, an error, a partial run, or a built-but-undelivered dashboard; it only ever sees one that's actually reachable. If Slack itself is unreachable, fall back to the Routine log / chat response, since there's no DM to send.
 
 ## Decisions log
 
@@ -78,6 +86,11 @@ It runs weekly as a Claude Code Routine (Mondays 08:00 ET). The manual procedure
 | 2026-09-23 | Pipeline goal by segment: no quota file exists; placeholder 0 = "not configured" for every segment, never estimated, percent-to-goal suppressed | config.sdr_section.goal_by_segment |
 | 2026-09-28 | Re-checked against a live FY2027 capacity/quota workbook that appeared in Drive — does not supersede the placeholder (wrong fiscal year, scenario-based, different segment taxonomy) | config.sdr_section.goal_by_segment.note |
 | 2026-09-29 | Delivery folder moved to a Shared Drive: `GTM Leadership Dashboard` (under `Reports & Analytics`), replacing the prior My Drive folder | config.distribution.gdrive_folder_id / gdrive_folder_path |
+| 2026-09-29 | Slack post generated by `build.py` into `output/slack_post.txt` from the same numbers as `tieout.md`; the skill posts that file verbatim instead of composing the post itself | build.py, config.distribution |
+| 2026-09-29 | Material-change threshold for the Slack post's DQ/change line: ±10% on any headline scalar vs. the comparison snapshot; process/display parameter, not a metric definition | config.compare_vs.material_change_threshold_pct |
+| 2026-09-29 | Compare vs embedded history capped at a trailing window (default 26 weeks); measured to have negligible effect on file size — see Known limitations | config.compare_vs.history_window_weeks |
+| 2026-09-29 | `build.py --diagnostic`: diagnostic/on-demand runs write scratch output under `output/diagnostic/` and never touch `data/kpi_history.json` or `runs/runs.jsonl` | build.py |
+| 2026-09-29 | Delivery reordered to upload → commit → post, so a reconciled build's history is committed even if the Drive upload fails; commit failure is always a stop | README Step 6 |
 
 ## Prerequisites
 
@@ -104,5 +117,8 @@ Test with **Run now** before trusting the schedule.
 - Stage probabilities are observed from deal records, not read from pipeline settings (the connector does not expose them).
 - The dashboard's brand font and logo load from the Findigs CDN and fall back to system font / text wordmark offline. Data and charts never need the network.
 - `weighted_amount` is populated on roughly half of open deals; the fallback rule covers the rest and each fallback deal is tagged.
-- The built HTML has outgrown the Drive connector's upload tool (see Step 6) — plan for a manual upload step until that's resolved.
+- The built HTML has outgrown the Drive connector's upload tool (see Step 6) — plan for a manual upload step until `publish_spec.md`'s resumable-upload approach is built and approved.
+- The file's size is driven almost entirely by the embedded pipeline-generation deal array (68% of 664KB, measured 2026-09-29), not by Compare vs history (under 1%) or the template shell (15%). Capping history further won't meaningfully help; shrinking the file for real would mean cutting or externalizing deal-level drilldown data, which hasn't been proposed or approved.
 - SDR section: `sdr_owner_new` and `attribution_source_drill_down` exist in HubSpot and are actively used by several live, currently-configured HubSpot saved reports, but this dashboard deliberately does not use either (see `config.fields.not_used` and DQ flags SDR-1/SDR-2 in the built file). If Findigs' live SDR reporting is ever reconciled onto a single field, update the Notion Metric Definitions rows first, then `config.json`, then re-run — never the reverse.
+- `qa.py` does not test Compare vs rendering (no check exists for the `#cmp-wrap` badge/no-badge behavior). The underlying JS (`template.html`'s `initCompare`/`renderCompare`) already does the right thing — badges against the most recent prior snapshot by date, hides the widget entirely when there's no prior snapshot — but nothing in `qa.py` verifies it. Flagged 2026-09-29, not yet built.
+- **Which branch the Routine commits to is not configured anywhere** — not in `config.json`, not in this README, not in the skill. Every refresh commit to date has landed on `claude/loving-bardeen-nyzhg3` (PR #2, open, unmerged as of 2026-09-29); `main` does not have `data/kpi_history.json` at all. If a future run ever committed to `main` before that PR merges, it would start a brand-new, empty Compare vs history and orphan everything accumulated here. Needs an explicit decision (a `config.distribution` key naming the branch, or confirmation that "wherever the Routine's checkout is" is good enough) before the next scheduled run.

@@ -9,7 +9,12 @@ Writes:  output/findigs_gtm_executive_dashboard_<as_of>.html, output/tieout.md, 
 Exit codes: 0 = built and reconciled; 2 = tie-out failure (nothing written to output/);
             3 = schema/config problem. The refresh skill treats any non-zero exit as "stop and report".
 
-Usage: python build.py [--as-of YYYY-MM-DD] [--no-run-log]
+Usage: python build.py [--as-of YYYY-MM-DD] [--no-run-log] [--diagnostic]
+
+--diagnostic: for on-demand "why does this say X" questions. Writes the HTML,
+tieout.md, and slack_post.txt under output/diagnostic/ instead of output/, and
+never writes to data/kpi_history.json or runs/runs.jsonl — a diagnostic run must
+not pollute the Compare vs baseline or the audit log. Implies --no-run-log.
 """
 import argparse, json, os, sys
 from collections import Counter, defaultdict
@@ -31,7 +36,10 @@ def fail(code, msg):
 ap = argparse.ArgumentParser()
 ap.add_argument("--as-of", help="override as-of date (YYYY-MM-DD, ET). Default: snapshot.json as_of")
 ap.add_argument("--no-run-log", action="store_true")
+ap.add_argument("--diagnostic", action="store_true", help="scratch output only; never writes kpi_history.json or runs.jsonl")
 args = ap.parse_args()
+DIAG = args.diagnostic
+NO_RUN_LOG = args.no_run_log or DIAG
 
 CFG = load("config.json")
 SNAP = load("data/snapshot.json")
@@ -314,15 +322,23 @@ HIST_PATH = P("data", "kpi_history.json")
 history = load("data/kpi_history.json") if os.path.exists(HIST_PATH) else []
 history = [h for h in history if h["asOf"] != AS_OF] + [hist_entry]
 history.sort(key=lambda h: h["asOf"])
-with open(HIST_PATH, "w", encoding="utf-8") as f: json.dump(history, f, ensure_ascii=False, separators=(",", ":"))
+HIST_WINDOW_WEEKS = CFG.get("compare_vs", {}).get("history_window_weeks")
+if HIST_WINDOW_WEEKS:
+    cutoff = iso(date.fromisoformat(AS_OF) - timedelta(weeks=HIST_WINDOW_WEEKS))
+    history = [h for h in history if h["asOf"] >= cutoff]
+cur_idx = next(i for i, h in enumerate(history) if h["asOf"] == AS_OF)
+prior_entry = history[cur_idx - 1] if cur_idx > 0 else None
+if not DIAG:
+    with open(HIST_PATH, "w", encoding="utf-8") as f: json.dump(history, f, ensure_ascii=False, separators=(",", ":"))
 
 # ----------------------------------------------------------------------------- render
+OUT_DIR = P("output", "diagnostic") if DIAG else P("output")
 with open(P("template.html"), encoding="utf-8") as f: tpl = f.read()
 payload = "const DEALS = " + json.dumps(deals, ensure_ascii=False, separators=(",", ":")) + ";\nconst PG = " + json.dumps(pg, ensure_ascii=False, separators=(",", ":")) + ";\nconst META = " + json.dumps(meta, ensure_ascii=False, separators=(",", ":")) + ";\nconst HISTORY = " + json.dumps(history, ensure_ascii=False, separators=(",", ":")) + ";"
 if "/*__DATA__*/" not in tpl: fail(3, "template.html is missing the /*__DATA__*/ placeholder")
 html = tpl.replace("/*__DATA__*/", payload)
-os.makedirs(P("output"), exist_ok=True)
-with open(P("output", out_name), "w", encoding="utf-8") as f: f.write(html)
+os.makedirs(OUT_DIR, exist_ok=True)
+with open(os.path.join(OUT_DIR, out_name), "w", encoding="utf-8") as f: f.write(html)
 
 # tieout.md
 lines = [f"# Tie-out — as of {AS_OF} (pulled {SNAP['pulled_at_et']})", "",
@@ -338,10 +354,50 @@ lines = [f"# Tie-out — as of {AS_OF} (pulled {SNAP['pulled_at_et']})", "",
         ["", "## SDR section tie-out", "| Measure | Pulled | Control | Delta |", "|---|---|---|---|"] + [f"| {t['m']} | {t['a']} | {t['b']} | {t['d']} |" for t in sdr_tie] + \
         ["", "## Data quality flags", "| ID | Severity | Count |", "|---|---|---|"] + [f"| {d['id']} | {d['sev']} | {d['n']} |" for d in dq] + \
         ["", "## SDR section data quality flags", "| ID | Severity | Count |", "|---|---|---|"] + [f"| {d['id']} | {d['sev']} | {d['n']} |" for d in meta['sdr']['dq']] + \
-        ["", f"Output: `output/{out_name}`"]
-with open(P("output", "tieout.md"), "w", encoding="utf-8") as f: f.write("\n".join(lines) + "\n")
+        ["", f"Output: `output/{'diagnostic/' if DIAG else ''}{out_name}`"]
+with open(os.path.join(OUT_DIR, "tieout.md"), "w", encoding="utf-8") as f: f.write("\n".join(lines) + "\n")
 
-if not args.no_run_log:
+# ----------------------------------------------------------------------------- slack_post.txt (model never types a number into Slack)
+def pct_delta(cur, base):
+    if base in (None, 0) or cur is None: return None
+    return (cur - base) / base * 100
+
+MC_THRESHOLD = CFG.get("compare_vs", {}).get("material_change_threshold_pct", 10)
+material = []
+if prior_entry:
+    checks = [
+        ("Bookings QTD", hist_entry["tier1"]["qtd"], prior_entry["tier1"]["qtd"]),
+        ("Bookings YTD", hist_entry["tier1"]["ytd"], prior_entry["tier1"]["ytd"]),
+        ("Gross open pipeline", hist_entry["tier1"]["gross"], prior_entry["tier1"]["gross"]),
+        ("Weighted open pipeline", hist_entry["tier1"]["wtd"], prior_entry["tier1"]["wtd"]),
+        ("Quarter forecast", hist_entry["tier1"]["fq"], prior_entry["tier1"]["fq"]),
+        ("Year forecast", hist_entry["tier1"]["fy"], prior_entry["tier1"]["fy"]),
+        ("Pipeline created QTD", hist_entry["pg"]["cqtd"], prior_entry["pg"]["cqtd"]),
+        ("Pipeline created YTD", hist_entry["pg"]["cytd"], prior_entry["pg"]["cytd"]),
+    ]
+    if prior_entry.get("sdr") and hist_entry.get("sdr"):
+        checks.append(("SDR opportunities generated (30d)", hist_entry["sdr"]["opp30"], prior_entry["sdr"]["opp30"]))
+    for label, cur, base in checks:
+        d = pct_delta(cur, base)
+        if d is not None and abs(d) >= MC_THRESHOLD:
+            material.append(f"{label} {'+' if d >= 0 else ''}{d:.0f}% vs {prior_entry['asOf']}")
+dq_high_n = sum(1 for d in dq if d["sev"] == "High") + sum(1 for d in meta["sdr"]["dq"] if d["sev"] == "High")
+if dq_high_n: dq_line = f"{dq_high_n} High-severity data-quality flag(s) — see tieout.md."
+elif material: dq_line = "; ".join(material) + "."
+else: dq_line = "No new data-quality flags."
+
+slack_lines = [
+    f"GTM executive dashboard — refreshed {date.fromisoformat(AS_OF).strftime('%b %-d, %Y')}",
+    f"Bookings QTD {usd(sum(x['amount'] for x in q_won))} ({len(q_won)} deals) · YTD {usd(wa)} ({len(won)})",
+    f"Gross open pipeline {usd(og)} · weighted {usd(ow)} · quarter forecast {usd(sum(x['amount'] for x in q_won) + sum(x['weighted'] for x in q_open))} · year forecast {usd(wa + sum(x['weighted'] for x in y_open))}",
+    f"Pipeline created QTD {usd(sum(x['amount'] for x in q3))} ({len(q3)}) · YTD {usd(pg_total)} ({len(pg)})",
+    f"SDR opportunities {usd(sdr_total_amt)} ({len(sdr_opps)}) · trailing 30d: booked {len(sdr_booked)}, held {len(sdr_held)}, opportunities {len(sdr_opp30)}",
+    "<DRIVE_LINK>",
+    f"Sources and methodology are in the file. {dq_line}",
+]
+with open(os.path.join(OUT_DIR, "slack_post.txt"), "w", encoding="utf-8") as f: f.write("\n".join(slack_lines) + "\n")
+
+if not NO_RUN_LOG:
     os.makedirs(P("runs"), exist_ok=True)
     run = dict(as_of=AS_OF, pulled=SNAP["pulled_at_et"], built=datetime.now(ET).strftime("%Y-%m-%d %H:%M ET"), open_n=len(open_), won_n=len(won), created_n=len(pg),
                open_gross=round(og, 2), open_weighted=round(ow, 2), weighted_fallback_n=len(fb), won_amount=round(wa, 2), created_amount=round(pg_total, 2),
@@ -349,4 +405,4 @@ if not args.no_run_log:
                sdr_opp_n=len(sdr_opps), sdr_opp_amount=round(sdr_total_amt, 2), sdr_booked_30d=len(sdr_booked), sdr_held_30d=len(sdr_held), output=out_name)
     with open(P("runs", "runs.jsonl"), "a", encoding="utf-8") as f: f.write(json.dumps(run) + "\n")
 
-print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)} sdr_opp={len(sdr_opps)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {len(tie)+len(pg_tie)+len(sdr_tie)}/{len(tie)+len(pg_tie)+len(sdr_tie)} reconciled")
+print(f"OK  {out_name}  open={len(open_)} won={len(won)} created={len(pg)} sdr_opp={len(sdr_opps)}  gross={usd(og)} weighted={usd(ow)} won={usd(wa)}  tie-out {len(tie)+len(pg_tie)+len(sdr_tie)}/{len(tie)+len(pg_tie)+len(sdr_tie)} reconciled" + ("  [DIAGNOSTIC — not published, history untouched]" if DIAG else ""))

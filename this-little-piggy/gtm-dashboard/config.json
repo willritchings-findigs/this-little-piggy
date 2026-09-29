@@ -163,6 +163,11 @@
     "known_field_conflicts": "See fields.not_used.sdr_owner_new and fields.not_used.attribution_source_drill_down. Surfaced as DQ flags SDR-1 and SDR-2 in the dashboard itself, not resolved here."
   },
   "tie_out_tolerance_usd": 0.01,
+  "compare_vs": {
+    "material_change_threshold_pct": 10,
+    "history_window_weeks": 26,
+    "note": "Confirmed 2026-09-29, process/display parameters only — not a metric definition, no Notion Data Definitions row: material_change_threshold_pct decides which headline scalar deltas build.py calls out in output/slack_post.txt (vs the most recent prior kpi_history.json entry); history_window_weeks caps how many weeks build.py keeps in kpi_history.json (measured impact: negligible on file size — the embedded history payload is ~700 bytes/entry vs. ~450KB for the deal-level pipeline-generation array, confirmed 2026-09-29). Flagged for Will: if either threshold should instead be a governed Notion decision, say so and this note will be replaced with a row_to_config_map entry."
+  },
   "distribution": {
     "gdrive_folder_id": "1uxooqagOt5pmyOKYjrH3ZLf9wjhNRuoX",
     "gdrive_folder_path": "Shared Drive / Reports & Analytics / GTM Leadership Dashboard",
