@@ -1,0 +1,20 @@
+finding_id,short_name,claim,paper_location,current_confidence,transcript_test
+F01,Leaky bucket,39.9% of closed deals lost from Intro & Challenge; 30.3% from Discovery; 12.2% BC; 8.4% Negotiation; 0.5% Trial; 8.8% won,Exhibit 1,Quant: high,Where in the funnel momentum is lost
+F02,BOFU works,49.3% of deals reaching Negotiation win; 67 of 74 wins passed Negotiation; BOFU = 9.7% of losses,State of the Business,Quant: high,"Are BOFU losses structural deal-breakers (ETF, contract, legal)?"
+F03,Volume vs quality,Closed volume doubled Q4 2025 to Q2 2026 while wins flat (20/24/25); win rate 15.9% to 8.8%,Exhibit 2,Quant: high,Did call quality / prospect fit decline as volume rose?
+F04,Q3 2026 break,Q3 2026 win rate 2.6% (5/194) vs 10.6% prior; opp WR 4.9% vs 17.0%; post-migration-created deals 1/86,Lesson 4,Quant: high on drop; cause unknown,"What changed in calls in Q3: process, messaging, price, people, prospect mix?"
+F05,TOFU disengagement,"TOFU top reasons: Unresponsive 124, Other 70, Demo didn't happen 48; disengagement family 28.0% to 42.8% of losses (H1 vs H2)",Lesson 1; Exhibits 4-6,"Quant: high size, medium cause",Did the first meeting occur? Was pain confirmed? Was the right persona booked?
+F06,Notes vs picklist,74 lost deals have notes saying demo never happened but a different reason code,Appendix B,Quant: medium,Gong: does a recorded first meeting exist for these deals?
+F07,Discovery stall,"50.4% of Discovery-reached deals lost at Discovery; MOFU top reasons Bad Timing 95, Unresponsive 83, Price 71",Lesson 2,Quant: high,What happens on Discovery calls that die vs advance?
+F08,Price before value,"71 of 102 Price losses in MOFU, 46 at Discovery itself",Lesson 2,Quant: medium (inference on cause),"When does price first come up, who raises it, was pain/ROI established first?"
+F09,Price share falling / Bad Timing rising,Price share 18.6% to 9.4%; Bad Timing 3-mo share 15% to 24% Jun-Sep,Exhibits 5-6,Quant: medium,Do Bad Timing losses contain price objections (recoding)?
+F10,Mid-Market stall,MM win rate 1.5% (2/134); reaches Discovery 59.7% (= SMB) but Negotiation 7.5% vs 19.4%; won MM median cycle 130d,Lesson 3; Exhibit 7,"Quant: high outcome, medium cause","Stakeholders, decision-maker presence, buying-committee objections on MM calls"
+F11,Data-provider source,DA - Data provider 0/53 won,Exhibit 9,Quant: high,Persona/fit of data-provider-sourced first meetings
+F12,People not the driver,AE win rate p=0.69; SDR win rate p=0.87; AE Discovery reach differs p=0.009 (Ian McLaughlin 49.5% vs 63.3%),State of the Business,Quant: high,Do call behaviors differ by AE in ways that explain Discovery reach? (observational only)
+F13,Dead deals linger,Lost deals sit 27-53 days median in final stage vs 2-8 days for advancing deals,Exhibit 8,Quant: medium (stage-date batching),Call cadence gaps before close-out; last meaningful call vs close date
+F14,Competitor under-capture,"139 lost deals name a competitor vs 38 coded Competitor; AppFolio 51, Yardi 32 (PMS-bundled screening)",Lesson 5,Quant: low/directional,"Which competitors/incumbents are mentioned in calls, and how are they positioned?"
+F15,Amount = list-rate proxy,79% of post-Intro deals still carry create-time list-rate amount,Lesson 5,Quant: high,Did pricing discussions occur and at what proposed price?
+H01,Hypothesis: booking quality,"First meetings are booked without confirmed pain, role, or unit fit",Priority 1,Untested,"RQ2, RQ3"
+H02,Hypothesis: no compelling event,Discovery fails to establish a dated compelling event; Bad Timing is the symptom,Priority 2,Untested,"RQ1, RQ3"
+H03,Hypothesis: ETF / commitment terms,Early termination fee structure and lack of a standard commitment/pilot instrument block late-stage deals (from Sept 2026 contract stack diagnostic),Contract stack diagnostic,Untested in calls,RQ6
+H04,Hypothesis: MM buying committee,Mid-Market deals stall because the economic buyer / decision committee is not engaged,Priority 3,Untested,RQ2
