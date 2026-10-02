@@ -1,0 +1,228 @@
+{
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "meetings_with_briefs": {
+   "type": "integer"
+  },
+  "trajectory_summary": {
+   "type": "string",
+   "description": "<=60 words, paraphrase of what the briefs show"
+  },
+  "momentum_inflection": {
+   "type": "object",
+   "properties": {
+    "call_sequence": {
+     "type": [
+      "integer",
+      "null"
+     ]
+    },
+    "type": {
+     "type": "string",
+     "enum": [
+      "no_meeting_held_or_ghosted",
+      "no_pain_or_poor_fit",
+      "no_compelling_event_priority_shift",
+      "price_or_budget",
+      "price_shock_premature_pricing",
+      "stakeholder_gap_no_decision_maker",
+      "champion_lost_or_changed",
+      "competitor_or_incumbent_chosen",
+      "pms_bundled_screening",
+      "pms_integration_gap",
+      "feature_gap",
+      "contract_terms_etf_commitment",
+      "pilot_trial_unavailable_or_failed",
+      "findigs_followup_or_execution_miss",
+      "process_friction",
+      "not_applicable_won",
+      "insufficient_evidence"
+     ]
+    },
+    "basis": {
+     "type": "string",
+     "description": "<=30-word paraphrase of the brief content supporting this (briefs are Gong summaries, not verbatim speech \u2014 never present as quotes)"
+    }
+   },
+   "required": [
+    "call_sequence",
+    "type",
+    "basis"
+   ]
+  },
+  "primary_driver": {
+   "type": "string",
+   "enum": [
+    "no_meeting_held_or_ghosted",
+    "no_pain_or_poor_fit",
+    "no_compelling_event_priority_shift",
+    "price_or_budget",
+    "price_shock_premature_pricing",
+    "stakeholder_gap_no_decision_maker",
+    "champion_lost_or_changed",
+    "competitor_or_incumbent_chosen",
+    "pms_bundled_screening",
+    "pms_integration_gap",
+    "feature_gap",
+    "contract_terms_etf_commitment",
+    "pilot_trial_unavailable_or_failed",
+    "findigs_followup_or_execution_miss",
+    "process_friction",
+    "not_applicable_won",
+    "insufficient_evidence"
+   ]
+  },
+  "secondary_driver": {
+   "type": "string",
+   "enum": [
+    "no_meeting_held_or_ghosted",
+    "no_pain_or_poor_fit",
+    "no_compelling_event_priority_shift",
+    "price_or_budget",
+    "price_shock_premature_pricing",
+    "stakeholder_gap_no_decision_maker",
+    "champion_lost_or_changed",
+    "competitor_or_incumbent_chosen",
+    "pms_bundled_screening",
+    "pms_integration_gap",
+    "feature_gap",
+    "contract_terms_etf_commitment",
+    "pilot_trial_unavailable_or_failed",
+    "findigs_followup_or_execution_miss",
+    "process_friction",
+    "not_applicable_won",
+    "insufficient_evidence",
+    "none"
+   ]
+  },
+  "objection_categories": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "enum": [
+     "price",
+     "timing_priority",
+     "no_pain_status_quo",
+     "competitor_or_incumbent",
+     "pms_bundled_screening",
+     "pms_integration_gap",
+     "feature_gap",
+     "contract_terms_etf_commitment",
+     "pilot_or_trial_request",
+     "legal_compliance",
+     "internal_bandwidth",
+     "decision_authority_needs_approval",
+     "renter_experience",
+     "data_security",
+     "other"
+    ]
+   }
+  },
+  "competitors": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "context": {
+      "type": "string",
+      "enum": [
+       "current_incumbent",
+       "bundled_with_pms",
+       "actively_evaluating",
+       "past_vendor",
+       "benchmark_only",
+       "unclear"
+      ]
+     }
+    },
+    "required": [
+     "name",
+     "context"
+    ]
+   }
+  },
+  "decision_maker_engaged": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unclear"
+   ]
+  },
+  "pricing_discussed": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unclear"
+   ]
+  },
+  "pilot_or_trial_requested": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unclear"
+   ]
+  },
+  "contract_terms_raised": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unclear"
+   ]
+  },
+  "last_next_step": {
+   "type": "string",
+   "enum": [
+    "specific",
+    "vague",
+    "none",
+    "unclear"
+   ]
+  },
+  "deal_breakers": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "enum": [
+     "structural_must_accept",
+     "fixable_product",
+     "fixable_terms_or_packaging",
+     "fixable_price",
+     "fixable_process_or_execution",
+     "unclear"
+    ]
+   }
+  },
+  "confidence": {
+   "type": "string",
+   "enum": [
+    "high",
+    "medium",
+    "low"
+   ]
+  }
+ },
+ "required": [
+  "meetings_with_briefs",
+  "trajectory_summary",
+  "momentum_inflection",
+  "primary_driver",
+  "secondary_driver",
+  "objection_categories",
+  "competitors",
+  "decision_maker_engaged",
+  "pricing_discussed",
+  "pilot_or_trial_requested",
+  "contract_terms_raised",
+  "last_next_step",
+  "deal_breakers",
+  "confidence"
+ ]
+}

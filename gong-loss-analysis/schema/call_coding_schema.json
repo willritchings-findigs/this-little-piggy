@@ -1,0 +1,843 @@
+{
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "call_type": {
+   "type": "string",
+   "enum": [
+    "cold_call_dialer",
+    "sdr_qualification",
+    "intro_meeting",
+    "discovery",
+    "demo",
+    "business_case_or_roi",
+    "pricing_or_proposal",
+    "negotiation_or_legal",
+    "trial_or_pilot_checkin",
+    "implementation_kickoff",
+    "internal_only",
+    "other",
+    "unclear"
+   ]
+  },
+  "meeting_occurred": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no_show_or_empty_room",
+    "voicemail_or_no_connect",
+    "too_short_to_assess",
+    "unclear"
+   ]
+  },
+  "external_attendees": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "role_token": {
+      "type": "string"
+     },
+     "title_as_stated": {
+      "type": "string"
+     },
+     "persona": {
+      "type": "string",
+      "enum": [
+       "owner_principal",
+       "executive_c_suite",
+       "vp_director_operations",
+       "regional_manager",
+       "property_manager",
+       "leasing_agent",
+       "finance_accounting",
+       "it_technology",
+       "compliance_legal",
+       "marketing",
+       "other",
+       "unknown"
+      ]
+     },
+     "decision_authority": {
+      "type": "string",
+      "enum": [
+       "economic_buyer",
+       "decision_maker",
+       "influencer",
+       "end_user",
+       "gatekeeper",
+       "unknown"
+      ],
+      "description": "Only what the transcript supports; default unknown"
+     },
+     "engagement": {
+      "type": "string",
+      "enum": [
+       "high",
+       "medium",
+       "low",
+       "silent"
+      ]
+     },
+     "evidence": {
+      "type": "string",
+      "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+     }
+    },
+    "required": [
+     "role_token",
+     "persona",
+     "decision_authority",
+     "engagement",
+     "evidence"
+    ]
+   }
+  },
+  "internal_roles_present": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "enum": [
+     "sdr",
+     "ae",
+     "sales_leader",
+     "solutions_or_implementation",
+     "customer_success",
+     "executive",
+     "revops",
+     "other"
+    ]
+   }
+  },
+  "pain": {
+   "type": "object",
+   "properties": {
+    "status": {
+     "type": "string",
+     "enum": [
+      "explicit_quantified",
+      "explicit_unquantified",
+      "implied",
+      "not_discussed"
+     ]
+    },
+    "categories": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "enum": [
+       "fraud_identity",
+       "evictions_delinquency",
+       "speed_to_lease_vacancy",
+       "manual_workload_staffing",
+       "compliance_fair_housing_fcra",
+       "applicant_experience",
+       "screening_cost",
+       "pms_integration",
+       "decision_consistency",
+       "other"
+      ]
+     }
+    },
+    "who_articulated": {
+     "type": "string",
+     "enum": [
+      "prospect",
+      "findigs_rep_suggested_prospect_agreed",
+      "findigs_rep_only",
+      "not_discussed"
+     ]
+    },
+    "evidence": {
+     "type": "string",
+     "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+    }
+   },
+   "required": [
+    "status",
+    "categories",
+    "who_articulated",
+    "evidence"
+   ]
+  },
+  "compelling_event": {
+   "type": "object",
+   "properties": {
+    "status": {
+     "type": "string",
+     "enum": [
+      "dated",
+      "undated",
+      "explicitly_none",
+      "not_discussed"
+     ]
+    },
+    "description": {
+     "type": "string"
+    },
+    "evidence": {
+     "type": "string",
+     "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+    }
+   },
+   "required": [
+    "status",
+    "description",
+    "evidence"
+   ]
+  },
+  "meddpicc": {
+   "type": "object",
+   "properties": {
+    "metrics": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "economic_buyer": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "decision_criteria": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "decision_process": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "paper_process": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "identify_pain": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "champion": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    },
+    "competition": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "covered_strong",
+        "covered_weak",
+        "not_covered"
+       ]
+      },
+      "evidence": {
+       "type": "string",
+       "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+      }
+     },
+     "required": [
+      "status",
+      "evidence"
+     ]
+    }
+   },
+   "required": [
+    "metrics",
+    "economic_buyer",
+    "decision_criteria",
+    "decision_process",
+    "paper_process",
+    "identify_pain",
+    "champion",
+    "competition"
+   ]
+  },
+  "findigs_questions": {
+   "type": "array",
+   "description": "Substantive questions asked by Findigs reps (skip pleasantries/logistics unless qualification).",
+   "items": {
+    "type": "object",
+    "properties": {
+     "question_summary": {
+      "type": "string",
+      "description": "Paraphrase, <=20 words, no names"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "situation",
+       "problem",
+       "implication",
+       "need_payoff",
+       "budget",
+       "authority",
+       "timeline",
+       "decision_process",
+       "current_vendor",
+       "product_fit",
+       "logistics",
+       "other"
+      ]
+     },
+     "form": {
+      "type": "string",
+      "enum": [
+       "open_probing",
+       "open_generic",
+       "closed_qualifying",
+       "closed_leading",
+       "logistical"
+      ]
+     },
+     "answer_depth": {
+      "type": "string",
+      "enum": [
+       "rich",
+       "brief",
+       "deflected",
+       "not_answered"
+      ]
+     }
+    },
+    "required": [
+     "question_summary",
+     "category",
+     "form",
+     "answer_depth"
+    ]
+   }
+  },
+  "discovery_depth_score": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 5,
+   "description": "0 = no discovery attempted; 1 = surface situation questions only; 3 = pain identified with some implication; 5 = pain quantified, implication and need-payoff explored, decision process mapped. Score against the rubric in the prompt."
+  },
+  "prospect_questions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "question_summary": {
+      "type": "string",
+      "description": "Paraphrase, <=20 words"
+     },
+     "category": {
+      "type": "string",
+      "enum": [
+       "pricing",
+       "pms_integration",
+       "product_capability",
+       "fraud_detection",
+       "decision_logic_criteria",
+       "compliance_fcra_fair_housing",
+       "implementation_onboarding",
+       "contract_terms_commitment",
+       "pilot_trial",
+       "references_proof",
+       "competitor_comparison",
+       "renter_experience",
+       "support_service",
+       "data_security",
+       "other"
+      ]
+     },
+     "answer_quality": {
+      "type": "string",
+      "enum": [
+       "answered_clearly",
+       "answered_partially",
+       "deferred_with_specific_followup",
+       "deflected_or_unanswered",
+       "inaccurate_or_contradictory"
+      ]
+     },
+     "followup_promised": {
+      "type": "boolean"
+     },
+     "evidence": {
+      "type": "string",
+      "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+     }
+    },
+    "required": [
+     "question_summary",
+     "category",
+     "answer_quality",
+     "followup_promised",
+     "evidence"
+    ]
+   }
+  },
+  "price": {
+   "type": "object",
+   "properties": {
+    "discussed": {
+     "type": "boolean"
+    },
+    "first_raised_by": {
+     "type": "string",
+     "enum": [
+      "findigs",
+      "prospect",
+      "not_discussed"
+     ]
+    },
+    "first_mention_minute": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "pain_established_before_price": {
+     "type": "string",
+     "enum": [
+      "yes",
+      "no",
+      "not_applicable"
+     ]
+    },
+    "value_or_roi_framed": {
+     "type": "string",
+     "enum": [
+      "quantified_roi",
+      "qualitative_value",
+      "none",
+      "not_applicable"
+     ]
+    },
+    "reaction": {
+     "type": "string",
+     "enum": [
+      "accepted",
+      "concern_but_open",
+      "strong_objection",
+      "compared_to_competitor_or_pms_bundle",
+      "not_applicable"
+     ]
+    },
+    "evidence": {
+     "type": "string",
+     "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+    }
+   },
+   "required": [
+    "discussed",
+    "first_raised_by",
+    "first_mention_minute",
+    "pain_established_before_price",
+    "value_or_roi_framed",
+    "reaction",
+    "evidence"
+   ]
+  },
+  "objections": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "category": {
+      "type": "string",
+      "enum": [
+       "price",
+       "timing_priority",
+       "no_pain_status_quo",
+       "competitor_or_incumbent",
+       "pms_bundled_screening",
+       "pms_integration_gap",
+       "feature_gap",
+       "contract_terms_etf_commitment",
+       "pilot_or_trial_request",
+       "legal_compliance",
+       "internal_bandwidth",
+       "decision_authority_needs_approval",
+       "renter_experience",
+       "data_security",
+       "other"
+      ]
+     },
+     "raised_by_role_token": {
+      "type": "string"
+     },
+     "severity": {
+      "type": "string",
+      "enum": [
+       "hard_blocker",
+       "significant",
+       "minor"
+      ]
+     },
+     "handling": {
+      "type": "string",
+      "enum": [
+       "resolved",
+       "partially_addressed",
+       "unaddressed",
+       "rep_conceded"
+      ]
+     },
+     "evidence": {
+      "type": "string",
+      "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+     }
+    },
+    "required": [
+     "category",
+     "severity",
+     "handling",
+     "evidence"
+    ]
+   }
+  },
+  "competitors_mentioned": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "context": {
+      "type": "string",
+      "enum": [
+       "current_incumbent",
+       "bundled_with_pms",
+       "actively_evaluating",
+       "past_vendor",
+       "benchmark_only"
+      ]
+     },
+     "prospect_sentiment": {
+      "type": "string",
+      "enum": [
+       "satisfied",
+       "neutral",
+       "dissatisfied",
+       "unknown"
+      ]
+     },
+     "evidence": {
+      "type": "string",
+      "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+     }
+    },
+    "required": [
+     "name",
+     "context",
+     "prospect_sentiment",
+     "evidence"
+    ]
+   }
+  },
+  "reception": {
+   "type": "object",
+   "properties": {
+    "overall_sentiment": {
+     "type": "string",
+     "enum": [
+      "positive",
+      "neutral",
+      "skeptical",
+      "negative"
+     ]
+    },
+    "engagement_level": {
+     "type": "string",
+     "enum": [
+      "high",
+      "medium",
+      "low"
+     ]
+    },
+    "reception_of_discovery": {
+     "type": "string",
+     "enum": [
+      "receptive",
+      "neutral",
+      "resistant",
+      "not_applicable"
+     ]
+    },
+    "reception_of_demo": {
+     "type": "string",
+     "enum": [
+      "engaged",
+      "neutral",
+      "disengaged",
+      "not_applicable"
+     ]
+    },
+    "friction_signals": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "signal": {
+        "type": "string",
+        "enum": [
+         "send_me_info_instead",
+         "circle_back_later",
+         "defer_to_someone_else",
+         "confused_by_process_or_next_steps",
+         "felt_premature_pricing",
+         "demo_not_relevant_to_needs",
+         "too_many_meetings_or_too_long",
+         "felt_sold_to_not_heard",
+         "other"
+        ]
+       },
+       "evidence": {
+        "type": "string",
+        "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+       }
+      },
+      "required": [
+       "signal",
+       "evidence"
+      ]
+     }
+    }
+   },
+   "required": [
+    "overall_sentiment",
+    "engagement_level",
+    "reception_of_discovery",
+    "reception_of_demo",
+    "friction_signals"
+   ]
+  },
+  "next_step": {
+   "type": "object",
+   "properties": {
+    "status": {
+     "type": "string",
+     "enum": [
+      "specific_dated_with_attendees",
+      "specific_undated",
+      "vague",
+      "none",
+      "prospect_declined"
+     ]
+    },
+    "owner": {
+     "type": "string",
+     "enum": [
+      "findigs",
+      "prospect",
+      "both",
+      "none"
+     ]
+    },
+    "description": {
+     "type": "string"
+    },
+    "evidence": {
+     "type": "string",
+     "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+    }
+   },
+   "required": [
+    "status",
+    "owner",
+    "description",
+    "evidence"
+   ]
+  },
+  "momentum": {
+   "type": "string",
+   "enum": [
+    "advancing",
+    "stable",
+    "stalling",
+    "reversing",
+    "unclear"
+   ]
+  },
+  "momentum_rationale": {
+   "type": "string",
+   "description": "<=40 words, cite what in the call drives this"
+  },
+  "deal_breaker_signals": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "description": {
+      "type": "string"
+     },
+     "classification": {
+      "type": "string",
+      "enum": [
+       "structural_must_accept",
+       "fixable_product",
+       "fixable_terms_or_packaging",
+       "fixable_price",
+       "fixable_process_or_execution",
+       "unclear"
+      ]
+     },
+     "evidence": {
+      "type": "string",
+      "description": "Verbatim supporting quote, <=25 words, already redacted (role tokens only). Empty string if status is not_discussed."
+     }
+    },
+    "required": [
+     "description",
+     "classification",
+     "evidence"
+    ]
+   }
+  },
+  "coding_confidence": {
+   "type": "string",
+   "enum": [
+    "high",
+    "medium",
+    "low"
+   ]
+  },
+  "coder_notes": {
+   "type": "string",
+   "description": "<=40 words: ambiguity, transcript quality, anything that limits confidence"
+  }
+ },
+ "required": [
+  "call_type",
+  "meeting_occurred",
+  "external_attendees",
+  "internal_roles_present",
+  "pain",
+  "compelling_event",
+  "meddpicc",
+  "findigs_questions",
+  "discovery_depth_score",
+  "prospect_questions",
+  "price",
+  "objections",
+  "competitors_mentioned",
+  "reception",
+  "next_step",
+  "momentum",
+  "momentum_rationale",
+  "deal_breaker_signals",
+  "coding_confidence",
+  "coder_notes"
+ ]
+}
