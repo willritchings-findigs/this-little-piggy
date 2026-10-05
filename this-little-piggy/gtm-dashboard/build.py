@@ -8,6 +8,11 @@ Writes:  output/findigs_gtm_executive_dashboard_<as_of>.html, output/tieout.md, 
 
 Exit codes: 0 = built and reconciled; 2 = tie-out failure (nothing written to output/);
             3 = schema/config problem. The refresh skill treats any non-zero exit as "stop and report".
+            (argparse also exits 2 on a bad command line; its message starts with "usage:".)
+
+Single-record gaps never stop the build: a blank deal_source_drill_down is bucketed as
+"Unassigned" and an owner ID missing from snapshot.json is shown as "Unresolved owner <id>".
+Both are counted in the data-quality tables.
 
 Usage: python build.py [--as-of YYYY-MM-DD] [--no-run-log] [--diagnostic]
 
@@ -91,9 +96,12 @@ def seg(units):
         if units >= b["min"] and (b["max"] is None or units <= b["max"]): return b["label"]
     return "Unknown"
 
+UNRESOLVED_OWNERS = set()
 def owner_name(oid):
     o = OWNERS.get(str(oid))
-    if not o: fail(3, f"owner id {oid} not in snapshot.json owners map — resolve via search_owners and re-run")
+    if not o:
+        UNRESOLVED_OWNERS.add(str(oid))
+        return f"Unresolved owner {oid}"
     return o["name"] + ("" if o.get("active", True) else " (inactive)")
 
 def stage_of(sid):
@@ -147,12 +155,13 @@ def derive_created(r):
     rs = p.get(F["record_source"]) or "UNKNOWN"
     sw = SWAN.get(str(r["id"]))
     src = p.get(F["source"])
-    if not src: fail(3, f"created deal {r['id']} has null {F['source']} — the no-null assumption used to infer 'Outbound SDR' no longer holds; pull the field for every deal")
+    src_null = not src
+    if src_null: src = "Unassigned"
     sdr_id = p.get(F["sdr_owner"]); is_sdr_opp = sdr_id is not None and sdr_id != ""
     chan_raw = p.get(F["channel_source"]) or None
     return dict(id=str(r["id"]), name=p["dealname"], pipe="N", pipeLabel="New Logo", stageId=sid, stage=st["label"], owner=owner_name(p[F["owner"]]), ownerId=str(p[F["owner"]]),
                 amount=amt, units=int(units), seg=seg(units), close=et_date(p.get(F["close_date"])), created=et_date(p.get(F["create_date"])),
-                src=src, srcParent=parent, srcGroup=SRC_GROUP.get(parent[:2], "Unassigned"), recSrc=rs, migrated=(rs == CFG["migration"]["record_source_value"]),
+                src=src, srcNull=src_null, srcParent=parent, srcGroup=SRC_GROUP.get(parent[:2], "Unassigned"), recSrc=rs, migrated=(rs == CFG["migration"]["record_source_value"]),
                 hsScore=num(p.get("hs_deal_score")), swan=sw, band=("No Swan score" if sw is None else f"Swan {sw}"),
                 won=sid in WON_IDS, lost=sid in LOST_IDS, weighted=w, wtdFallback=fb, pastDue=False, migration=(rs == CFG["migration"]["record_source_value"]),
                 isSdrOpp=is_sdr_opp, sdrOwnerId=(str(sdr_id) if is_sdr_opp else None), sdrOwnerName=(owner_name(sdr_id) if is_sdr_opp else None),
@@ -183,10 +192,11 @@ fq_amt = qtd_amt + sum(x["weighted"] for x in q_open); fy_amt = wa + sum(x["weig
 pg_total = sum(x["amount"] for x in pg); pg_mig = [x for x in pg if x["migrated"]]; pg_nat = [x for x in pg if not x["migrated"]]
 q3 = [x for x in pg if inw(x["created"], WIN["qtd"])]; q3_mig = [x for x in q3 if x["migrated"]]
 zero_amt = [x for x in pg if x["amount"] == 0]; scored = [x for x in pg if x["swan"] is not None]
-null_parent = [x for x in pg if x["srcParent"] == "Unassigned"]; no_close = [x for x in pg if not x["close"]]
+null_parent = [x for x in pg if x["srcParent"] == "Unassigned"]; null_src = [x for x in pg if x["srcNull"]]
+unresolved_pg = [x for x in pg if x["owner"].startswith("Unresolved owner ")]; no_close = [x for x in pg if not x["close"]]
 mig_dates = sorted(x["created"] for x in pg_mig); nat_dates = sorted(x["created"] for x in pg_nat)
 
-# ----------------------------------------------------------------------------- SDR section (confirmed 2026-09-23)
+# ----------------------------------------------------------------------------- SDR section
 sdr_window = {"start": iso(date.fromisoformat(AS_OF) - timedelta(days=29)), "end": AS_OF}
 sdr_opps = [x for x in pg if x["isSdrOpp"]]; sdr_total_amt = sum(x["amount"] for x in sdr_opps)
 sdr_booked = [x for x in pg if inw(x["demoBooked"], sdr_window)]
@@ -272,6 +282,7 @@ dq = [
     dict(id="DQ-9", sev="Low", text="Stage probabilities were read from deal records (observed values by stage), not from pipeline settings, which the connector does not expose.", n=f"{len([s for s in stages_meta if not s['closed']])} open stages", handling="Documented in methodology. Verify against Settings → Objects → Deals → Pipelines if probabilities change."),
     dict(id="DQ-10", sev="Low", text=f"A third deal pipeline, Renewal (<code>{CFG['pipelines']['renewal']['id']}</code>), exists in the portal.", n="1 pipeline", handling="Excluded by confirmed decision; not represented in any tile."),
     dict(id="DQ-11", sev="Low", text="Deal owners are resolved via the owners API each run; inactive owners are labeled. " + (f"Inactive owners in scope: {', '.join(sorted({x['owner'] for x in deals if '(inactive)' in x['owner']}))}." if any('(inactive)' in x['owner'] for x in deals) else "No inactive owners in scope."), n=f"{len({x['ownerId'] for x in deals})} owners", handling="Names resolved and applied."),
+    dict(id="DQ-12", sev="Medium" if UNRESOLVED_OWNERS else "Low", text="Owner IDs not found in snapshot.json's owners map (deal owner or SDR owner): " + (", ".join(sorted(UNRESOLVED_OWNERS)) or "none") + ".", n=f"{len(UNRESOLVED_OWNERS)} owner ID(s)", handling="Shown as 'Unresolved owner &lt;id&gt;'; the build does not stop. Resolve via search_owners and add to snapshot.json on the next refresh."),
 ]
 
 meta = dict(
@@ -290,8 +301,8 @@ meta = dict(
             migCutoffLastSF=(mig_dates[-1] if mig_dates else None), migCutoffFirstNative=(nat_dates[0] if nat_dates else None),
             counts=dict(total=len(pg), mig=len(pg_mig), nat=len(pg_nat), migAmt=sum(x["amount"] for x in pg_mig), natAmt=sum(x["amount"] for x in pg_nat), totalAmt=pg_total,
                         q3=len(q3), q3Mig=len(q3_mig), q3MigAmt=sum(x["amount"] for x in q3_mig), scored=len(scored), scoredAmt=sum(x["amount"] for x in scored),
-                        zeroAmt=len(zero_amt), zeroAmtNames=[x["name"] for x in zero_amt], nullSrc=0, nullSrcAmt=0, nullSrcNames=[],
-                        noClose=len(no_close), nullOwner=0, nullAmt=0, nullParentSrc=len(null_parent), nullParentSrcNames=[x["name"] for x in null_parent],
+                        zeroAmt=len(zero_amt), zeroAmtNames=[x["name"] for x in zero_amt], nullSrc=len(null_src), nullSrcAmt=sum(x["amount"] for x in null_src), nullSrcNames=[x["name"] for x in null_src],
+                        noClose=len(no_close), nullOwner=len(unresolved_pg), nullAmt=0, nullParentSrc=len(null_parent), nullParentSrcNames=[x["name"] for x in null_parent],
                         driftNote=" ".join(SNAP.get("notes", []))),
             controls=[{k: v for k, v in t.items() if k != "ok"} for t in pg_tie]),
     sdr=dict(asOf=AS_OF, qtd=WIN["qtd"], ytd=WIN["ytd"], window=sdr_window, goalBySegment=sdr_goal,
@@ -360,7 +371,7 @@ with open(os.path.join(OUT_DIR, "tieout.md"), "w", encoding="utf-8") as f: f.wri
 # ----------------------------------------------------------------------------- slack_post.txt (model never types a number into Slack)
 def pct_delta(cur, base):
     if base in (None, 0) or cur is None: return None
-    return (cur - base) / base * 100
+    return (cur - base) / abs(base) * 100  # same formula as the template's Compare vs badges
 
 MC_THRESHOLD = CFG.get("compare_vs", {}).get("material_change_threshold_pct", 10)
 material = []

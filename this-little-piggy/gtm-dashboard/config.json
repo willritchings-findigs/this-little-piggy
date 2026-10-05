@@ -1,6 +1,6 @@
 {
   "_about": "Confirmed decisions governing the Findigs GTM executive dashboard. Notion 'Data Definitions' is the system of record; this file is the bundled fallback and must match it. The refresh skill stops on any mismatch.",
-  "version": "2026-09-22",
+  "version": "2026-10-05",
   "portal_id": "243635806",
   "timezone": "America/New_York",
   "fiscal_year": {
@@ -176,6 +176,8 @@
     "slack_channel": "#gtm_leadership",
     "slack_channel_id": "C0C1P09SPFF",
     "schedule": "Claude Code Routine, Mondays 08:00 America/New_York",
+    "git_branch": "main",
+    "git_branch_note": "Branch that refresh commits (data/, runs/, output/tieout.md, output/slack_post.txt) go to. The Routine must check out this branch; a run on any other branch stops before step 0. data/kpi_history.json only accumulates correctly if every refresh commits here.",
     "slack_dm_user_id": "U0BQ5AZK284",
     "slack_dm_note": "All errors/stops go here as a DM, never to slack_channel_id. slack_channel_id only receives successful-refresh posts."
   },
@@ -197,15 +199,15 @@
       "Gross pipeline created (period)": "populations.created_fy + pipeline_generation",
       "Tie-out tolerance": "tie_out_tolerance_usd",
       "SDR opportunity (derived)": "sdr_section.opportunity_rule + populations.sdr_opportunity",
-      "Meeting booked (SDR)": "sdr_section.meeting_booked_rule",
-      "Meeting held (SDR)": "sdr_section.meeting_held_rule",
+      "Meeting held (SDR)": "sdr_section.meeting_held_rule + sdr_section.meeting_booked_rule",
       "Meeting booked to held conversion": "sdr_section.rolling_window + sdr_section.meeting_booked_rule + sdr_section.meeting_held_rule",
       "Meeting held to opportunity conversion": "sdr_section.rolling_window + sdr_section.opportunity_rule",
       "Opportunities generated per SDR": "sdr_section.rolling_window + sdr_section.opportunity_rule + fields.sdr_owner",
       "Pipeline generated vs goal by segment": "sdr_section.goal_by_segment + segment_rule",
       "SDR channel mix (derived)": "sdr_section.channel_buckets + fields.channel_source",
-      "SDR-sourced opportunity stage progression": "sdr_section.opportunity_rule + sdr_section.channel_buckets"
+      "SDR-sourced opportunity stage progression": "sdr_section.opportunity_rule + sdr_section.channel_buckets",
+      "Compare vs delta (period-over-period)": "compare_vs"
     },
-    "note": "Preflight compares each row's Formula / fields / scope / exclusions / null handling against the mapped config keys. Any row with Status other than Confirmed, or any semantic mismatch, stops the run."
+    "note": "Preflight compares each row's Formula / fields / scope / exclusions / null handling against the mapped config keys. It also checks the mapping is one-to-one: every row returned by preflight_query has exactly one row_to_config_map key, and every key matches exactly one returned row. No row count is hardcoded anywhere. Any row with Status other than Confirmed, any semantic mismatch, or any unmatched row or key stops the run."
   }
 }
