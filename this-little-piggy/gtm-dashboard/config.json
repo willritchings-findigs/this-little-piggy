@@ -206,7 +206,19 @@
       "Pipeline generated vs goal by segment": "sdr_section.goal_by_segment + segment_rule",
       "SDR channel mix (derived)": "sdr_section.channel_buckets + fields.channel_source",
       "SDR-sourced opportunity stage progression": "sdr_section.opportunity_rule + sdr_section.channel_buckets",
-      "Compare vs delta (period-over-period)": "compare_vs"
+      "Compare vs delta (period-over-period)": "compare_vs",
+      "Bookings QTD": "populations.won_fy + fields.bookings_amount + fiscal_year",
+      "Average sales price": "populations.won_fy + fields.bookings_amount",
+      "Average sales cycle": "populations.won_fy + fields.create_date + fields.close_date + migration",
+      "New Logo bookings YTD": "populations.won_fy + pipelines.new_logo",
+      "Upsell / Expansion bookings YTD": "populations.won_fy + pipelines.upsell_expansion",
+      "Weighted open pipeline": "populations.open + weighting_rule",
+      "Past-due open deal": "populations.open + fields.close_date",
+      "Current-quarter forecast": "populations.won_fy + populations.open + weighting_rule + fields.close_date + fiscal_year",
+      "Current-year forecast": "populations.won_fy + populations.open + weighting_rule + fields.close_date + fiscal_year",
+      "Deals created (period)": "populations.created_fy + pipeline_generation",
+      "Pipeline creation pacing": "pipeline_generation + fields.create_date + fiscal_year",
+      "Create month × close month": "pipeline_generation + fields.create_date + fields.close_date"
     },
     "note": "Preflight compares each row's Formula / fields / scope / exclusions / null handling against the mapped config keys. It also checks the mapping is one-to-one: every row returned by preflight_query has exactly one row_to_config_map key, and every key matches exactly one returned row. No row count is hardcoded anywhere. Any row with Status other than Confirmed, any semantic mismatch, or any unmatched row or key stops the run."
   }
