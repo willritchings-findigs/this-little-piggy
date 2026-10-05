@@ -3,8 +3,10 @@
 Findigs GTM executive dashboard — build step.
 
 Reads:   config.json, data/snapshot.json, data/controls.json,
-         data/deals_open.json, data/deals_won.json, data/deals_created.json, data/swan_scores.json
-Writes:  output/findigs_gtm_executive_dashboard_<as_of>.html, output/tieout.md, runs/runs.jsonl
+         data/deals_open.json, data/deals_won.json, data/deals_created.json, data/swan_scores.json,
+         data/kpi_history.json (if present)
+Writes:  output/findigs_gtm_executive_dashboard_<as_of>.html, output/tieout.md, output/slack_post.txt,
+         data/kpi_history.json (this as_of's entry, deduped, capped), runs/runs.jsonl (one appended line)
 
 Exit codes: 0 = built and reconciled; 2 = tie-out failure (nothing written to output/);
             3 = schema/config problem. The refresh skill treats any non-zero exit as "stop and report".
