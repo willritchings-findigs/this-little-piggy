@@ -1,8 +1,8 @@
 {
  "portal": "243635806",
  "timezone": "America/New_York",
- "as_of": "2026-10-05",
- "pulled_at_et": "Oct 5, 2026 12:57 PM ET",
+ "as_of": "2026-10-12",
+ "pulled_at_et": "Oct 12, 2026 8:30 AM ET",
  "stages": [
   {
    "id": "3753890497",
@@ -194,6 +194,6 @@
   }
  },
  "notes": [
-  "Discovery / Demo (New Logo) shows mixed probabilities on live deals (0.15 on 1 deal, 0.2 on 13); modal 0.2 kept for the stage. Fallback weighting uses each deal's own probability."
+  "Discovery / Demo (New Logo) shows mixed probabilities on live deals (0.15 on 1 deal, 0.2 on 12); modal 0.2 kept for the stage. Fallback weighting uses each deal's own probability."
  ]
 }
