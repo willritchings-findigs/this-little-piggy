@@ -115,7 +115,14 @@ try:
         pg.click("button.kpi[data-k=gross]"); pg.wait_for_timeout(300)
         if pg.locator("#dd-b tbody tr").count() != len(open_): fails.append("gross drilldown row count mismatch")
         pg.click("#dd-x")
-        if errs: fails.append("late page errors: " + "; ".join(errs)[:400])
+        # every KPI tile in every section is clickable without a page error (a Tier 1 handler bound to all
+        # .kpi buttons once threw on Pipeline Generation / SDR tiles while their own handler still ran)
+        n_err = len(errs)
+        for i in range(pg.locator("button.kpi").count()):
+            pg.locator("button.kpi").nth(i).click(); pg.wait_for_timeout(50)
+            if pg.locator("#dd.on").count(): pg.click("#dd-x")
+        if len(errs) > n_err: fails.append("KPI tile clicks raised page errors: " + "; ".join(errs[n_err:])[:400])
+        if errs[:n_err]: fails.append("late page errors: " + "; ".join(errs[:n_err])[:400])
         pg.screenshot(path=shot, full_page=False)
         b.close()
 except Exception as e:  # browser launch failure, missing element, timeout: all count as a failed QA, never a crash

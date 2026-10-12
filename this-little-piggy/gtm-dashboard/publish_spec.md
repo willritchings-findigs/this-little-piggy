@@ -1,4 +1,6 @@
-# `publish.py` — real fix for the Drive upload size limitation (spec only, not built)
+# `publish.py` — real fix for the Drive upload size limitation
+
+**Status (2026-10-12): built.** `publish.py` implements this spec and `test_publish.py` tests it offline. What's still open is provisioning, items 1–3 under "Open items" below. Item 4 is answered: outbound HTTPS to `oauth2.googleapis.com` and `www.googleapis.com` works from the cloud environment (verified 2026-10-12). The text below is the original design, kept as the rationale.
 
 ## Why this exists
 
@@ -10,7 +12,7 @@ tool call can carry — no folder path, permission, or retry logic changes it (c
 any script would: stream it to Drive's own upload API, outside the model-tool-call
 mechanism entirely.
 
-This is a spec for that fix. **Not built, per instruction — stop after this document.**
+This was the spec for that fix; `publish.py` now implements it.
 
 ## What `publish.py` would do
 

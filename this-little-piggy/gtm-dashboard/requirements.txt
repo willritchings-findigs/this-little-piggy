@@ -1,0 +1,5 @@
+# gtm-dashboard runtime dependencies (build.py itself is stdlib-only)
+playwright>=1.40      # qa.py render checks; Chromium comes from /opt/pw-browsers, never `playwright install`
+google-auth>=2.20     # publish.py service-account auth
+requests>=2.28        # publish.py transport (google.auth.transport.requests)
+cryptography>=41      # google-auth RSA signing; some images ship a broken system copy (see README → Prerequisites)

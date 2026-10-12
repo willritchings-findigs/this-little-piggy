@@ -510,7 +510,7 @@ function openDD(title, meta, rows, opts = {}) {
   $('#dd').classList.add('on'); $('#dd-back').classList.add('on'); $('#dd').setAttribute('aria-hidden', 'false');
 }
 function closeDD() { $('#dd').classList.remove('on'); $('#dd-back').classList.remove('on'); $('#dd').setAttribute('aria-hidden', 'true'); }
-document.querySelectorAll('.kpi').forEach(b => b.addEventListener('click', () => { const [t, m, r] = DD[b.dataset.k](K); openDD(t, m, r); }));
+document.querySelectorAll('.kpi[data-k]').forEach(b => b.addEventListener('click', () => { const [t, m, r] = DD[b.dataset.k](K); openDD(t, m, r); }));
 $('#dd-x').addEventListener('click', closeDD); $('#dd-back').addEventListener('click', closeDD);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDD(); });
 
