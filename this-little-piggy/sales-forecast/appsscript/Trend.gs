@@ -13,12 +13,12 @@ function apiGetTrend(fiscalYear) {
   var v = currentViewer_(), cfg = FORECAST_CONFIG;
   var week = ForecastCore.forecastWeekFor(nowMs_(), cfg.forecast.cutoff);
   var openFy = ForecastCore.fiscalYearOf(week.forecastWeek), closedFy = ForecastCore.fiscalYearOf(week.previousWeek);
-  var years = Object.keys(cfg.forecast.drive.folders_by_fiscal_year).map(Number).filter(function (y) { return y <= openFy; }).sort().reverse();
+  var years = Object.keys(foldersByFy_()).map(Number).filter(function (y) { return y <= openFy; }).sort().reverse();
   var fy = fiscalYear ? Number(fiscalYear) : closedFy;
   if (years.indexOf(fy) < 0) {
     if (fiscalYear) throw new Error('No Drive folder is configured for FY' + fy + '.');
     return JSON.parse(JSON.stringify({ viewer: viewerOut_(v), testMode: isTestMode_(), fiscalYear: fy, years: years,
-      aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+      aes: trendAes_([]),
       week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt }, throughWeek: null,
       reportWeek: null, threshold: cfg.forecast.section3.delta_threshold_pct, rows: [], syntheticRows: 0, openWeekRows: 0 }));
   }
@@ -35,12 +35,20 @@ function apiGetTrend(fiscalYear) {
   if (fy > closedFy) throughWeek = null;
   return JSON.parse(JSON.stringify({
     viewer: viewerOut_(v), testMode: isTestMode_(), fiscalYear: fy, years: years,
-    aes: cfg.roster.aes.map(function (a) { return { slug: a.slug, name: a.name }; }),
+    aes: trendAes_(rows),
     week: { forecastWeek: week.forecastWeek, previousWeek: week.previousWeek, cutoffAt: week.cutoffAt }, throughWeek: throughWeek,
     reportWeek: ForecastCore.defaultReportWeek(rows, week.forecastWeek),
     threshold: cfg.forecast.section3.delta_threshold_pct,
     rows: rows, syntheticRows: rows.filter(function (r) { return r.synthetic; }).length, openWeekRows: fy === openFy ? openWeekRows : 0
   }));
+}
+
+/** Active AEs, plus deactivated AEs who have submissions in the rows shown (their history stays visible). */
+function trendAes_(rows) {
+  var seen = {};
+  rows.forEach(function (r) { seen[r.ae_slug] = true; });
+  return roster_().aes.filter(function (a) { return a.active !== false || seen[a.slug]; })
+    .map(function (a) { return { slug: a.slug, name: a.name, inactive: a.active === false }; });
 }
 
 /** Read and integrity-check one snapshot file. Returns { snapshot, integrity } (integrity: ok | changed | missing). */
@@ -55,7 +63,7 @@ function readSnapshot_(row) {
 /** Movement drill-down for one AE and week: this week's official snapshot vs the prior week's. */
 function apiGetMovement(aeSlug, forecastWeek) {
   currentViewer_();
-  var ae = rosterAeBySlug_(aeSlug);
+  var ae = rosterAeBySlug_(aeSlug, true);
   if (!ae) throw new Error('Unknown AE: ' + aeSlug);
   var prevWeek = ForecastCore.addDays(forecastWeek, -7);
   var rows = readSubmissions_(ForecastCore.fiscalYearOf(forecastWeek));
@@ -77,7 +85,7 @@ function apiGetMethodology() {
   var v = currentViewer_(), cfg = FORECAST_CONFIG, hs = cfg.hubspot, ds = getDataset_(false), m = ds.metrics;
   var stages = Object.keys(ds.stageMap.stages).map(function (id) { return ds.stageMap.stages[id]; })
     .sort(function (a, b) { return a.pipelineId === b.pipelineId ? a.order - b.order : (a.pipelineId < b.pipelineId ? -1 : 1); });
-  var fy = ds.period.fiscalYear, folderId = cfg.forecast.drive.folders_by_fiscal_year[String(fy)] || null;
+  var fy = ds.period.fiscalYear, folderId = foldersByFy_()[String(fy)] || null;
   return JSON.parse(JSON.stringify({
     viewer: viewerOut_(v), testMode: isTestMode_(),
     source: { system: 'HubSpot', portalId: cfg.portalId, apis: ['CRM Search API (deals)', 'CRM Objects list API (independent tie-out)', 'Pipelines API (stages, probabilities)', 'Owners API (owner status)'] },

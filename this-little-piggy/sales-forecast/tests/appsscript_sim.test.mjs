@@ -78,7 +78,7 @@ function loadApp(hub, { email = 'will.ritchings@findigs.com', token = 'test-toke
     Logger: { log: () => {} }
   };
   vm.createContext(ctx);
-  for (const f of ['Generated_Config.gs', 'Generated_Core.gs', 'HubSpot.gs', 'Data.gs', 'Main.gs']) {
+  for (const f of ['Admin.gs', 'Generated_Config.gs', 'Generated_Core.gs', 'HubSpot.gs', 'Data.gs', 'Main.gs']) {
     vm.runInContext(readFileSync(join(ROOT, 'appsscript', f), 'utf8'), ctx, { filename: f });
   }
   ctx.appendBuildLog_ = (e) => logs.build.push(e);

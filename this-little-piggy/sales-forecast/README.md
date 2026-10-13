@@ -17,7 +17,7 @@ Every submission is an immutable JSON snapshot in Drive, plus a row in a rollup 
 4. [Go-live checklist](#go-live-checklist)
 5. [Shipping a change](#shipping-a-change)
 6. [Weekly operations](#weekly-operations)
-7. [Roster maintenance](#roster-maintenance)
+7. [Admin panel](#admin-panel)
 8. [Year rollover](#year-rollover)
 9. [Test mode and synthetic data](#test-mode-and-synthetic-data)
 10. [Troubleshooting](#troubleshooting)
@@ -29,7 +29,7 @@ Every submission is an immutable JSON snapshot in Drive, plus a row in a rollup 
 | `ae` | Spencer Wuthrich, Ian McLaughlin, Ben de Winter, Matt Lynch | Submit and tag for themselves. See every row, builder, and trend (full transparency, decision P3-2) |
 | `ae_leader` + admin | Phil Aroian | Same as `ae`, plus everything an admin can do (`"admin": true` on his AE entry) |
 | `leadership` | Alexander Schaper, Asaf Raz | See everything. No edits |
-| `admin` | Will Ritchings, Brian Korchin | See everything, edit **any AE's builder tags**, submit on behalf of any AE, and run the editor functions below |
+| `admin` | Will Ritchings, Brian Korchin | See everything, edit **any AE's builder tags**, submit on behalf of any AE, and use the **Admin** tab (users, health, year rollover) |
 
 When someone other than the AE sets a tag, the AE's builder says so ("3 tags were last set by Will Ritchings…") and marks each deal "set by …". The snapshot records who set each tag (`tag_updated_by`, schema 1.1). Tags are shared: whoever changes a deal's tag last wins, and it goes into the AE's next submission.
 
@@ -118,33 +118,47 @@ Settings that live in config:
 - **Forecast call with screen share:** an admin opens Forecast builder, picks the AE, and tags deals while the AE walks through them. Then, in Forecast submission, the admin picks the same AE and submits their numbers, or the AE submits them. The snapshot freezes the tags with who set each one.
 - **Monday review:** open Forecast trend. The change table defaults to the most recent closed week. Click any AE point, or **Deal movement**, for the builder-tag drill-down. A red **Does not reconcile** means the submitted change is larger or smaller than the tag movement explains. Ask the AE; it is never adjusted.
 - **Missed week:** it shows as a gap marked "Not submitted". It cannot be back-filled. A late submission counts toward the next week, by design (decision Q1).
-- **Need fresher HubSpot data than the 30-minute refresh:** run `refreshDataTrigger` from the editor. Each submission already re-pulls that AE's figures.
-- **Monthly, or after anyone touches the Drive folder:** run `verifySnapshots` from the editor. `"ok": true` means every snapshot still matches the SHA-256 recorded when it was written.
+- **Need fresher HubSpot data than the 30-minute refresh:** Admin → Data health → **Refresh HubSpot data now** (or run `refreshDataTrigger` from the editor). Each submission already re-pulls that AE's figures.
+- **Monthly, or after anyone touches the Drive folder:** Admin → Data health → **Run snapshot integrity check** (or run `verifySnapshots` from the editor). `"ok": true` means every snapshot still matches the SHA-256 recorded when it was written.
 
 Never edit or delete files in the year folders or rows in the rollup Sheet. The only in-place edit the app makes is flipping `is_official` when an AE resubmits.
 
-## Roster maintenance
-The roster is `config/roster.json`. The app re-checks every owner against HubSpot on each refresh and flags one that becomes inactive or loses their user seat.
+## Admin panel
+Admins (Will, Brian, Phil) see an **Admin** tab. Everything in it takes effect immediately, with no code push or redeploy, and every change is written to the rollup's `admin_log` tab (who, what, when, before/after). Every action asks for a confirmation first.
 
-**Add an AE**
-1. Find their HubSpot owner ID: HubSpot → Settings → Users & Teams → click the user; the ID is in the URL. Or ask the GTM dashboard maintainer.
-2. Add an entry to `aes`:
-   ```json
-   { "name": "Jane Doe", "slug": "jane-doe", "email": "jane.doe@findigs.com", "hubspot_owner_id": "123456789", "role": "ae" }
-   ```
-   `slug` is lowercase with hyphens and is used in snapshot file names. Never change it once the AE has submitted.
-3. If they were listed under `non_roster_owners`, remove them from there.
-4. Bump `"version"` to today's date, then run the [Shipping a change](#shipping-a-change) steps, including the new deployment version.
+| Section | What it does |
+|---|---|
+| **Users** | **Invite user**: email, name, access level (AE, AE and leadership, Leadership, Admin), "also an admin" for AEs, and for AEs the HubSpot owner, picked from a live HubSpot list. Owners already assigned to an AE can't be picked. Optionally emails the invite: app link, what they can do, the Notion guide, and the Friday deadline. **Change access**, **Deactivate** / **Reactivate**, **Resend invite**. |
+| **This week's submissions** | Who has and hasn't submitted, with a **Submit on behalf** shortcut. |
+| **Data health** | Last pull, tie-out, trigger status, app link, recent data pulls. Buttons: **Refresh HubSpot data now**, **Install refresh trigger** (if missing), **Run snapshot integrity check**. |
+| **Year rollover** | The Drive folder for each fiscal year; set the current or next year's folder if it's missing. |
+| **Other owners** | Add, edit, or remove people who hold deals but don't forecast, with the reason shown in the app. |
+| **Admin activity log** | The last 50 admin changes this year. |
+| **Settings** | Read-only: cutoff, highlight threshold, snapshot format, guide link, test mode. These change only through code, so a mid-week change can't move submissions between weeks. |
 
-**Remove or replace an AE**
-- Snapshots and rollup rows are permanent and stay in Drive.
-- Charts and the change table only show AEs on the roster. **Keep a departed AE on the roster until the end of the fiscal year** so the trend and team totals stay complete.
-- Once they leave HubSpot, the app flags their owner as inactive or without a seat. That is expected.
-- To stop them from submitting sooner, move them to `non_roster_owners` with a reason. Their trend history then drops out of Section 3 for the rest of the year.
+**Rules the panel enforces** (in `ForecastCore.applyRosterChange`):
+- findigs.com emails only, and one active entry per person.
+- An AE needs a HubSpot owner that exists and isn't another AE's.
+- AE slugs never change, because they name snapshot files. Re-inviting a name that's taken gets a suffix, such as `jane-doe-2`.
+- There's always at least one active admin, and no admin can demote or deactivate themselves.
 
-**Leadership and admins:** edit `leadership` or `admins` and ship the change. An email may appear in only one list. To make an AE an admin as well, add `"admin": true` to their AE entry (as with Phil) rather than listing them twice.
+**Deactivating** removes access immediately.
+- For an AE, their row leaves Forecast submission and their deals move to **Other owners**, so totals still tie to HubSpot.
+- Their past weeks stay in Forecast trend, labeled "(inactive)". Snapshots are never deleted.
+- Reactivating restores everything.
+- A leadership or admin entry is removed on deactivation; invite them again to restore it.
 
-**Non-roster owners:** `non_roster_owners` lists people who hold in-scope deals but do not forecast (currently Reese Ryan, Clay Stapleford, Hayden Ashwill). They appear in a read-only reconciliation row, so Section 1 totals tie to the company total. Add a `reason` so the Sources & methodology panel explains them.
+**Moving an AE to Leadership or Admin** keeps their inactive AE record for history. Moving them back reuses the same slug.
+
+### Where the roster lives
+- Until the first change in the panel, the app uses `config/roster.json`.
+- The first panel change copies it into the Script Property `ROSTER_JSON`, and from then on **the panel is the source of truth**. Editing `config/roster.json` afterwards has no effect on the running app; it only seeds a brand-new deployment.
+- Don't edit or delete `ROSTER_JSON` by hand. Deleting it would reset the roster to `config/roster.json`.
+- Years added under Year rollover are stored in `FY_FOLDERS_JSON`. Folders in `config/forecast.json` win for the same year.
+
+**Invite emails** are sent from the script owner's Gmail (Will) with **Reply-To** set to the admin who clicked Invite. They're never sent in test mode.
+- The first `clasp push` with the admin panel adds one Google permission: **send email as you**. After pushing, run any function from the editor, for example `installTriggers`, and approve it, then create the new deployment version.
+- Gmail limits apply: 1,500 emails a day on Workspace, far above what this app sends.
 
 ## Year rollover
 Forecast weeks belong to the year of their Friday.
@@ -154,14 +168,12 @@ Forecast weeks belong to the year of their Friday.
 - From Dec 1, admins see a yellow **Year rollover** banner, and `npm test` prints a warning, until the folder is configured.
 
 **Checklist (do it in early December):**
-1. In the Shared Drive, next to the 2026 folder, create **2027**. Copy its ID from the URL (the part after `/folders/`).
-2. In `config/forecast.json`, add it under `drive.folders_by_fiscal_year`:
-   ```json
-   "folders_by_fiscal_year": { "2026": "1WGzeVVLMlfTHpU9S5GKVB45EDRx84I_P", "2027": "<new folder id>" }
-   ```
-3. Review the roster for next year. On Jan 1, change `"fiscal_year"` in `config/roster.json` to `2027`.
-4. Ship the change, including the new deployment version.
-5. After the first FY2027 submission, confirm **Sales Forecast Rollup 2027** appeared in the 2027 folder.
+1. In the Shared Drive, next to the 2026 folder, create **2027**. The script owner (Will) needs Content manager access to it, which a new folder in the same shared drive inherits.
+2. In the app: **Admin → Year rollover**, choose FY2027, paste the folder link, **Set folder**, then **Confirm**. The app checks it can open the folder. There's no code change or redeploy.
+3. Review the roster for next year in **Admin → Users**.
+4. After the first FY2027 submission, confirm **Sales Forecast Rollup 2027** appeared in the 2027 folder.
+
+To make the folder permanent in code later, add it to `config/forecast.json` → `drive.folders_by_fiscal_year` and ship the change. The config entry then takes precedence and the panel shows "config/forecast.json".
 
 What happens at the turn of the year:
 - The first FY2027 submission (the week of Jan 1) records Closed Won YTD as $0, with a warning, and the period runs through Dec 31, 2027.
@@ -188,7 +200,9 @@ With the Script Property `FORECAST_TEST_FOLDER_ID` = `17CBtW0XTcMq-GO3OsXlbRArf9
 | "HUBSPOT_TOKEN is not set" or HTTP 401 | Token missing, rotated, or the private app was deleted. See [Secrets](#secrets) |
 | "No Drive folder configured for FY…" | See [Year rollover](#year-rollover) |
 | "Another submission is being saved…" | Two writes collided on the script lock; nothing was saved. Submit again after a few seconds |
-| "Access denied" | The Google account isn't on the roster, or the user is signed into a personal account. Use the findigs.com account |
+| "Access denied" | The Google account isn't on the roster, is deactivated, or the user is signed into a personal account. Check **Admin → Users**; they must use their findigs.com account |
+| An AE's row disappeared from Forecast submission | They were deactivated or moved out of the AE role. See **Admin → Admin activity log**; reactivate from **Admin → Users** |
+| Invite email didn't arrive | Test mode doesn't send email. Otherwise check spam, then **Resend invite**. The script owner must have approved the "send email" permission (see [Admin panel](#admin-panel)) |
 | The `/exec` link shows old behavior | A new deployment version wasn't created. See [Shipping a change](#shipping-a-change) |
 | `npm test` shows `STALE` on Windows | Run `npm run build`, then `npm test`. The build normalizes line endings |
 | `verifySnapshots` lists a problem | A snapshot file was edited, moved, or deleted in Drive. Restore it from Drive trash or version history; never recreate it by hand. The drill-down also flags it |
@@ -196,7 +210,7 @@ With the Script Property `FORECAST_TEST_FOLDER_ID` = `17CBtW0XTcMq-GO3OsXlbRArf9
 
 ## Local development
 ```powershell
-npm test                                   # build --check + 107 tests (browser tests skip if Playwright isn't installed)
+npm test                                   # build --check + 127 tests (browser tests skip if Playwright isn't installed)
 npm run preview                            # http://127.0.0.1:8787/?as=ben.dewinter@findigs.com  (try ?as=brian.korchin@findigs.com)
 node scripts/preview.mjs 8787 --synthetic  # test mode with four weeks of synthetic history
 npm run verify:phase1                      # re-runs the 2026-09-25 tie-out from verification/
@@ -207,8 +221,8 @@ The preview runs the real `.gs` and UI code against a fake HubSpot serving the 2
 config/roster.json, config/forecast.json   hand-edited sources
 core/forecast_core.js                      all business logic (Node-tested; copied into Apps Script and the browser)
 appsscript/                                clasp project root
-  HubSpot.gs Data.gs Storage.gs BuilderState.gs Snapshots.gs Trend.gs Synthetic.gs Main.gs   server
-  Index.html Styles.html Client_App/Builder/Submission/Trend/Methodology.html              UI
+  Admin.gs HubSpot.gs Data.gs Storage.gs BuilderState.gs Snapshots.gs Trend.gs Synthetic.gs Main.gs   server
+  Index.html Styles.html Client_App/Builder/Submission/Trend/Methodology/Admin.html                 UI
   Generated_*.gs, Client_Core/Config/ChartLoader.html, Vendor_ChartJs.html                 GENERATED
 vendor/chart.umd.js                        Chart.js 4.4.4 (MIT), byte-identical to the jsDelivr file
 scripts/                                   build.mjs, preview.mjs, verify_phase1.mjs

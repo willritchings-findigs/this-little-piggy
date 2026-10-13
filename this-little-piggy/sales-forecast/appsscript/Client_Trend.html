@@ -58,6 +58,7 @@ var Trend = (function () {
   function shortDate(d) { var a = d.split('-'); return MON[+a[1] - 1] + ' ' + (+a[2]); }
   function isOpenWeek(w) { return S.data && w >= S.data.week.forecastWeek; }
   function gapText(w) { return isOpenWeek(w) ? 'Not yet submitted' : 'Not submitted'; }
+  function label(a) { return a.name + (a.inactive ? ' (inactive)' : ''); }
   function aeName(slug) { var a = S.data.aes.filter(function (x) { return x.slug === slug; })[0]; return a ? a.name : slug; }
 
   // ------------------------------------------------------------------ load + controls
@@ -81,7 +82,7 @@ var Trend = (function () {
     if (S.bound) return; S.bound = true;
     $('t-fy').addEventListener('change', function (e) { load(Number(e.target.value)); });
     var sel = $('t-ae');
-    sel.innerHTML = '<option value="all">All AEs</option>' + S.data.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '">' + A.esc(a.name) + '</option>'; }).join('');
+    sel.innerHTML = '<option value="all">All AEs</option>' + S.data.aes.map(function (a) { return '<option value="' + A.esc(a.slug) + '">' + A.esc(label(a)) + '</option>'; }).join('');
     sel.addEventListener('change', function () { S.ae = sel.value; render(); });
     document.querySelectorAll('#t-controls [data-view]').forEach(function (b) { b.addEventListener('click', function () { S.view = b.getAttribute('data-view'); render(); }); });
     document.querySelectorAll('#t-controls [data-axis]').forEach(function (b) { b.addEventListener('click', function () { S.axis = b.getAttribute('data-axis'); render(); }); });
@@ -144,14 +145,14 @@ var Trend = (function () {
       var yMax = S.axis === 'shared' && S.ae === 'all' ? niceMax(s.sharedAeMax) : null;
       aes.forEach(function (a) {
         var host = document.createElement('div'); grid.appendChild(host);
-        drawCard(host, { title: a.name, slug: a.slug, points: s.byAe[a.slug], weeks: s.weeks, yMax: yMax, big: S.ae !== 'all' });
+        drawCard(host, { title: label(a), slug: a.slug, points: s.byAe[a.slug], weeks: s.weeks, yMax: yMax, big: S.ae !== 'all' });
       });
     }).catch(function (e) {
       $('t-team').innerHTML = '<div class="note error">' + A.icon('error') + ' Charts unavailable: ' + A.esc(e.message) + ' The tables below still show every value.</div>';
       var grid = $('t-grid'); grid.innerHTML = '';
       (S.ae === 'all' ? d.aes : d.aes.filter(function (a) { return a.slug === S.ae; })).forEach(function (a) {
         var host = document.createElement('div'); host.className = 'card chart-card'; grid.appendChild(host);
-        host.innerHTML = '<div class="card-head"><h3>' + A.esc(a.name) + '</h3></div>' + tableHtml(s.byAe[a.slug], s.weeks, false, a.slug);
+        host.innerHTML = '<div class="card-head"><h3>' + A.esc(label(a)) + '</h3></div>' + tableHtml(s.byAe[a.slug], s.weeks, false, a.slug);
       });
     });
     renderChange();
@@ -375,7 +376,7 @@ var Trend = (function () {
       K.map(function () { return '<th scope="col" class="num">Prior</th><th scope="col" class="num">Current</th><th scope="col" class="num">Δ $</th><th scope="col" class="num">Δ %</th>'; }).join('') +
       '</tr></thead><tbody>';
     ct.rows.forEach(function (r) {
-      html += '<tr><th scope="row">' + A.esc(r.name) + (r.submittedCurrent ? '<div><button type="button" class="linkbtn" data-move="' + A.esc(r.key + '|' + S.week) + '">Deal movement</button></div>' : '') + '</th>' +
+      html += '<tr><th scope="row">' + A.esc(label(d.aes.filter(function (x) { return x.slug === r.key; })[0] || { name: r.name })) + (r.submittedCurrent ? '<div><button type="button" class="linkbtn" data-move="' + A.esc(r.key + '|' + S.week) + '">Deal movement</button></div>' : '') + '</th>' +
         K.map(function (k) { return cell(r.values, k); }).join('') + '</tr>';
     });
     var tm = ct.team;

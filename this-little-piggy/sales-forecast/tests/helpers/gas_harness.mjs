@@ -102,13 +102,21 @@ export class FakeDrive {
 
 export function loadApp({ email = 'will.ritchings@findigs.com', hub = fakeHubSpot(), token = 'test-token', asOf = '2026-09-25', lockBusy = false,
                           now = '2026-09-25T14:00:00-04:00', testFolderId = null } = {}) {
-  const store = { build: [], rollups: {}, sheets: null, clock: Date.parse(now), drive: new FakeDrive(), props: {} };
+  const store = { build: [], rollups: {}, sheets: null, clock: Date.parse(now), drive: new FakeDrive(), props: {}, mail: [], triggers: [] };
   const session = { email };
   const props = () => ({ HUBSPOT_TOKEN: token, FORECAST_TEST_FOLDER_ID: testFolderId, ...store.props });
   const ctx = {
     console, JSON, Math, Date, Object, Array, String, Number, Error, encodeURIComponent, RegExp,
     UrlFetchApp: { fetch: (u, o) => hub.fetch(u, o) },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props()[k] ?? null, setProperty() {} }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props()[k] ?? null, setProperty: (k, v) => { store.props[k] = String(v); },
+                                                       deleteProperty: (k) => { delete store.props[k]; } }) },
+    MailApp: { sendEmail: (o) => { store.mail.push(o); } },
+    ScriptApp: {
+      getService: () => ({ getUrl: () => 'https://script.google.com/a/macros/findigs.com/s/TESTDEPLOY/exec' }),
+      getProjectTriggers: () => store.triggers.map((t) => ({ getHandlerFunction: () => t.fn })),
+      deleteTrigger: (t) => { store.triggers = store.triggers.filter((x) => x.fn !== t.getHandlerFunction()); },
+      newTrigger: (fn) => { const b = { timeBased: () => b, everyMinutes: (m) => { b.m = m; return b; }, create: () => { store.triggers.push({ fn, every: b.m }); } }; return b; }
+    },
     Utilities: { sleep() {}, DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' }, getUuid: () => randomUUID(),
       computeDigest: (_a, s) => [...createHash('sha256').update(s).digest()].map((b) => (b > 127 ? b - 256 : b)) },
     Session: { getActiveUser: () => ({ getEmail: () => session.email }) },

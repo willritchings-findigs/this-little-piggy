@@ -1,6 +1,6 @@
 # Sales forecast: QA test list (Phase 5)
 
-Every case in the Phase 5 QA list is automated and runs with `npm test`: 107 tests, 0 failures as of 2026-09-25.
+Every case in the Phase 5 QA list is automated and runs with `npm test`: 127 tests, 0 failures as of 2026-09-28.
 The tests run the real Apps Script code (`appsscript/*.gs`, loaded alphabetically as Apps Script does) against a fake HubSpot that serves the live 2026-09-25 pulls, plus in-memory Drive and Sheets. Browser tests drive the real UI in Chromium. The live checks at the end cover what only Google can prove.
 
 ## Required cases
@@ -32,11 +32,24 @@ The tests run the real Apps Script code (`appsscript/*.gs`, loaded alphabeticall
 | Chart library fallback | `ui_trend.test.mjs` › *Chart.js: blocked CDN and SRI failure both fall back…* |
 | Permissions (transparency, edit own only, admin on behalf) | `submission.test.mjs` › *permissions…* · *admin submits on behalf…* · `ui_submission.test.mjs` › *Admin: submits on behalf…* |
 
+## Admin panel (P6)
+
+| Case | Automated test | What it proves |
+|---|---|---|
+| Only admins can open or use it | `admin.test.mjs` › *only admins can open or use the panel* · `ui_admin.test.mjs` › *Admin tab: visible to admins only* | Every admin endpoint re-checks on the server; the tab is hidden for AEs and leadership |
+| Invite an AE end to end | `admin.test.mjs` › *invite an AE end to end…* · `ui_admin.test.mjs` › *invite an AE with confirmation…* | Saved to the runtime roster, email sent with Reply-To the inviter, audit-logged, a new Section 1 row appears, and the new user can sign in and submit |
+| Roster rules | `admin.test.mjs` › *invite: AE needs a real, unassigned HubSpot owner…* · *change access…* | findigs.com only, no duplicates, owner must exist and be unassigned, unique slugs, last-admin and self-demotion guards |
+| Deactivate keeps history | `admin.test.mjs` › *deactivate an AE…* · `ui_admin.test.mjs` › *change access, deactivate…* | Access denied immediately, row gone, deals move to Other owners with totals still tying, trend history and movement still readable, reactivation restores |
+| No email in test mode | `admin.test.mjs` › *invite without email, and no email is ever sent in test mode* | Test mode can't email real people |
+| Year rollover from the panel | `admin.test.mjs` › *year rollover folder from the panel…* · `ui_admin.test.mjs` › *health, Other owners reason, and year-rollover folder…* | Validated, can't overwrite a configured year or reuse a folder, banner clears, FY2027 submissions land in the new folder |
+| Health actions | `admin.test.mjs` › *health actions…* | Refresh, trigger install, and integrity check work and are logged |
+
 ## Live checks (Google only; run at go-live)
 - [x] Phase 1: live data pull ties out (2026-09-25, `verification/2026-09-25/live_run_apps_script.md`)
 - [x] Phase 3: test-mode submission and resubmission write immutable files and correct `is_official` (2026-09-25)
 - [x] Phase 4: synthetic trend renders in the web app; the chart library loads (2026-09-25)
 - [ ] Go-live: `FORECAST_TEST_FOLDER_ID` deleted; the first real submission lands in the production 2026 folder and **Sales Forecast Rollup 2026**
+- [ ] Admin panel: after `clasp push`, the owner approves the new "send email" permission, then an invite to a test address arrives with the `/exec` link
 - [ ] Go-live: `installTriggers` run; the refresh trigger shows in Triggers and `build_log` gains a row every 30 minutes
 - [ ] First Friday: every AE opens the `/exec` URL and submits before 5:00 PM ET; Monday review uses Section 3 with two or more weeks
 - [ ] After the first Friday: run `verifySnapshots` and confirm the log shows `"ok": true` with `problems: []`

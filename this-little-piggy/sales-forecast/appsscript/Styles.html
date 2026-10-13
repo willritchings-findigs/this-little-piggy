@@ -241,6 +241,21 @@ table.compact thead th { cursor: default; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
 .muted.small { font-size: 12px; margin: 0; }
 
+/* Admin */
+.confirm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); background: var(--sky-20); border-radius: var(--r-md); padding: var(--space-3) var(--space-4); margin: var(--space-3) 0; font-size: 13px; }
+.confirm-bar.danger { background: var(--coral-20); }
+.note.warnbox { background: var(--sun-20); }
+.admin-form { background: var(--bg-surface); border-radius: var(--r-md); padding: var(--space-4); margin: var(--space-3) 0; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3) var(--space-4); }
+.fld { display: flex; flex-direction: column; gap: var(--space-1); font-size: 13px; color: var(--fg-2); }
+.fld.wide { grid-column: span 2; }
+.fld input[type="text"], .fld input[type="email"] { width: 100%; height: 36px; border: 1px solid var(--border-subtle); border-radius: var(--r-md); background: var(--sand); padding: 0 var(--space-3); color: var(--fg-1); }
+.fld input:focus { outline: none; border: 2px solid var(--forest); padding: 0 11px; }
+.fld input[readonly] { background: var(--neutral-10); color: var(--fg-2); }
+.fld select { width: 100%; }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-top: var(--space-3); }
+table.compact tr.subtle th, table.compact tr.subtle td { color: var(--fg-2); }
+
 @media (max-width: 900px) {
   .tiles { grid-template-columns: 1fr; }
   .tag-moves, .two-col { grid-template-columns: 1fr; }

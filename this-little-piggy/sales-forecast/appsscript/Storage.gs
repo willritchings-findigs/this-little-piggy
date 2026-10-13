@@ -19,7 +19,8 @@ var ROLLUP_TABS_ = {
   builder_state: ['ae_email', 'deal_id', 'tag', 'updated_at', 'updated_by'],
   build_log: ['logged_at', 'status', 'as_of', 'pulled_at', 'open_count', 'won_ytd_count', 'cw_ytd', 'gross_open', 'weighted_open',
               'weighted_fallback_n', 'tie_out', 'message', 'config_version'],
-  meta: ['key', 'value']
+  meta: ['key', 'value'],
+  admin_log: ['logged_at', 'actor', 'action', 'target', 'summary', 'before', 'after']
 };
 
 // Script-lock depth for this execution (a literal, so it is safe whatever the file load order).
@@ -61,8 +62,8 @@ function getYearFolder_(fiscalYear) {
   if (testId) {
     return getOrCreateFolder_(DriveApp.getFolderById(testId), 'FY' + fiscalYear);
   }
-  var id = FORECAST_CONFIG.forecast.drive.folders_by_fiscal_year[String(fiscalYear)];
-  if (!id) throw new Error('No Drive folder configured for FY' + fiscalYear + ' in config/forecast.json (drive.folders_by_fiscal_year). Submissions are blocked until an admin adds it.');
+  var id = foldersByFy_()[String(fiscalYear)];
+  if (!id) throw new Error('No Drive folder configured for FY' + fiscalYear + '. Submissions are blocked until an admin adds it (Admin tab → Year rollover).');
   return DriveApp.getFolderById(id);
 }
 

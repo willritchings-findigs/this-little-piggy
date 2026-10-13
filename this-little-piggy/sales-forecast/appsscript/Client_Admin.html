@@ -1,0 +1,296 @@
+<script>
+/*
+ * Admin tab (admins only; the server re-checks every call). Users, this week's submissions, data health,
+ * year rollover, Other owners, audit log, read-only settings. Every write asks for an inline confirmation first.
+ */
+var Admin = (function () {
+  'use strict';
+  var A = App;
+  var S = { p: null, form: null, confirm: null, busy: false, nrForm: null, verify: null };
+  var $ = function (id) { return document.getElementById(id); };
+  var ACCESS_HELP = {
+    ae: 'Submits their own forecast and tags their own deals. Sees everything.',
+    ae_leader: 'Same as AE; shown as "AE and leadership".',
+    leadership: 'Sees everything. Can\'t edit or submit.',
+    admin: 'Sees everything, edits any AE\'s tags, submits on behalf, and uses this Admin tab.'
+  };
+
+  function init() {
+    $('tab-admin').addEventListener('click', onClick);
+    $('tab-admin').addEventListener('change', onChange);
+    load();
+  }
+  function load() {
+    A.rpc('apiAdminGet').then(function (p) { S.p = p; render(); })
+      .catch(function (e) { $('a-body').innerHTML = '<div class="note error">' + A.icon('error') + ' ' + A.esc(e.message) + '</div>'; });
+  }
+
+  /** Run an admin RPC; show the outcome as a banner and re-render from the returned panel. */
+  function run(fn, args, pending) {
+    if (S.busy) return;
+    S.busy = true; S.confirm = null; renderBusy(pending);
+    A.rpc.apply(null, [fn].concat(args)).then(function (res) {
+      S.busy = false; S.p = res.panel; S.form = null; S.nrForm = null; S.folderDraft = null;
+      if (res.result && res.result.verify) S.verify = res.result.verify;
+      A.banner('info', A.icon('check_circle') + ' ' + A.esc(res.result.summary), 'admin-result');
+      render();
+    }).catch(function (e) {
+      S.busy = false;
+      A.banner('error', '<strong>Not saved.</strong> ' + A.esc(e.message), 'admin-result');
+      render();
+    });
+  }
+  function renderBusy(msg) {
+    var el = $('a-busy'); if (el) { el.hidden = false; el.innerHTML = A.icon('sync') + ' ' + A.esc(msg || 'Saving…') + ' This can take up to 30 seconds while HubSpot data refreshes.'; }
+    document.querySelectorAll('#tab-admin button').forEach(function (b) { b.disabled = true; });
+  }
+
+  // ------------------------------------------------------------------ render
+  function render() {
+    var p = S.p;
+    $('a-body').innerHTML =
+      '<div id="a-busy" class="note" hidden aria-live="polite"></div>' +
+      (p.testMode ? '<div class="note">' + A.icon('science') + ' Test mode is on: invite emails are not sent.</div>' : '') +
+      (p.folders.rollover ? '<div class="note warnbox">' + A.icon('warning') + ' ' + A.esc(p.folders.rollover.message) + ' Fix it under Year rollover below.</div>' : '') +
+      card('a-users', 'Users', usersHtml()) +
+      card('a-week', 'This week\'s submissions', weekHtml()) +
+      card('a-health', 'Data health', healthHtml()) +
+      card('a-folders', 'Year rollover', foldersHtml()) +
+      card('a-nonroster', 'Other owners', nonRosterHtml()) +
+      card('a-audit', 'Admin activity log', auditHtml()) +
+      card('a-settings', 'Settings (read-only)', settingsHtml());
+  }
+  function card(id, title, body) { return '<div class="card" id="' + id + '"><div class="card-head"><h3>' + A.esc(title) + '</h3></div>' + body + '</div>'; }
+  function confirmBar(key, text, fn, args, pending, danger) {
+    if (S.confirm !== key) return '';
+    return '<div class="confirm-bar' + (danger ? ' danger' : '') + '" role="alert"><span>' + A.esc(text) + '</span>' +
+      '<button type="button" class="btn primary small" data-do="' + A.esc(key) + '">Confirm</button>' +
+      '<button type="button" class="btn small" data-cancel>Cancel</button></div>';
+  }
+  var PENDING = {};   // confirm key → [fn, args, pendingText]
+  function ask(key, fn, args, pending) { PENDING[key] = [fn, args, pending]; S.confirm = key; render(); var el = document.querySelector('[data-do="' + key + '"]'); if (el) el.focus(); }
+
+  function statusTag(u) {
+    return u.active ? '<span class="tag jade">Active</span>' : '<span class="tag neutral">Inactive' + (u.deactivatedAt ? ' since ' + A.esc(A.date(u.deactivatedAt.slice(0, 10))) : '') + '</span>';
+  }
+  function accessLabel(u) {
+    var l = { ae: 'AE', ae_leader: 'AE and leadership', leadership: 'Leadership', admin: 'Admin' }[u.access] || u.access;
+    return A.esc(l) + (u.admin && u.access !== 'admin' ? ' <span class="tag sky">Admin</span>' : '');
+  }
+  function ownerCell(u) {
+    if (!u.isAe) return '<span class="muted">—</span>';
+    if (!u.hubspotOwner) return '<span class="tag coral">Owner ' + A.esc(u.hubspotOwnerId) + ' not found</span>';
+    return A.esc(u.hubspotOwner.name) + (u.hubspotOwner.status !== 'active' ? ' <span class="tag coral">' + A.esc(u.hubspotOwner.status.replace(/_/g, ' ')) + ' in HubSpot</span>' : '');
+  }
+
+  function usersHtml() {
+    var p = S.p, me = p.viewer.email;
+    var rows = p.users.map(function (u) {
+      var k = u.email;
+      var actions = u.active
+        ? '<button type="button" class="linkbtn" data-edit="' + A.esc(k) + '">Change access</button>' +
+          (k !== me ? ' · <button type="button" class="linkbtn" data-deact="' + A.esc(k) + '">Deactivate</button>' : '') +
+          ' · <button type="button" class="linkbtn" data-resend="' + A.esc(k) + '">Resend invite</button>'
+        : (u.isAe ? '<button type="button" class="linkbtn" data-react="' + A.esc(k) + '">Reactivate</button>' : '<span class="muted">Invite again to restore</span>');
+      return '<tr data-user="' + A.esc(k) + '"' + (u.active ? '' : ' class="subtle"') + '><th scope="row">' + A.esc(u.name) + (k === me ? ' <span class="muted">(you)</span>' : '') + '</th>' +
+        '<td>' + A.esc(u.email) + '</td><td>' + accessLabel(u) + '</td><td>' + ownerCell(u) + '</td><td>' + statusTag(u) + '</td>' +
+        '<td class="muted">' + (u.invitedAt ? A.esc(A.date(u.invitedAt.slice(0, 10))) + (u.invitedBy ? '<div class="lw">by ' + A.esc(u.invitedBy) + '</div>' : '') : 'Original roster') + '</td>' +
+        '<td>' + actions + '</td></tr>' +
+        (S.confirm === 'deact:' + k ? '<tr><td colspan="7">' + confirmBar('deact:' + k, 'Deactivate ' + u.name + '? They lose access immediately.' + (u.isAe ? ' Their forecast history stays in Forecast trend; their deals move to Other owners.' : ''), null, null, null, true) + '</td></tr>' : '') +
+        (S.confirm === 'react:' + k ? '<tr><td colspan="7">' + confirmBar('react:' + k, 'Reactivate ' + u.name + '? They get access back and appear in Forecast submission again.') + '</td></tr>' : '') +
+        (S.confirm === 'resend:' + k ? '<tr><td colspan="7">' + confirmBar('resend:' + k, 'Email ' + u.email + ' the invite again?') + '</td></tr>' : '') +
+        (S.form && S.form.mode === 'edit' && S.form.email === k ? '<tr><td colspan="7">' + formHtml() + '</td></tr>' : '');
+    }).join('');
+    return '<p class="muted small">Source: ' + (p.rosterSource === 'admin_panel' ? 'managed in this panel' : 'config/roster.json (becomes panel-managed after the first change here)') + '.</p>' +
+      '<div class="tbl-actions"><button type="button" class="btn primary small" data-invite>' + A.icon('person_add') + ' Invite user</button></div>' +
+      (S.form && S.form.mode === 'invite' ? formHtml() : '') +
+      '<div class="table-wrap wide"><table class="deals compact" id="a-users-table"><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Access</th>' +
+      '<th scope="col">HubSpot owner</th><th scope="col">Status</th><th scope="col">Added</th><th scope="col">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function ownerOptions(selected, forEmail) {
+    var p = S.p;
+    var opts = p.owners.map(function (o) {
+      var mine = selected && o.id === String(selected);
+      var taken = o.assignedTo && !mine;
+      return '<option value="' + A.esc(o.id) + '"' + (mine ? ' selected' : '') + (taken ? ' disabled' : '') + '>' + A.esc(o.name) + (o.email ? ' · ' + A.esc(o.email) : '') +
+        (o.status !== 'active' ? ' (' + o.status.replace(/_/g, ' ') + ')' : '') + (taken ? ' — assigned to ' + A.esc(o.assignedTo) : '') + '</option>';
+    });
+    return '<option value="">Choose the HubSpot owner…</option>' + opts.join('');
+  }
+
+  function formHtml() {
+    var f = S.form, isAe = f.access === 'ae' || f.access === 'ae_leader', edit = f.mode === 'edit';
+    return '<form class="admin-form" id="a-user-form" novalidate><div class="form-grid">' +
+      '<label class="fld">Email<input type="email" name="email" value="' + A.esc(f.email || '') + '"' + (edit ? ' readonly' : '') + ' placeholder="name@findigs.com" autocomplete="off"></label>' +
+      '<label class="fld">Name<input type="text" name="name" value="' + A.esc(f.name || '') + '" placeholder="First Last" autocomplete="off"></label>' +
+      '<label class="fld">Access<select name="access">' + S.p.accessLevels.map(function (a) { return '<option value="' + a.key + '"' + (a.key === f.access ? ' selected' : '') + '>' + A.esc(a.label) + '</option>'; }).join('') + '</select>' +
+        '<span class="muted small">' + A.esc(ACCESS_HELP[f.access] || '') + '</span></label>' +
+      (isAe ? '<label class="fld">HubSpot owner<select name="ownerId">' + ownerOptions(f.ownerId) + '</select><span class="muted small">Whose HubSpot deals this AE forecasts.</span></label>' : '') +
+      '</div><div class="form-row">' +
+      (isAe ? '<label class="toggle"><input type="checkbox" name="admin"' + (f.admin ? ' checked' : '') + '> Also an admin</label>' : '') +
+      (!edit ? '<label class="toggle"><input type="checkbox" name="sendInvite"' + (f.sendInvite !== false ? ' checked' : '') + '> Email them an invite with the link and guide</label>' : '') +
+      '</div>' +
+      (edit && f.wasAe && !isAe ? '<p class="muted small">' + A.icon('info') + ' Moving an AE out of the AE role keeps their forecast history; their deals move to Other owners.</p>' : '') +
+      '<div class="form-row"><button type="submit" class="btn primary small">' + (edit ? 'Save changes' : 'Invite') + '</button><button type="button" class="btn small" data-cancel-form>Cancel</button></div>' +
+      (S.confirm === 'form' ? confirmBar('form', formSummary(), null) : '') + '</form>';
+  }
+  function formSummary() {
+    var f = S.form, label = (S.p.accessLevels.filter(function (a) { return a.key === f.access; })[0] || {}).label;
+    return (f.mode === 'edit' ? 'Change ' + (f.name || f.email) + ' to ' : 'Invite ' + (f.name || f.email) + ' as ') + label + (f.admin && f.access !== 'admin' ? ' + admin' : '') +
+      (f.mode === 'invite' && f.sendInvite !== false ? ', and email them the invite?' : '?');
+  }
+  function readForm() {
+    var el = $('a-user-form'); if (!el) return;
+    var fd = function (n) { var x = el.querySelector('[name="' + n + '"]'); return x ? (x.type === 'checkbox' ? x.checked : x.value) : undefined; };
+    S.form.email = fd('email'); S.form.name = fd('name'); S.form.access = fd('access');
+    if (fd('ownerId') !== undefined) S.form.ownerId = fd('ownerId');
+    if (fd('admin') !== undefined) S.form.admin = fd('admin');
+    if (fd('sendInvite') !== undefined) S.form.sendInvite = fd('sendInvite');
+  }
+  function formChange() {
+    var f = S.form, isAe = f.access === 'ae' || f.access === 'ae_leader';
+    var c = { action: f.mode === 'edit' ? 'update' : 'invite', email: String(f.email || '').trim(), name: String(f.name || '').trim(), access: f.access,
+              admin: f.access === 'admin' ? true : (isAe ? !!f.admin : false) };
+    if (isAe) c.ownerId = f.ownerId;
+    return c;
+  }
+
+  function weekHtml() {
+    var w = S.p.thisWeek, missing = w.rows.filter(function (r) { return r.status === 'not_submitted'; }).length;
+    return '<p class="muted small">Forecast week ending ' + A.esc(A.date(w.forecastWeek)) + ' · cutoff ' + A.esc(A.stamp(w.cutoffAt)) + ' · ' +
+      (w.rows.length - missing) + ' of ' + w.rows.length + ' submitted</p>' +
+      '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">AE</th><th scope="col">Status</th><th scope="col">Last submitted</th><th scope="col" class="num">Submissions</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead><tbody>' +
+      w.rows.map(function (r) {
+        var chip = r.status === 'not_submitted' ? '<span class="tag coral">Not submitted</span>' : r.status === 'resubmitted' ? '<span class="tag sky">Resubmitted</span>' : '<span class="tag jade">Submitted</span>';
+        return '<tr><th scope="row">' + A.esc(r.name) + '</th><td>' + chip + '</td><td>' + (r.lastSubmittedAt ? A.esc(A.stamp(r.lastSubmittedAt)) : '<span class="muted">—</span>') + '</td>' +
+          '<td class="num">' + (r.submissions || 0) + '</td><td><button type="button" class="linkbtn" data-behalf="' + A.esc(r.slug) + '">Submit on behalf</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function healthHtml() {
+    var h = S.p.health;
+    var tie = h.tieOut ? (h.tieOut.ok ? '<span class="tag jade">Tied out</span>' : '<span class="tag danger">' + h.tieOut.mismatches + ' mismatch(es)</span>') : '<span class="tag neutral">Not run</span>';
+    var trig = h.triggerInstalled === true ? '<span class="tag jade">Installed, every ' + h.refreshMinutes + ' min</span>' : h.triggerInstalled === false ? '<span class="tag coral">Not installed</span>' : '<span class="tag neutral">Unknown</span>';
+    var v = S.verify;
+    return '<dl class="meth-dl">' +
+      '<dt>Last HubSpot pull</dt><dd>' + A.esc(A.stamp(h.pulledAt)) + '</dd>' +
+      '<dt>Tie-out</dt><dd>' + tie + '</dd>' +
+      '<dt>Refresh trigger</dt><dd>' + trig + '</dd>' +
+      '<dt>App link</dt><dd>' + (h.appUrl ? '<a href="' + A.esc(h.appUrl) + '" target="_blank" rel="noopener">' + A.esc(h.appUrl) + '</a>' : '<span class="muted">Unavailable</span>') + '</dd>' +
+      '<dt>Data-quality flags</dt><dd>' + (h.flags.length ? h.flags.length + ' <span class="muted">(details in Sources &amp; methodology)</span>' : 'None') + '</dd></dl>' +
+      '<div class="form-row">' +
+        '<button type="button" class="btn small" data-refresh>' + A.icon('sync') + ' Refresh HubSpot data now</button>' +
+        (h.triggerInstalled === false ? '<button type="button" class="btn small" data-trigger>' + A.icon('schedule') + ' Install refresh trigger</button>' : '') +
+        '<button type="button" class="btn small" data-verify>' + A.icon('verified') + ' Run snapshot integrity check</button></div>' +
+      confirmBar('refresh', 'Pull fresh data from HubSpot now (about 20 seconds)?') + confirmBar('trigger', 'Install the refresh trigger?') + confirmBar('verify', 'Re-check every snapshot this year against its recorded SHA-256?') +
+      (v ? '<div class="note' + (v.ok ? ' ok' : ' error') + '" id="a-verify">' + (v.ok ? A.icon('check_circle') + ' ' + v.checked + ' snapshot(s) checked; all match.' :
+            A.icon('error') + ' ' + v.problems.length + ' problem(s):<ul>' + v.problems.map(function (x) { return '<li>' + A.esc(x.file) + ': ' + A.esc(x.problem) + '</li>'; }).join('') + '</ul>') + '</div>' : '') +
+      '<h4>Recent data pulls</h4>' + (h.buildLog.length ? '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">When</th><th scope="col">Status</th><th scope="col" class="num">Open</th><th scope="col" class="num">Won YTD</th><th scope="col">Tie-out</th><th scope="col">Message</th></tr></thead><tbody>' +
+        h.buildLog.map(function (b) { return '<tr' + (b.status !== 'OK' ? ' class="flagged"' : '') + '><td>' + A.esc(A.stamp(b.at)) + '</td><td>' + A.esc(b.status) + '</td><td class="num">' + A.esc(b.openCount) + '</td><td class="num">' + A.esc(b.wonYtdCount) + '</td><td>' + A.esc(b.tieOut) + '</td><td class="muted">' + A.esc(b.message) + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' : '<p class="muted">No pulls logged yet this year.</p>');
+  }
+
+  function foldersHtml() {
+    var f = S.p.folders, need = [f.currentFy, f.nextFy].filter(function (y) { return !f.years.some(function (x) { return x.year === y; }); });
+    return '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">Fiscal year</th><th scope="col">Drive folder</th><th scope="col">Set in</th></tr></thead><tbody>' +
+      f.years.map(function (y) { return '<tr><th scope="row">FY' + y.year + '</th><td><a href="https://drive.google.com/drive/folders/' + A.esc(y.folderId) + '" target="_blank" rel="noopener"><code>' + A.esc(y.folderId) + '</code></a></td><td>' + (y.source === 'config' ? 'config/forecast.json' : 'Admin panel') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' +
+      (need.length ? '<form class="admin-form" id="a-folder-form"><div class="form-grid"><label class="fld">Year<select name="year">' + need.map(function (y) { return '<option value="' + y + '"' + (S.folderDraft && S.folderDraft.year === y ? ' selected' : '') + '>FY' + y + '</option>'; }).join('') + '</select></label>' +
+        '<label class="fld">Drive folder link or ID<input type="text" name="folder" value="' + A.esc(S.folderDraft ? S.folderDraft.folder : '') + '" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off"></label></div>' +
+        '<p class="muted small">Create the folder in the Sales Forecasts shared drive first (next to the current year). Submissions for a year are blocked until its folder is set. A folder can\'t be changed here once set.</p>' +
+        '<div class="form-row"><button type="submit" class="btn primary small">Set folder</button></div>' + confirmBar('folder', 'Use this folder for FY' + (S.folderDraft ? S.folderDraft.year : '') + '? It can\'t be changed from the panel afterwards.') + '</form>'
+        : '<p class="muted small">' + A.icon('check_circle') + ' This year and next year both have folders.</p>');
+  }
+
+  function nonRosterHtml() {
+    var p = S.p, nf = S.nrForm;
+    var rows = p.nonRoster.map(function (o) {
+      return '<tr><th scope="row">' + A.esc(o.name) + '<div class="lw muted">Owner ' + A.esc(o.ownerId) + '</div></th><td>' + A.esc(o.reason) + '</td><td class="num">' + o.openCount + '</td><td class="num">' + A.usd0(o.openAmount) + '</td>' +
+        '<td><button type="button" class="linkbtn" data-nredit="' + A.esc(o.ownerId) + '">Edit reason</button> · <button type="button" class="linkbtn" data-nrrm="' + A.esc(o.ownerId) + '">Remove</button></td></tr>' +
+        (S.confirm === 'nrrm:' + o.ownerId ? '<tr><td colspan="5">' + confirmBar('nrrm:' + o.ownerId, 'Remove ' + o.name + ' from the list? If they still hold deals they stay under Other owners with the default reason.') + '</td></tr>' : '');
+    }).join('');
+    var unlisted = p.unlistedOwners.length ? '<p class="muted small">Also holding deals, with no reason set: ' + p.unlistedOwners.map(function (o) { return A.esc(o.name) + ' (' + o.openCount + ' open)'; }).join(', ') + '.</p>' : '';
+    var candidates = p.owners.filter(function (o) { return !o.assignedTo || /\(inactive\)$/.test(o.assignedTo); });
+    return '<p class="muted small">People who own in-scope HubSpot deals but don\'t forecast. Their deals count in the company total, in a read-only row, so totals tie to HubSpot.</p>' +
+      '<div class="table-wrap wide"><table class="deals compact"><thead><tr><th scope="col">Owner</th><th scope="col">Reason</th><th scope="col" class="num">Open deals</th><th scope="col" class="num">Open amount</th><th scope="col">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + unlisted +
+      (nf ? '<form class="admin-form" id="a-nr-form"><div class="form-grid">' +
+        (nf.ownerId && nf.edit ? '<label class="fld">Owner<input type="text" value="' + A.esc(nf.name) + '" readonly></label>' :
+          '<label class="fld">HubSpot owner<select name="ownerId"><option value="">Choose…</option>' + candidates.map(function (o) { return '<option value="' + A.esc(o.id) + '"' + (o.id === nf.ownerId ? ' selected' : '') + '>' + A.esc(o.name) + (o.status !== 'active' ? ' (' + o.status.replace(/_/g, ' ') + ')' : '') + '</option>'; }).join('') + '</select></label>') +
+        '<label class="fld wide">Reason<input type="text" name="reason" value="' + A.esc(nf.reason || '') + '" placeholder="e.g. Accounts pending reassignment" autocomplete="off"></label></div>' +
+        '<div class="form-row"><button type="submit" class="btn primary small">Save</button><button type="button" class="btn small" data-cancel-form>Cancel</button></div>' +
+        confirmBar('nrsave', 'Save this Other owners entry?') + '</form>'
+        : '<div class="form-row"><button type="button" class="btn small" data-nradd>' + A.icon('add') + ' Add owner</button></div>');
+  }
+
+  function auditHtml() {
+    var a = S.p.audit;
+    return a.length ? '<div class="table-wrap"><table class="deals compact"><thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th></tr></thead><tbody>' +
+      a.map(function (x) { return '<tr><td>' + A.esc(A.stamp(x.at)) + '</td><td>' + A.esc(x.actor) + '</td><td>' + A.esc(x.summary) + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<p class="muted">No admin changes logged this year yet.</p>';
+  }
+
+  function settingsHtml() {
+    var s = S.p.settings, t = String(s.cutoff.time_et).split(':'), h = +t[0];
+    return '<dl class="meth-dl">' +
+      '<dt>Weekly cutoff</dt><dd>' + A.esc(s.cutoff.weekday) + ' ' + ((h % 12) || 12) + ':' + t[1] + (h >= 12 ? ' PM' : ' AM') + ' ET</dd>' +
+      '<dt>Change highlight</dt><dd>±' + Math.round(s.threshold * 100) + '% week over week</dd>' +
+      '<dt>Snapshot format</dt><dd>' + A.esc(s.schemaVersion) + '</dd>' +
+      '<dt>Guide for users</dt><dd>' + (s.docsUrl ? '<a href="' + A.esc(s.docsUrl) + '" target="_blank" rel="noopener">Sales Forecast Tool (Notion)</a>' : '—') + '</dd>' +
+      '<dt>Test mode</dt><dd>' + (S.p.testMode ? 'On' : 'Off') + '</dd></dl>' +
+      '<p class="muted small">These change only through a code update (see the README), so a mid-week change can\'t move submissions between weeks.</p>';
+  }
+
+  // ------------------------------------------------------------------ events
+  function userByEmail(e) { return S.p.users.filter(function (u) { return u.email === e; })[0]; }
+  function onChange(e) {
+    if (e.target.closest('#a-user-form')) { readForm(); if (e.target.name === 'access') { S.confirm = null; render(); } }
+    if (e.target.closest('#a-folder-form')) S.confirm = null;
+  }
+  function onClick(e) {
+    var t = e.target.closest('button'); if (!t || S.busy) return;
+    if (t.hasAttribute('data-cancel')) { S.confirm = null; render(); return; }
+    if (t.hasAttribute('data-cancel-form')) { S.form = null; S.nrForm = null; S.confirm = null; render(); return; }
+    if (t.hasAttribute('data-invite')) { S.form = { mode: 'invite', access: 'ae', sendInvite: true }; S.confirm = null; render(); focusForm(); return; }
+    var k;
+    if ((k = t.getAttribute('data-edit'))) {
+      var u = userByEmail(k);
+      S.form = { mode: 'edit', email: u.email, name: u.name, access: u.access, admin: u.admin, ownerId: u.hubspotOwnerId || '', wasAe: u.isAe };
+      S.confirm = null; render(); focusForm(); return;
+    }
+    if ((k = t.getAttribute('data-deact'))) { ask('deact:' + k, 'apiAdminChange', [{ action: 'deactivate', email: k }, {}], 'Deactivating…'); return; }
+    if ((k = t.getAttribute('data-react'))) { ask('react:' + k, 'apiAdminChange', [{ action: 'reactivate', email: k }, {}], 'Reactivating…'); return; }
+    if ((k = t.getAttribute('data-resend'))) { ask('resend:' + k, 'apiAdminResendInvite', [k], 'Sending…'); return; }
+    if ((k = t.getAttribute('data-behalf'))) { A.selectTab('submission'); Submission.reload(k); window.scrollTo(0, 0); return; }
+    if (t.hasAttribute('data-refresh')) { ask('refresh', 'apiAdminRefresh', [], 'Refreshing HubSpot data…'); return; }
+    if (t.hasAttribute('data-trigger')) { ask('trigger', 'apiAdminInstallTrigger', [], 'Installing…'); return; }
+    if (t.hasAttribute('data-verify')) { ask('verify', 'apiAdminVerifySnapshots', [], 'Checking snapshots…'); return; }
+    if (t.hasAttribute('data-nradd')) { S.nrForm = { edit: false }; S.confirm = null; render(); return; }
+    if ((k = t.getAttribute('data-nredit'))) { var o = S.p.nonRoster.filter(function (x) { return x.ownerId === k; })[0]; S.nrForm = { edit: true, ownerId: k, name: o.name, reason: o.reason }; S.confirm = null; render(); return; }
+    if ((k = t.getAttribute('data-nrrm'))) { ask('nrrm:' + k, 'apiAdminChange', [{ action: 'nonroster_remove', ownerId: k }, {}], 'Saving…'); return; }
+    if ((k = t.getAttribute('data-do'))) {
+      if (k === 'form') { var f = S.form; run('apiAdminChange', [formChange(), { sendInvite: f.mode === 'invite' && f.sendInvite !== false }], f.mode === 'invite' ? 'Inviting…' : 'Saving…'); return; }
+      if (k === 'folder') { run('apiAdminSetFolder', [S.folderDraft.year, S.folderDraft.folder], 'Checking the folder…'); return; }
+      if (k === 'nrsave') { run('apiAdminChange', [{ action: 'nonroster_set', ownerId: S.nrForm.ownerId, reason: S.nrForm.reason }, {}], 'Saving…'); return; }
+      var pend = PENDING[k]; if (pend) run(pend[0], pend[1], pend[2]);
+      return;
+    }
+  }
+  function focusForm() { var i = document.querySelector('#a-user-form input:not([readonly]), #a-user-form select'); if (i) i.focus(); }
+
+  document.addEventListener('submit', function (e) {
+    var f = e.target; if (!f.closest || !f.closest('#tab-admin')) return;
+    e.preventDefault();
+    if (f.id === 'a-user-form') { readForm(); S.confirm = 'form'; render(); }
+    if (f.id === 'a-folder-form') { S.folderDraft = { year: Number(f.year.value), folder: f.folder.value }; S.confirm = 'folder'; render(); }
+    if (f.id === 'a-nr-form') {
+      S.nrForm.reason = f.reason.value; if (f.ownerId) S.nrForm.ownerId = f.ownerId.value;
+      S.confirm = 'nrsave'; render();
+    }
+  });
+
+  return { init: init, _state: S };
+})();
+
+document.addEventListener('DOMContentLoaded', function () { App.onFirstShow('admin', Admin.init); });
+</script>

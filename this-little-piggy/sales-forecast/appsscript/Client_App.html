@@ -65,13 +65,15 @@ var App = (function () {
       b.addEventListener('click', function () { selectTab(b.getAttribute('data-tab')); });
       b.addEventListener('keydown', function (e) {
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        var n = btns[(i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length]; n.focus(); n.click();
+        var vis = btns.filter(function (x) { return !x.hidden; }), j = vis.indexOf(b);
+        var n = vis[(j + (e.key === 'ArrowRight' ? 1 : vis.length - 1)) % vis.length]; n.focus(); n.click();
       });
     });
     selectTab(defaultTab);
   }
 
   function setHeader(viewer, pulledAt, tieOutOk) {
+    var adminTab = document.getElementById('tabbtn-admin'); if (adminTab) adminTab.hidden = !viewer.isAdmin;
     if (viewer.rollover) banner('warn', '<strong>Year rollover (admins).</strong> ' + esc(viewer.rollover.message), 'rollover-banner');
     document.getElementById('viewer').textContent = viewer.name + ' · ' + ({ ae: 'AE', ae_leader: 'AE and leadership', leadership: 'Leadership', admin: 'Admin' }[viewer.role] || viewer.role) +
       (viewer.isAdmin && viewer.role !== 'admin' ? ' · Admin' : '');
