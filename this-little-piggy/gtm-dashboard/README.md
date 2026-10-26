@@ -115,12 +115,12 @@ It runs weekly as a Claude Code Routine (Mondays 08:00 ET). The manual procedure
 Repository `willritchings-findigs/this-little-piggy`. Connectors: HubSpot, Notion, Google Drive, Slack. Schedule: weekly, Monday 08:00 America/New_York. Prompt:
 
 ```
-Run the gtm-dashboard-refresh skill now, exactly as written in its SKILL.md. This is an unattended run: if the Notion Data Definitions diff shows drift, a HubSpot property is missing, a pull count does not match its total, build.py exits non-zero, or qa.py fails, stop at that step. On any stop, DM me (Slack user U0BQ5AZK284) the failure note — do not post anything to #gtm_leadership in that case. #gtm_leadership should only ever receive a post when the refresh fully succeeds. Never edit anything in HubSpot or Notion.
+Run the gtm-dashboard-refresh skill now, exactly as written in its SKILL.md. First run `git fetch origin main && git checkout main && git pull origin main` and do all work and commits on `main`. This is an unattended run: if the Notion Data Definitions diff shows drift, a HubSpot property is missing, a pull count does not match its total, build.py exits non-zero, or qa.py fails, stop at that step. On any stop, DM me (Slack user U0BQ5AZK284) the failure note — do not post anything to #gtm_leadership in that case. #gtm_leadership should only ever receive a post when the refresh fully succeeds. Never edit anything in HubSpot or Notion.
 ```
 
 Before the channel post reaches anyone but you, confirm the Slack identity the Routine runs under is actually a member of `#gtm_leadership` (private channel) — a DM to `U0BQ5AZK284` works regardless, but the success post will silently fail otherwise.
 
-The Routine must run on the `main` branch: the skill stops before step 0 on any other branch, and `data/kpi_history.json` only accumulates on `main`. The Routine's environment setup script should run `python3 -m pip install -r this-little-piggy/gtm-dashboard/requirements.txt` (see Prerequisites), and its secrets must include `GTM_DASHBOARD_SA_KEY`. Check with `python publish.py --check`.
+The Routine must run on the `main` branch. Routine sessions start on a throwaway `claude/*` branch, so the prompt above checks out `main` first, and the Routine's repository setting must allow pushes to branches other than `claude/*` (unrestricted branch push), or the step 6.2 push fails. The skill stops before step 0 if `main` can't be checked out, and `data/kpi_history.json` only accumulates on `main`. The Routine's environment setup script should run `python3 -m pip install -r this-little-piggy/gtm-dashboard/requirements.txt` (see Prerequisites), and its secrets must include `GTM_DASHBOARD_SA_KEY`. Check with `python publish.py --check`.
 
 Test with **Run now** before trusting the schedule.
 

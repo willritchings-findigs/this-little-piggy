@@ -7,4 +7,3 @@ Self-contained HTML dashboard for revenue leadership, rebuilt weekly from HubSpo
 - Read-only against HubSpot. Never edit a deal, company, or Notion record from this repo.
 - Manual runbook and decisions log: `gtm-dashboard/README.md`. Data file shapes: `gtm-dashboard/schema.md`.
 
-Add this section to the repo-root `CLAUDE.md` (create the file if it doesn't exist); keep any hygiene-agent content already there.
