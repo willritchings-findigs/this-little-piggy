@@ -26,7 +26,7 @@ The kit lives in `this-little-piggy/gtm-dashboard/` in `willritchings-findigs/th
 
 ### Before step 0: right branch, right kit
 
-Check out `config.distribution.git_branch`. If the checkout is on any other branch, or its `config.json` has no `sdr_section` or `compare_vs` block (an older kit), stop. `data/kpi_history.json` only accumulates if every refresh builds and commits on that one branch.
+Unattended runs may start on a throwaway `claude/*` branch; the Routine prompt checks out `config.distribution.git_branch` (`git fetch origin <branch> && git checkout <branch> && git pull origin <branch>`) before invoking this skill. Do that checkout yourself if it hasn't happened and it succeeds. If the checkout is on any other branch after that (checkout failed, or the branch can't be pushed to), or its `config.json` has no `sdr_section` or `compare_vs` block (an older kit), stop. `data/kpi_history.json` only accumulates if every refresh builds and commits on that one branch.
 
 ### 0. Preflight: definitions agree
 
@@ -86,11 +86,11 @@ It checks:
 
 Only reached when steps 0–5 all passed.
 
-1. **Upload** the HTML to Drive folder `config.distribution.gdrive_folder_id` (`config.distribution.gdrive_folder_path`), keeping its file name. Each week is its own file; never overwrite a prior week.
-   - **Today this fails on every run.** The Drive connector's `create_file` needs the whole file inline in one tool call, and the HTML is several hundred KB.
-   - Don't retype the file into a tool call and don't retry. Treat the upload as failed and go to 6.4.
-   - The fix, a service-account resumable upload, is specced in `publish_spec.md` and not built.
-2. **Commit and push** `data/`, `runs/runs.jsonl`, `output/tieout.md` and `output/slack_post.txt` to `config.distribution.git_branch`, with message `dashboard refresh <as_of>`. Do this whether or not the upload worked. Include the HTML only if the repo owner has asked for file history. **A failed commit or push is a stop**: send the failure note and don't post.
+1. **Upload** the HTML with `python publish.py output/findigs_gtm_executive_dashboard_<as_of>.html` (from `gtm-dashboard/`). It streams the file to Drive folder `config.distribution.gdrive_folder_id` (`config.distribution.gdrive_folder_path`) as a service account, keeping its file name, and prints only the Drive link on stdout. Each week is its own file; it never overwrites a prior week.
+   - Exit 0: the stdout line is the Drive link.
+   - Exit 5 (not configured: `GTM_DASHBOARD_SA_KEY` unset or google-auth missing) or 6 (upload failed, including a same-named file already in the folder): treat the upload as failed and go to 6.4 with the stderr line as the reason. Don't re-run it (it retries transient errors itself).
+   - Never upload through the Drive connector's `create_file`; it needs the whole file inline in one tool call.
+2. **Commit and push** `data/`, `runs/runs.jsonl`, `output/tieout.md` and `output/slack_post.txt` to `config.distribution.git_branch`, with message `dashboard refresh <as_of>`. Also commit `output/qa_screenshot.png` and the built HTML: the repo owner asked for file history (2026-09-24). Do this whether or not the upload worked. Commit straight to the branch and push; no PR. **A failed commit or push is a stop**: send the failure note and don't post.
 3. **Upload succeeded:**
    - Post `output/slack_post.txt` to `#gtm_leadership` verbatim, replacing `<DRIVE_LINK>` with the Drive link. Every number in it comes from the build and matches `tieout.md`; don't type or edit numbers.
    - Then DM Will the success note.
