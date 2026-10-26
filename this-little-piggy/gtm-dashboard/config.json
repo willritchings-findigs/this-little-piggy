@@ -178,6 +178,8 @@
     "schedule": "Claude Code Routine, Mondays 08:00 America/New_York",
     "git_branch": "main",
     "git_branch_note": "Branch that refresh commits (data/, runs/, output/tieout.md, output/slack_post.txt) go to. The Routine must check out this branch; a run on any other branch stops before step 0. data/kpi_history.json only accumulates correctly if every refresh commits here.",
+    "dashboard_link_pattern": "https://github.com/willritchings-findigs/this-little-piggy/blob/main/this-little-piggy/gtm-dashboard/output/findigs_gtm_executive_dashboard_{as_of}.html",
+    "dashboard_link_note": "Confirmed 2026-10-26: Drive upload dropped from the skill; success = built, QA'd and pushed to git_branch, and the #gtm_leadership post links the pushed HTML. gdrive_* fields are retained for publish.py (not run).",
     "slack_dm_user_id": "U0BQ5AZK284",
     "slack_dm_note": "All errors/stops go here as a DM, never to slack_channel_id. slack_channel_id only receives successful-refresh posts."
   },
