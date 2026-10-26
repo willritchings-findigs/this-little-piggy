@@ -1,6 +1,6 @@
 ---
 name: "gtm-dashboard-refresh"
-description: "Refresh the Findigs GTM executive dashboard from live HubSpot data and publish it — re-pull open, closed-won, and created-this-year deals (also backing the SDR pipeline generation section added 2026-09-23/28, no separate pull), rebuild the self-contained HTML with gtm-dashboard/build.py — including Compare vs period-over-period KPI badges vs a prior snapshot — tie out against reporting-API controls, QA the render, and upload to the Reporting & Analytics Drive folder. On success, post to #gtm_leadership. On any stop or failure, DM Will in Slack instead — #gtm_leadership only ever sees successful refreshes. Use this whenever anyone asks to refresh, rebuild, re-run, update, or re-publish the GTM/exec/pipeline/bookings/forecast/SDR dashboard, or the Monday dashboard, and on every scheduled Routine run. Also use it when someone asks why a number looks off, or how it compares to a prior week — the tie-out, DQ output, and Compare vs badges answer that. Never edits HubSpot or Notion."
+description: "Refresh the Findigs GTM executive dashboard from live HubSpot data and publish it — re-pull open, closed-won, and created-this-year deals (also backing the SDR pipeline generation section added 2026-09-23/28, no separate pull), rebuild the self-contained HTML with gtm-dashboard/build.py — including Compare vs period-over-period KPI badges vs a prior snapshot — tie out against reporting-API controls, QA the render, commit it to the repo, and post it to #gtm_leadership. Success means the dashboard was rebuilt, QA'd and pushed to the repo; no Drive upload is required. On any stop or failure, DM Will in Slack instead — #gtm_leadership only ever sees successful refreshes. Use this whenever anyone asks to refresh, rebuild, re-run, update, or re-publish the GTM/exec/pipeline/bookings/forecast/SDR dashboard, or the Monday dashboard, and on every scheduled Routine run. Also use it when someone asks why a number looks off, or how it compares to a prior week — the tie-out, DQ output, and Compare vs badges answer that. Never edits HubSpot or Notion."
 ---
 
 # GTM dashboard refresh
@@ -9,7 +9,7 @@ Rebuilds `output/findigs_gtm_executive_dashboard_<as_of>.html` from a fresh HubS
 
 What each metric means (fields, weighting, segment bands, fiscal calendar, SDR rules, the Compare vs delta) lives in Notion → Revenue Operations → Reporting & Analytics → **Data Definitions** and its **Metric Definitions** database. `config.json` mirrors them for the build. This skill owns *process* only. To change a definition, change it in Notion and `config.json`, not here.
 
-**Delivery is split by outcome.** Only a refresh that reached Drive is posted to `#gtm_leadership` (`config.distribution.slack_channel_id`). Every stop, error, QA or tie-out failure, and every built-but-not-published result goes to Will as a Slack DM (`config.distribution.slack_dm_user_id`) in unattended runs, or to the chat in on-demand runs. `#gtm_leadership` never sees a failure, a stack trace, or a dashboard nobody can open.
+**Delivery is split by outcome.** Only a refresh whose build, QA and push to the repo all succeeded is posted to `#gtm_leadership` (`config.distribution.slack_channel_id`). Every stop, error, QA or tie-out failure, and failed push goes to Will as a Slack DM (`config.distribution.slack_dm_user_id`) in unattended runs, or to the chat in on-demand runs. `#gtm_leadership` never sees a failure, a stack trace, or a link to a file that wasn't pushed. Drive upload is no longer part of this skill; Will uploads to Drive himself if wanted. `publish.py` stays in the kit but is not run.
 
 The kit lives in `this-little-piggy/gtm-dashboard/` in `willritchings-findigs/this-little-piggy`. Work there. Read `README.md` once per run: its Step 2 is the authoritative list of control queries. Read `schema.md` when writing data files. Dates are America/New_York throughout; `as_of` is today's ET date unless someone gives one.
 
@@ -82,22 +82,13 @@ It checks:
 
 **Exit 4 → stop**, quoting the failed checks. That includes a browser that won't launch, and, with `--require-render`, a missing Playwright. On demand, a syntax-only pass must be mentioned in the chat summary.
 
-### 6. Deliver: upload, then commit, then post
+### 6. Deliver: commit, then post
 
 Only reached when steps 0–5 all passed.
 
-1. **Upload** the HTML with `python publish.py output/findigs_gtm_executive_dashboard_<as_of>.html` (from `gtm-dashboard/`). It streams the file to Drive folder `config.distribution.gdrive_folder_id` (`config.distribution.gdrive_folder_path`) as a service account, keeping its file name, and prints only the Drive link on stdout. Each week is its own file; it never overwrites a prior week.
-   - Exit 0: the stdout line is the Drive link.
-   - Exit 5 (not configured: `GTM_DASHBOARD_SA_KEY` unset or google-auth missing) or 6 (upload failed, including a same-named file already in the folder): treat the upload as failed and go to 6.4 with the stderr line as the reason. Don't re-run it (it retries transient errors itself).
-   - Never upload through the Drive connector's `create_file`; it needs the whole file inline in one tool call.
-2. **Commit and push** `data/`, `runs/runs.jsonl`, `output/tieout.md` and `output/slack_post.txt` to `config.distribution.git_branch`, with message `dashboard refresh <as_of>`. Also commit `output/qa_screenshot.png` and the built HTML: the repo owner asked for file history (2026-09-24). Do this whether or not the upload worked. Commit straight to the branch and push; no PR. **A failed commit or push is a stop**: send the failure note and don't post.
-3. **Upload succeeded:**
-   - Post `output/slack_post.txt` to `#gtm_leadership` verbatim, replacing `<DRIVE_LINK>` with the Drive link. Every number in it comes from the build and matches `tieout.md`; don't type or edit numbers.
-   - Then DM Will the success note.
-4. **Upload failed** (the size limit above, or any Drive error):
-   - Don't post to `#gtm_leadership`.
-   - DM Will the built-but-not-published note: the file's repo path and branch, plus the full `slack_post.txt` with `<DRIVE_LINK>` replaced by that path, so he can paste it once he's uploaded the file.
-   - On demand, put the same note in the chat instead.
+1. **Commit and push** `data/`, `runs/runs.jsonl`, `output/tieout.md`, `output/slack_post.txt`, `output/qa_screenshot.png` and the built HTML to `config.distribution.git_branch`, with message `dashboard refresh <as_of>`. Commit straight to the branch and push; no PR. **A failed commit or push is a stop**: send the failure note and don't post.
+2. **Post** `output/slack_post.txt` to `#gtm_leadership` verbatim, replacing `<DRIVE_LINK>` with the link built from `config.distribution.dashboard_link_pattern` (`{as_of}` filled in; the file is now on the branch). Every number in it comes from the build and matches `tieout.md`; don't type or edit numbers. The Slack connector can't attach files, so the post carries the link to the pushed HTML.
+3. DM Will the success note.
 
 ### 7. Run summary (chat or Routine log)
 
@@ -120,10 +111,10 @@ Stop, and send the failure note (DM unattended, chat on demand; never `#gtm_lead
 - `build.py` exits non-zero after at most one controlled re-run of steps 2–3 (step 4)
 - `qa.py` exits non-zero (step 5)
 - the commit or push fails (step 6.2)
-- the HubSpot or Notion connector is unreachable at the step that needs it. On demand, an unreachable Notion can instead be put to the user (step 0.6). A failed Drive upload is not a stop: it's the built-but-not-published path.
+- the HubSpot or Notion connector is unreachable at the step that needs it. On demand, an unreachable Notion can instead be put to the user (step 0.6). 
 - **the Slack connector is unreachable.** There's no DM to send, so write the note into the Routine log or chat instead, and never retry into the channel.
 
-Not stops: a blank `deal_source_drill_down`, an owner ID `search_owners` can't resolve, a changed stage probability, a failed Drive upload.
+Not stops: a blank `deal_source_drill_down`, an owner ID `search_owners` can't resolve, a changed stage probability.
 
 Never:
 
@@ -135,7 +126,7 @@ Never:
 
 ## Message formats
 
-**`#gtm_leadership` post (only when the upload succeeded):** `output/slack_post.txt`, verbatim, with `<DRIVE_LINK>` filled in. `build.py` generates it, in this shape:
+**`#gtm_leadership` post (only when the push succeeded):** `output/slack_post.txt`, verbatim, with `<DRIVE_LINK>` replaced by the repo link to the pushed HTML. `build.py` generates it, in this shape:
 
 ```
 GTM executive dashboard — refreshed <Mon D, YYYY>
@@ -150,16 +141,7 @@ Sources and methodology are in the file. <High-severity DQ count, or headline ch
 **Success DM to Will:**
 
 ```
-Dashboard refresh succeeded, posted to #gtm_leadership. <Drive link>
-```
-
-**Built-but-not-published DM to Will** (or chat on demand):
-
-```
-GTM dashboard <as_of> built and QA'd, not published: the Drive upload failed (<reason>).
-File: <repo path> on <branch>, commit <sha>.
-Ready-to-post text, once uploaded:
-<slack_post.txt with <DRIVE_LINK> replaced by the repo path>
+Dashboard refresh succeeded, posted to #gtm_leadership. <repo link>
 ```
 
 **Failure note** (DM to Will unattended, chat on demand):
@@ -168,7 +150,7 @@ Ready-to-post text, once uploaded:
 GTM dashboard refresh did not publish — <as_of>
 Stopped at step <n> (<name>): <one sentence>.
 <the measure / property / row / check that failed, verbatim from the tool or build output>
-Last successful build: <as_of from the last runs/runs.jsonl line>. Prior file remains current in Drive.
+Last successful build: <as_of from the last runs/runs.jsonl line>. Prior file remains current in the repo.
 ```
 
 `#gtm_leadership` isn't told a run happened when it doesn't publish. From the channel's side, no news means nothing changed since the last post.
