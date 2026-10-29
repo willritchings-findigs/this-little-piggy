@@ -1,7 +1,7 @@
-GTM executive dashboard — refreshed Oct 26, 2026
-Bookings QTD $277,070.25 (2 deals) · YTD $7,848,375.37 (75)
-Gross open pipeline $74,561,888.33 · weighted $11,526,909.89 · quarter forecast $5,327,640.79 · year forecast $13,624,934.09
-Pipeline created QTD $15,828,463.50 (47) · YTD $173,452,022.57 (716)
-SDR opportunities $173,349,612.57 (715) · trailing 30d: booked 59, held 27, opportunities 53
+GTM executive dashboard — refreshed Oct 29, 2026
+Bookings QTD $119,282.25 (2 deals) · YTD $7,690,587.37 (75)
+Gross open pipeline $75,223,614.63 · weighted $11,965,259.77 · quarter forecast $5,313,971.59 · year forecast $13,611,264.89
+Pipeline created QTD $16,973,568.50 (56) · YTD $174,597,127.57 (725)
+SDR opportunities $174,494,717.57 (724) · trailing 30d: booked 63, held 31, opportunities 57
 <DRIVE_LINK>
 Sources and methodology are in the file. 3 High-severity data-quality flag(s) — see tieout.md.

@@ -137,6 +137,7 @@ deals = [derive_deal(r, False) for r in OPEN_RAW] + [derive_deal(r, True) for r 
 open_ = [x for x in deals if not x["won"]]; won = [x for x in deals if x["won"]]
 if any(x["stageId"] in WON_IDS or x["stageId"] in LOST_IDS for x in open_): fail(3, "deals_open.json contains closed deals")
 if any(x["stageId"] not in WON_IDS for x in won): fail(3, "deals_won.json contains a non-won stage")
+if any(x["close"] and x["close"] > AS_OF for x in won): fail(3, "deals_won.json contains a deal with closedate after the as-of date; Bookings YTD is Jan 1 through as_of (pull with closedate <= as_of)")
 
 # ----------------------------------------------------------------------------- derive pipeline-generation deals
 SRC_GROUP = {"IB": "Inbound", "OB": "Outbound", "EV": "Event", "RE": "Referral", "DA": "Data provider", "UK": "Unknown"}
@@ -262,7 +263,7 @@ stages_meta = [dict(id=s["id"], label=s["label"], prob=s["probability"], pipe=("
 # ----------------------------------------------------------------------------- methodology + DQ (dynamic counts)
 kpis = [
     dict(k="Bookings QTD", p=["amount", "dealstage", "closedate", "pipeline"], f=f"dealstage IN won stages AND closedate {WIN['qtd']['start']}..{WIN['qtd']['end']} (ET)", formula="Σ amount", x="Renewal pipeline; Closed Lost", n=f"{len(q_won)} deals"),
-    dict(k="Bookings YTD", p=["amount", "dealstage", "closedate", "pipeline"], f=f"dealstage IN won stages AND closedate {WIN['ytd']['start']}..{WIN['ytd']['end']} (ET)", formula="Σ amount", x="Renewal pipeline; Closed Lost", n=f"{len(won)} deals"),
+    dict(k="Bookings YTD", p=["amount", "dealstage", "closedate", "pipeline"], f=f"dealstage IN won stages AND closedate {WIN['ytd']['start']}..{AS_OF} (ET)", formula="Σ amount", x="Renewal pipeline; Closed Lost", n=f"{len(won)} deals"),
     dict(k="Average sales price", p=["amount"], f="same as Bookings YTD", formula="Σ amount ÷ count", x="none beyond scope", n=f"{len(won)} deals"),
     dict(k="Average sales cycle", p=["createdate", "closedate"], f="same as Bookings YTD", formula="mean(closedate − createdate) in calendar days (ET)", x=f"tile: none (migration cohort tagged); secondary figure excludes createdate < {CFG['migration']['date_cutoff']}", n=f"{len(won)} all / {n_clean} post-cutoff"),
     dict(k="New Logo bookings", p=["pipeline", "amount"], f=f"Bookings YTD AND pipeline = {NL_ID}", formula="Σ amount; % = ÷ Bookings YTD", x="—", n=f"{sum(1 for x in won if x['pipe']=='N')} deals"),

@@ -1,6 +1,6 @@
 {
   "_about": "Confirmed decisions governing the Findigs GTM executive dashboard. Notion 'Data Definitions' is the system of record; this file is the bundled fallback and must match it. The refresh skill stops on any mismatch.",
-  "version": "2026-10-05",
+  "version": "2026-10-29",
   "portal_id": "243635806",
   "timezone": "America/New_York",
   "fiscal_year": {
@@ -113,7 +113,7 @@
   },
   "populations": {
     "open": "pipeline in scope AND dealstage not in terminal_stages",
-    "won_fy": "dealstage in terminal_stages.won AND closedate >= FY start",
+    "won_fy": "dealstage in terminal_stages.won AND closedate between FY start and as_of date inclusive (ET); year-to-date = Jan 1 through today, per Notion Bookings YTD 2026-10-27. Full-year goals/forecast windows still use Jan 1 - Dec 31",
     "created_fy": "pipeline = new_logo AND createdate >= FY start",
     "sdr_opportunity": "pipeline = new_logo AND createdate >= FY start AND sdr_owner IS NOT NULL (subset of created_fy; no separate pull)"
   },

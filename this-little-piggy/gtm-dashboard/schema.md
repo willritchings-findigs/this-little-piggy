@@ -38,9 +38,9 @@ Array of `search_crm_objects` results, unchanged:
 
 Filter: `pipeline IN (new_logo, upsell_expansion)` AND `dealstage NOT IN (all four terminal stage IDs)`. Properties: the `pull_properties` list in `config.json`. Paginate with `offset` until `total` is reached; `total` must equal the array length.
 
-## `deals_won.json` — closed-won, close date on or after FY start
+## `deals_won.json` — closed-won, close date from FY start through the as-of date
 
-Same shape. Filter: `dealstage IN (won stage IDs)` AND `closedate >= <FY start>`.
+Same shape. Filter: `dealstage IN (won stage IDs)` AND `closedate >= <FY start>` AND `closedate < <as_of + 1 day 00:00 ET, as UTC>` (YTD = Jan 1 through today).
 
 ## `deals_created.json` — New Logo, created on or after FY start, any stage
 

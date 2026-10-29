@@ -44,7 +44,7 @@ It runs weekly as a Claude Code Routine (Mondays 08:00 ET). The manual procedure
 
 **2. Controls.** Eleven `query_crm_data` aggregates → `data/controls.json` (keys in `schema.md`). Run them before the record pulls, in the same session, so both see the same population:
 1. **open**: `pipeline, COUNT(*), SUM(amount), SUM(hs_projected_amount), SUM(weighted_amount)` for open stages in both pipelines → `open_count`, `open_gross`, `open_hs_projected_amount`, `open_weighted_amount_stored` (summed across pipelines)
-2. **won FY**: `pipeline, COUNT(*), SUM(amount), SUM(acv), SUM(units__c)` for won stages, `closedate` in FY → `won_count`, `won_amount`, `won_acv`, `won_units`
+2. **won FY**: `pipeline, COUNT(*), SUM(amount), SUM(acv), SUM(units__c)` for won stages, `closedate` from FY start through as_of (inclusive, ET; Notion Bookings YTD, 2026-10-27) → `won_count`, `won_amount`, `won_acv`, `won_units`
 3. **created FY by record source**: `hs_object_source_label, COUNT(*), SUM(amount)` for New Logo, `createdate` in FY → `created_by_record_source`, and its totals → `created_count`, `created_amount`
 4. **created FY by source**: same population `GROUP BY deal_source_drill_down` → `created_by_drill_down`. The API reports blank values as "Unassigned", which is the bucket `build.py` puts them in.
 5. **created FY by Swan score**: same population `GROUP BY company.swan_score` → `created_swan` (blank → key `"null"`)

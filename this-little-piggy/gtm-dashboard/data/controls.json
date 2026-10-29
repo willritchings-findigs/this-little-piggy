@@ -1,22 +1,22 @@
 {
- "open_count": 110,
- "open_gross": 74561888.33,
- "open_hs_projected_amount": 12881575.763,
- "open_weighted_amount_stored": 3153234.6325,
+ "open_count": 111,
+ "open_gross": 75223614.63,
+ "open_hs_projected_amount": 13287248.393,
+ "open_weighted_amount_stored": 3369267.3825,
  "won_count": 75,
- "won_amount": 7848375.37,
- "won_units": 135120,
- "won_acv": 4180951.49,
- "created_count": 716,
- "created_amount": 173452022.57,
+ "won_amount": 7690587.37,
+ "won_units": 133020,
+ "won_acv": 4023163.49,
+ "created_count": 725,
+ "created_amount": 174597127.57,
  "created_by_record_source": {
   "SALESFORCE": {
    "n": 512,
    "a": 95439114.6
   },
   "CRM_UI": {
-   "n": 203,
-   "a": 77780987.97
+   "n": 212,
+   "a": 78926092.97
   },
   "MOBILE_IOS": {
    "n": 1,
@@ -39,6 +39,10 @@
   "Conferences Bizdev": {
    "n": 28,
    "a": 3598847.33
+  },
+  "Conferences Outbound": {
+   "n": 1,
+   "a": 58850.0
   },
   "Customer Referral": {
    "n": 2,
@@ -65,16 +69,16 @@
    "a": 150010.01
   },
   "Meta Ads": {
-   "n": 46,
-   "a": 3807173.2
+   "n": 47,
+   "a": 3877793.2
   },
   "Outbound AE": {
-   "n": 19,
-   "a": 8939796.1
+   "n": 22,
+   "a": 9136141.1
   },
   "Outbound SDR": {
-   "n": 365,
-   "a": 80647097.94
+   "n": 367,
+   "a": 80907312.94
   },
   "Referral": {
    "n": 1,
@@ -97,8 +101,8 @@
    "a": 56730.24
   },
   "Zoominfo": {
-   "n": 112,
-   "a": 42581591.7
+   "n": 114,
+   "a": 43140666.7
   },
   "Bisnow": {
    "n": 1,
@@ -111,45 +115,45 @@
    "a": 534225
   },
   "4": {
-   "n": 22,
-   "a": 6378294.75
+   "n": 23,
+   "a": 6554844.75
   },
   "3": {
-   "n": 137,
-   "a": 28089790.58
+   "n": 142,
+   "a": 29653270.58
   },
   "null": {
-   "n": 555,
-   "a": 138449712.24
+   "n": 558,
+   "a": 137854787.24
   }
  },
- "sdr_opp_count": 715,
- "sdr_opp_amount": 173349612.57,
+ "sdr_opp_count": 724,
+ "sdr_opp_amount": 174494717.57,
  "sdr_by_channel": {
   "Outbound": {
-   "n": 433,
-   "a": 93698614.64
+   "n": 438,
+   "a": 94155174.64
   },
   "Inbound": {
-   "n": 175,
-   "a": 34367967.4
+   "n": 176,
+   "a": 34438587.4
   },
   "Referral": {
-   "n": 86,
-   "a": 41124841.18
+   "n": 88,
+   "a": 41683916.18
   },
   "Event": {
-   "n": 19,
-   "a": 3682681.35
+   "n": 20,
+   "a": 3741531.35
   },
   "null": {
    "n": 2,
    "a": 475508
   }
  },
- "sdr_meeting_booked_30d": 59,
- "sdr_meeting_held_30d": 27,
- "sdr_opp_from_held_30d": 27,
- "sdr_opp_30d_count": 53,
- "sdr_opp_30d_amount": 17129366
+ "sdr_meeting_booked_30d": 63,
+ "sdr_meeting_held_30d": 31,
+ "sdr_opp_from_held_30d": 31,
+ "sdr_opp_30d_count": 57,
+ "sdr_opp_30d_amount": 17132463.5
 }
