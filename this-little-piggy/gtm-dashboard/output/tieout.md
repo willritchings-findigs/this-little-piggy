@@ -1,25 +1,25 @@
-# Tie-out — as of 2026-10-29 (pulled Oct 29, 2026 10:30 AM ET)
+# Tie-out — as of 2026-11-02 (pulled Nov 2, 2026 9:00 AM ET)
 
 ## Record counts
-- Open (both pipelines): 111
+- Open (both pipelines): 110
 - Closed-won FY: 75
-- New Logo created FY: 725
+- New Logo created FY: 727
 
 ## Headline (unfiltered)
 - Bookings QTD $119,282.25 (2) · YTD $7,690,587.37 (75)
-- Gross open $75,223,614.63 · weighted $11,965,259.77 (stored $3,369,267.38 on 33, fallback $8,595,992.39 on 78)
-- Forecast quarter $5,313,971.59 · year $13,611,264.89
-- Pipeline created QTD $16,973,568.50 (56) · YTD $174,597,127.57 (725)
-- SDR opportunities $174,494,717.57 (724) · trailing 30d: booked 63, held 31, opportunities 57
+- Gross open $74,896,540.38 · weighted $11,902,077.92 (stored $3,323,182.88 on 32, fallback $8,578,895.04 on 78)
+- Forecast quarter $5,267,887.09 · year $13,565,180.39
+- Pipeline created QTD $17,703,308.50 (58) · YTD $175,326,867.57 (727)
+- SDR opportunities $175,224,457.57 (726) · trailing 30d: booked 55, held 26, opportunities 51
 
 ## Tier 1–3 tie-out
 | Measure | Pulled | Control | Delta |
 |---|---|---|---|
-| Open deal count | 111 | 111 | 0 — reconciles |
-| Open gross pipeline (Σ amount) | $75,223,614.63 | $75,223,614.63 | 0.00 — reconciles |
-| Stored weighted_amount, populated open deals only (33) | $3,369,267.38 | $3,369,267.38 | 0.00 — reconciles |
-| Weighted open pipeline as displayed (stored + fallback) | $11,965,259.77 | $3,369,267.38 stored + $8,595,992.39 fallback | composed, not a single API figure |
-| Reference only: Σ amount × hs_deal_stage_probability vs Σ hs_projected_amount | $13,287,248.39 | $13,287,248.39 | 0.00 — reconciles |
+| Open deal count | 110 | 110 | 0 — reconciles |
+| Open gross pipeline (Σ amount) | $74,896,540.38 | $74,896,540.38 | 0.00 — reconciles |
+| Stored weighted_amount, populated open deals only (32) | $3,323,182.88 | $3,323,182.88 | 0.00 — reconciles |
+| Weighted open pipeline as displayed (stored + fallback) | $11,902,077.92 | $3,323,182.88 stored + $8,578,895.04 fallback | composed, not a single API figure |
+| Reference only: Σ amount × hs_deal_stage_probability vs Σ hs_projected_amount | $13,095,666.54 | $13,095,666.54 | 0.00 — reconciles |
 | Closed-won FY count | 75 | 75 | 0 — reconciles |
 | Closed-won FY bookings (Σ amount) | $7,690,587.37 | $7,690,587.37 | 0.00 — reconciles |
 | Closed-won FY units (Σ units__c) | 133,020 | 133,020 | 0 — reconciles |
@@ -28,12 +28,12 @@
 ## Pipeline generation tie-out
 | Measure | Pulled | Control | Delta |
 |---|---|---|---|
-| Created FY count | 725 | 725 | 0 — reconciles |
-| Created FY Σ amount | $174,597,127.57 | $174,597,127.57 | 0.00 — reconciles |
+| Created FY count | 727 | 727 | 0 — reconciles |
+| Created FY Σ amount | $175,326,867.57 | $175,326,867.57 | 0.00 — reconciles |
 | Record source SALESFORCE count | 512 | 512 | 0 — reconciles |
 | Record source SALESFORCE Σ amount | $95,439,114.60 | $95,439,114.60 | 0.00 — reconciles |
-| Record source CRM_UI count | 212 | 212 | 0 — reconciles |
-| Record source CRM_UI Σ amount | $78,926,092.97 | $78,926,092.97 | 0.00 — reconciles |
+| Record source CRM_UI count | 214 | 214 | 0 — reconciles |
+| Record source CRM_UI Σ amount | $79,655,832.97 | $79,655,832.97 | 0.00 — reconciles |
 | Record source MOBILE_IOS count | 1 | 1 | 0 — reconciles |
 | Record source MOBILE_IOS Σ amount | $231,920.00 | $231,920.00 | 0.00 — reconciles |
 | deal_source_drill_down = Bing Ads count | 1 | 1 | 0 — reconciles |
@@ -58,12 +58,12 @@
 | deal_source_drill_down = Google Organic Σ amount | $20,432,930.15 | $20,432,930.15 | 0.00 — reconciles |
 | deal_source_drill_down = LinkedIn Ads count | 3 | 3 | 0 — reconciles |
 | deal_source_drill_down = LinkedIn Ads Σ amount | $150,010.01 | $150,010.01 | 0.00 — reconciles |
-| deal_source_drill_down = Meta Ads count | 47 | 47 | 0 — reconciles |
-| deal_source_drill_down = Meta Ads Σ amount | $3,877,793.20 | $3,877,793.20 | 0.00 — reconciles |
+| deal_source_drill_down = Meta Ads count | 48 | 48 | 0 — reconciles |
+| deal_source_drill_down = Meta Ads Σ amount | $4,172,043.20 | $4,172,043.20 | 0.00 — reconciles |
 | deal_source_drill_down = Outbound AE count | 22 | 22 | 0 — reconciles |
 | deal_source_drill_down = Outbound AE Σ amount | $9,136,141.10 | $9,136,141.10 | 0.00 — reconciles |
-| deal_source_drill_down = Outbound SDR count | 367 | 367 | 0 — reconciles |
-| deal_source_drill_down = Outbound SDR Σ amount | $80,907,312.94 | $80,907,312.94 | 0.00 — reconciles |
+| deal_source_drill_down = Outbound SDR count | 368 | 368 | 0 — reconciles |
+| deal_source_drill_down = Outbound SDR Σ amount | $81,342,802.94 | $81,342,802.94 | 0.00 — reconciles |
 | deal_source_drill_down = Referral count | 1 | 1 | 0 — reconciles |
 | deal_source_drill_down = Referral Σ amount | $187,785.00 | $187,785.00 | 0.00 — reconciles |
 | deal_source_drill_down = Referral Website count | 3 | 3 | 0 — reconciles |
@@ -82,31 +82,31 @@
 | Swan score 5 Σ amount | $534,225.00 | $534,225.00 | 0.00 — reconciles |
 | Swan score 4 count | 23 | 23 | 0 — reconciles |
 | Swan score 4 Σ amount | $6,554,844.75 | $6,554,844.75 | 0.00 — reconciles |
-| Swan score 3 count | 142 | 142 | 0 — reconciles |
-| Swan score 3 Σ amount | $29,653,270.58 | $29,653,270.58 | 0.00 — reconciles |
-| Swan score null count | 558 | 558 | 0 — reconciles |
-| Swan score null Σ amount | $137,854,787.24 | $137,854,787.24 | 0.00 — reconciles |
+| Swan score 3 count | 145 | 145 | 0 — reconciles |
+| Swan score 3 Σ amount | $30,222,403.58 | $30,222,403.58 | 0.00 — reconciles |
+| Swan score null count | 557 | 557 | 0 — reconciles |
+| Swan score null Σ amount | $138,015,394.24 | $138,015,394.24 | 0.00 — reconciles |
 
 ## SDR section tie-out
 | Measure | Pulled | Control | Delta |
 |---|---|---|---|
-| SDR opportunity count | 724 | 724 | 0 — reconciles |
-| SDR opportunity Σ amount | $174,494,717.57 | $174,494,717.57 | 0.00 — reconciles |
-| deal_source_group = Outbound count | 438 | 438 | 0 — reconciles |
-| deal_source_group = Outbound Σ amount | $94,155,174.64 | $94,155,174.64 | 0.00 — reconciles |
-| deal_source_group = Inbound count | 176 | 176 | 0 — reconciles |
-| deal_source_group = Inbound Σ amount | $34,438,587.40 | $34,438,587.40 | 0.00 — reconciles |
+| SDR opportunity count | 726 | 726 | 0 — reconciles |
+| SDR opportunity Σ amount | $175,224,457.57 | $175,224,457.57 | 0.00 — reconciles |
+| deal_source_group = Outbound count | 439 | 439 | 0 — reconciles |
+| deal_source_group = Outbound Σ amount | $94,590,664.64 | $94,590,664.64 | 0.00 — reconciles |
+| deal_source_group = Inbound count | 177 | 177 | 0 — reconciles |
+| deal_source_group = Inbound Σ amount | $34,732,837.40 | $34,732,837.40 | 0.00 — reconciles |
 | deal_source_group = Referral count | 88 | 88 | 0 — reconciles |
 | deal_source_group = Referral Σ amount | $41,683,916.18 | $41,683,916.18 | 0.00 — reconciles |
 | deal_source_group = Event count | 20 | 20 | 0 — reconciles |
 | deal_source_group = Event Σ amount | $3,741,531.35 | $3,741,531.35 | 0.00 — reconciles |
 | deal_source_group = null count | 2 | 2 | 0 — reconciles |
 | deal_source_group = null Σ amount | $475,508.00 | $475,508.00 | 0.00 — reconciles |
-| Meeting booked, trailing 30d (2026-09-30..2026-10-29) | 63 | 63 | 0 — reconciles |
-| Meeting held, trailing 30d (of booked cohort) | 31 | 31 | 0 — reconciles |
-| Held → opportunity, trailing 30d | 31 | 31 | 0 — reconciles |
-| Opportunities generated, trailing 30d (createdate) | 57 | 57 | 0 — reconciles |
-| Opportunities generated Σ amount, trailing 30d | $17,132,463.50 | $17,132,463.50 | 0.00 — reconciles |
+| Meeting booked, trailing 30d (2026-10-04..2026-11-02) | 55 | 55 | 0 — reconciles |
+| Meeting held, trailing 30d (of booked cohort) | 26 | 26 | 0 — reconciles |
+| Held → opportunity, trailing 30d | 26 | 26 | 0 — reconciles |
+| Opportunities generated, trailing 30d (createdate) | 51 | 51 | 0 — reconciles |
+| Opportunities generated Σ amount, trailing 30d | $14,368,019.65 | $14,368,019.65 | 0.00 — reconciles |
 
 ## Data quality flags
 | ID | Severity | Count |
@@ -114,10 +114,10 @@
 | DQ-1 | Medium | 66 won deals blank |
 | DQ-2 | High | 71 of 75 |
 | DQ-3 | High | 4 conflicting sources |
-| DQ-4 | Medium | 78 of 111 open deals · $8,595,992.39 fallback |
-| DQ-5 | Low | 111 open deals |
+| DQ-4 | Medium | 78 of 110 open deals · $8,578,895.04 fallback |
+| DQ-5 | Low | 110 open deals |
 | DQ-6 | Low | 1 deal(s) |
-| DQ-7 | Medium | 10 deals · $3,696,457.48 |
+| DQ-7 | Medium | 22 deals · $9,772,188.13 |
 | DQ-8 | Medium | 8 deals |
 | DQ-9 | Low | 10 open stages |
 | DQ-10 | Low | 1 pipeline |
@@ -131,8 +131,8 @@
 | SDR-2 | Medium | 3 fields, not interchangeable |
 | SDR-3 | Low | 1 non-SDR deal(s) |
 | SDR-4 | High | 0 of 3 segments configured |
-| SDR-5 | Low | 31 of 31 |
-| SDR-6 | Low | 2 of 724 |
+| SDR-5 | Low | 26 of 26 |
+| SDR-6 | Low | 2 of 726 |
 | SDR-7 | Low | 0 recent records |
 
-Output: `output/findigs_gtm_executive_dashboard_2026-10-29.html`
+Output: `output/findigs_gtm_executive_dashboard_2026-11-02.html`

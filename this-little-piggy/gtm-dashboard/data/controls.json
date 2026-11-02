@@ -1,22 +1,22 @@
 {
- "open_count": 111,
- "open_gross": 75223614.63,
- "open_hs_projected_amount": 13287248.393,
- "open_weighted_amount_stored": 3369267.3825,
+ "open_count": 110,
+ "open_gross": 74896540.38,
+ "open_hs_projected_amount": 13095666.543,
+ "open_weighted_amount_stored": 3323182.8825,
  "won_count": 75,
  "won_amount": 7690587.37,
  "won_units": 133020,
  "won_acv": 4023163.49,
- "created_count": 725,
- "created_amount": 174597127.57,
+ "created_count": 727,
+ "created_amount": 175326867.57,
  "created_by_record_source": {
   "SALESFORCE": {
    "n": 512,
    "a": 95439114.6
   },
   "CRM_UI": {
-   "n": 212,
-   "a": 78926092.97
+   "n": 214,
+   "a": 79655832.97
   },
   "MOBILE_IOS": {
    "n": 1,
@@ -69,16 +69,16 @@
    "a": 150010.01
   },
   "Meta Ads": {
-   "n": 47,
-   "a": 3877793.2
+   "n": 48,
+   "a": 4172043.2
   },
   "Outbound AE": {
    "n": 22,
    "a": 9136141.1
   },
   "Outbound SDR": {
-   "n": 367,
-   "a": 80907312.94
+   "n": 368,
+   "a": 81342802.94
   },
   "Referral": {
    "n": 1,
@@ -119,24 +119,24 @@
    "a": 6554844.75
   },
   "3": {
-   "n": 142,
-   "a": 29653270.58
+   "n": 145,
+   "a": 30222403.58
   },
   "null": {
-   "n": 558,
-   "a": 137854787.24
+   "n": 557,
+   "a": 138015394.24
   }
  },
- "sdr_opp_count": 724,
- "sdr_opp_amount": 174494717.57,
+ "sdr_opp_count": 726,
+ "sdr_opp_amount": 175224457.57,
  "sdr_by_channel": {
   "Outbound": {
-   "n": 438,
-   "a": 94155174.64
+   "n": 439,
+   "a": 94590664.64
   },
   "Inbound": {
-   "n": 176,
-   "a": 34438587.4
+   "n": 177,
+   "a": 34732837.4
   },
   "Referral": {
    "n": 88,
@@ -151,9 +151,9 @@
    "a": 475508
   }
  },
- "sdr_meeting_booked_30d": 63,
- "sdr_meeting_held_30d": 31,
- "sdr_opp_from_held_30d": 31,
- "sdr_opp_30d_count": 57,
- "sdr_opp_30d_amount": 17132463.5
+ "sdr_meeting_booked_30d": 55,
+ "sdr_meeting_held_30d": 26,
+ "sdr_opp_from_held_30d": 26,
+ "sdr_opp_30d_count": 51,
+ "sdr_opp_30d_amount": 14368019.65
 }
