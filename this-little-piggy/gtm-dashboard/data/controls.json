@@ -1,22 +1,22 @@
 {
- "open_count": 110,
- "open_gross": 74896540.38,
- "open_hs_projected_amount": 13095666.543,
- "open_weighted_amount_stored": 3323182.8825,
+ "open_count": 111,
+ "open_gross": 74911687.93,
+ "open_hs_projected_amount": 13097181.298,
+ "open_weighted_amount_stored": 3252143.26,
  "won_count": 75,
  "won_amount": 7690587.37,
  "won_units": 133020,
  "won_acv": 4023163.49,
- "created_count": 727,
- "created_amount": 175326867.57,
+ "created_count": 734,
+ "created_amount": 176992322.57,
  "created_by_record_source": {
   "SALESFORCE": {
    "n": 512,
    "a": 95439114.6
   },
   "CRM_UI": {
-   "n": 214,
-   "a": 79655832.97
+   "n": 221,
+   "a": 81321287.97
   },
   "MOBILE_IOS": {
    "n": 1,
@@ -70,15 +70,15 @@
   },
   "Meta Ads": {
    "n": 48,
-   "a": 4172043.2
+   "a": 3818943.2
   },
   "Outbound AE": {
    "n": 22,
    "a": 9136141.1
   },
   "Outbound SDR": {
-   "n": 368,
-   "a": 81342802.94
+   "n": 372,
+   "a": 82902327.94
   },
   "Referral": {
    "n": 1,
@@ -93,16 +93,16 @@
    "a": 199999.15
   },
   "SalesIntel": {
-   "n": 10,
-   "a": 1362884.5
+   "n": 11,
+   "a": 1480584.5
   },
   "Yahoo Organic": {
    "n": 1,
    "a": 56730.24
   },
   "Zoominfo": {
-   "n": 114,
-   "a": 43140666.7
+   "n": 116,
+   "a": 43481996.7
   },
   "Bisnow": {
    "n": 1,
@@ -119,28 +119,28 @@
    "a": 6554844.75
   },
   "3": {
-   "n": 145,
-   "a": 30222403.58
+   "n": 152,
+   "a": 32123308.58
   },
   "null": {
    "n": 557,
-   "a": 138015394.24
+   "a": 137779944.24
   }
  },
- "sdr_opp_count": 726,
- "sdr_opp_amount": 175224457.57,
+ "sdr_opp_count": 733,
+ "sdr_opp_amount": 176889912.57,
  "sdr_by_channel": {
   "Outbound": {
-   "n": 439,
-   "a": 94590664.64
+   "n": 443,
+   "a": 96150189.64
   },
   "Inbound": {
    "n": 177,
-   "a": 34732837.4
+   "a": 34379737.4
   },
   "Referral": {
-   "n": 88,
-   "a": 41683916.18
+   "n": 91,
+   "a": 42142946.18
   },
   "Event": {
    "n": 20,
@@ -151,9 +151,9 @@
    "a": 475508
   }
  },
- "sdr_meeting_booked_30d": 55,
- "sdr_meeting_held_30d": 26,
- "sdr_opp_from_held_30d": 26,
- "sdr_opp_30d_count": 51,
- "sdr_opp_30d_amount": 14368019.65
+ "sdr_meeting_booked_30d": 56,
+ "sdr_meeting_held_30d": 27,
+ "sdr_opp_from_held_30d": 27,
+ "sdr_opp_30d_count": 54,
+ "sdr_opp_30d_amount": 15277252.15
 }
