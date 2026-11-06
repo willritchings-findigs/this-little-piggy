@@ -28,6 +28,12 @@ The kit lives in `this-little-piggy/gtm-dashboard/` in `willritchings-findigs/th
 
 Unattended runs may start on a throwaway `claude/*` branch; the Routine prompt checks out `config.distribution.git_branch` (`git fetch origin <branch> && git checkout <branch> && git pull origin <branch>`) before invoking this skill. Do that checkout yourself if it hasn't happened and it succeeds. If the checkout is on any other branch after that (checkout failed, or the branch can't be pushed to), or its `config.json` has no `sdr_section` or `compare_vs` block (an older kit), stop. `data/kpi_history.json` only accumulates if every refresh builds and commits on that one branch.
 
+**Connectors.** HubSpot, Notion and Slack finish connecting a few seconds into a Routine run (they show as "still connecting" at first), so an early tool search can come back empty while the tools exist. The 2026-11-02 run stopped at step 1 this way and no dashboard was published.
+
+- Find connector tools by server name, never by keyword: ToolSearch `+HubSpot`, `+Notion`, `+Slack`, or exact `select:mcp__<Server>__<tool>` names. Keyword searches ("hubspot", "slack") have returned nothing while the tools existed.
+- If a connector's tools are missing, wait ~20 seconds and search again, up to 3 tries (about a minute), before treating it as unreachable and stopping.
+- If Slack itself is the missing connector, send the failure note as a push notification instead of a Slack DM.
+
 ### 0. Preflight: definitions agree
 
 1. Read `config.json`.
@@ -111,8 +117,8 @@ Stop, and send the failure note (DM unattended, chat on demand; never `#gtm_lead
 - `build.py` exits non-zero after at most one controlled re-run of steps 2–3 (step 4)
 - `qa.py` exits non-zero (step 5)
 - the commit or push fails (step 6.2)
-- the HubSpot or Notion connector is unreachable at the step that needs it. On demand, an unreachable Notion can instead be put to the user (step 0.6). 
-- **the Slack connector is unreachable.** There's no DM to send, so write the note into the Routine log or chat instead, and never retry into the channel.
+- the HubSpot or Notion connector is unreachable at the step that needs it, after the retries under **Connectors** (before step 0). On demand, an unreachable Notion can instead be put to the user (step 0.6). 
+- **the Slack connector is unreachable** (after the same retries). There's no DM to send, so send the failure note as a push notification instead (and write it into the Routine log or chat), and never retry into the channel.
 
 Not stops: a blank `deal_source_drill_down`, an owner ID `search_owners` can't resolve, a changed stage probability.
 
