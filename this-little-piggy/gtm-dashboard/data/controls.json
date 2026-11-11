@@ -1,159 +1,159 @@
 {
- "open_count": 111,
- "open_gross": 74911687.93,
- "open_hs_projected_amount": 13097181.298,
- "open_weighted_amount_stored": 3252143.26,
- "won_count": 75,
- "won_amount": 7690587.37,
- "won_units": 133020,
- "won_acv": 4023163.49,
- "created_count": 734,
- "created_amount": 176992322.57,
- "created_by_record_source": {
-  "SALESFORCE": {
-   "n": 512,
-   "a": 95439114.6
+  "open_count": 115,
+  "open_gross": 80347579.93,
+  "open_hs_projected_amount": 13576664.623,
+  "open_weighted_amount_stored": 3156527.96,
+  "won_count": 76,
+  "won_amount": 7742036.12,
+  "won_units": 133810,
+  "won_acv": 4074612.24,
+  "created_count": 744,
+  "created_amount": 183237778.82,
+  "created_by_record_source": {
+    "SALESFORCE": {
+      "n": 512,
+      "a": 95439114.6
+    },
+    "CRM_UI": {
+      "n": 231,
+      "a": 87566744.22
+    },
+    "MOBILE_IOS": {
+      "n": 1,
+      "a": 231920
+    }
   },
-  "CRM_UI": {
-   "n": 221,
-   "a": 81321287.97
+  "created_by_drill_down": {
+    "Bing Ads": {
+      "n": 1,
+      "a": 20865
+    },
+    "Bing Organic": {
+      "n": 7,
+      "a": 3728134.55
+    },
+    "Chatgpt": {
+      "n": 1,
+      "a": 98490
+    },
+    "Conferences Bizdev": {
+      "n": 28,
+      "a": 3598847.33
+    },
+    "Conferences Outbound": {
+      "n": 1,
+      "a": 58850
+    },
+    "Customer Referral": {
+      "n": 2,
+      "a": 1103223.5
+    },
+    "Direct Traffic": {
+      "n": 61,
+      "a": 5154404.45
+    },
+    "Facebook Organic": {
+      "n": 1,
+      "a": 150228
+    },
+    "Google Ads": {
+      "n": 3,
+      "a": 537942.5
+    },
+    "Google Organic": {
+      "n": 42,
+      "a": 20487366.4
+    },
+    "LinkedIn Ads": {
+      "n": 3,
+      "a": 150010.01
+    },
+    "Meta Ads": {
+      "n": 49,
+      "a": 4113193.2
+    },
+    "Outbound AE": {
+      "n": 22,
+      "a": 9136141.1
+    },
+    "Outbound SDR": {
+      "n": 375,
+      "a": 85144512.94
+    },
+    "Referral": {
+      "n": 1,
+      "a": 187785
+    },
+    "Referral Website": {
+      "n": 3,
+      "a": 265889.25
+    },
+    "Rental History Questionnaire": {
+      "n": 11,
+      "a": 199999.15
+    },
+    "SalesIntel": {
+      "n": 11,
+      "a": 1480584.5
+    },
+    "Yahoo Organic": {
+      "n": 1,
+      "a": 56730.24
+    },
+    "Zoominfo": {
+      "n": 120,
+      "a": 47136581.7
+    },
+    "Bisnow": {
+      "n": 1,
+      "a": 428000
+    }
   },
-  "MOBILE_IOS": {
-   "n": 1,
-   "a": 231920
-  }
- },
- "created_by_drill_down": {
-  "Bing Ads": {
-   "n": 1,
-   "a": 20865.0
+  "created_swan": {
+    "5": {
+      "n": 2,
+      "a": 534225
+    },
+    "4": {
+      "n": 23,
+      "a": 11345769.75
+    },
+    "3": {
+      "n": 153,
+      "a": 29833838.28
+    },
+    "null": {
+      "n": 566,
+      "a": 141523945.79
+    }
   },
-  "Bing Organic": {
-   "n": 7,
-   "a": 3728134.55
+  "sdr_opp_count": 743,
+  "sdr_opp_amount": 183135368.82,
+  "sdr_by_channel": {
+    "Outbound": {
+      "n": 446,
+      "a": 98392374.64
+    },
+    "Inbound": {
+      "n": 180,
+      "a": 34728423.65
+    },
+    "Referral": {
+      "n": 95,
+      "a": 45797531.18
+    },
+    "Event": {
+      "n": 20,
+      "a": 3741531.35
+    },
+    "null": {
+      "n": 2,
+      "a": 475508
+    }
   },
-  "Chatgpt": {
-   "n": 1,
-   "a": 98490.0
-  },
-  "Conferences Bizdev": {
-   "n": 28,
-   "a": 3598847.33
-  },
-  "Conferences Outbound": {
-   "n": 1,
-   "a": 58850.0
-  },
-  "Customer Referral": {
-   "n": 2,
-   "a": 1103223.5
-  },
-  "Direct Traffic": {
-   "n": 61,
-   "a": 5154404.45
-  },
-  "Facebook Organic": {
-   "n": 1,
-   "a": 150228.0
-  },
-  "Google Ads": {
-   "n": 3,
-   "a": 537942.5
-  },
-  "Google Organic": {
-   "n": 40,
-   "a": 20432930.15
-  },
-  "LinkedIn Ads": {
-   "n": 3,
-   "a": 150010.01
-  },
-  "Meta Ads": {
-   "n": 48,
-   "a": 3818943.2
-  },
-  "Outbound AE": {
-   "n": 22,
-   "a": 9136141.1
-  },
-  "Outbound SDR": {
-   "n": 372,
-   "a": 82902327.94
-  },
-  "Referral": {
-   "n": 1,
-   "a": 187785.0
-  },
-  "Referral Website": {
-   "n": 3,
-   "a": 265889.25
-  },
-  "Rental History Questionnaire": {
-   "n": 11,
-   "a": 199999.15
-  },
-  "SalesIntel": {
-   "n": 11,
-   "a": 1480584.5
-  },
-  "Yahoo Organic": {
-   "n": 1,
-   "a": 56730.24
-  },
-  "Zoominfo": {
-   "n": 116,
-   "a": 43481996.7
-  },
-  "Bisnow": {
-   "n": 1,
-   "a": 428000.0
-  }
- },
- "created_swan": {
-  "5": {
-   "n": 2,
-   "a": 534225
-  },
-  "4": {
-   "n": 23,
-   "a": 6554844.75
-  },
-  "3": {
-   "n": 152,
-   "a": 32123308.58
-  },
-  "null": {
-   "n": 557,
-   "a": 137779944.24
-  }
- },
- "sdr_opp_count": 733,
- "sdr_opp_amount": 176889912.57,
- "sdr_by_channel": {
-  "Outbound": {
-   "n": 443,
-   "a": 96150189.64
-  },
-  "Inbound": {
-   "n": 177,
-   "a": 34379737.4
-  },
-  "Referral": {
-   "n": 91,
-   "a": 42142946.18
-  },
-  "Event": {
-   "n": 20,
-   "a": 3741531.35
-  },
-  "null": {
-   "n": 2,
-   "a": 475508
-  }
- },
- "sdr_meeting_booked_30d": 56,
- "sdr_meeting_held_30d": 27,
- "sdr_opp_from_held_30d": 27,
- "sdr_opp_30d_count": 54,
- "sdr_opp_30d_amount": 15277252.15
+  "sdr_meeting_booked_30d": 62,
+  "sdr_meeting_held_30d": 37,
+  "sdr_opp_from_held_30d": 37,
+  "sdr_opp_30d_count": 57,
+  "sdr_opp_30d_amount": 18833263.4
 }
