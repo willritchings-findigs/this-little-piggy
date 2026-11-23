@@ -1,5 +1,9 @@
 [
  {
+  "deal_id": "256156585667",
+  "swan_score": 3
+ },
+ {
   "deal_id": "257264986863",
   "swan_score": 3
  },
@@ -24,11 +28,35 @@
   "swan_score": 3
  },
  {
+  "deal_id": "264062265074",
+  "swan_score": 3
+ },
+ {
   "deal_id": "264789081805",
   "swan_score": 3
  },
  {
   "deal_id": "265047693008",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "269503858366",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "270496615123",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "270607888116",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "271436098256",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "271447191282",
   "swan_score": 3
  },
  {
@@ -76,6 +104,10 @@
   "swan_score": 3
  },
  {
+  "deal_id": "285106841303",
+  "swan_score": 3
+ },
+ {
   "deal_id": "285142459085",
   "swan_score": 3
  },
@@ -108,7 +140,19 @@
   "swan_score": 3
  },
  {
+  "deal_id": "293247198954",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "293288003276",
+  "swan_score": 3
+ },
+ {
   "deal_id": "295020123890",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "296228755141",
   "swan_score": 3
  },
  {
@@ -128,7 +172,19 @@
   "swan_score": 3
  },
  {
+  "deal_id": "301372227315",
+  "swan_score": 3
+ },
+ {
   "deal_id": "301374053050",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "301464974053",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "302940448462",
   "swan_score": 3
  },
  {
@@ -137,6 +193,26 @@
  },
  {
   "deal_id": "305518884548",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "305538257599",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "306013540070",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "306382800617",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "306500185836",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "306537890501",
   "swan_score": 3
  },
  {
@@ -176,7 +252,27 @@
   "swan_score": 3
  },
  {
+  "deal_id": "316065759947",
+  "swan_score": 3
+ },
+ {
   "deal_id": "316224886492",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "316279417532",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "316761352907",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "316902924010",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "316919251687",
   "swan_score": 3
  },
  {
@@ -228,11 +324,23 @@
   "swan_score": 3
  },
  {
+  "deal_id": "318055521992",
+  "swan_score": 3
+ },
+ {
   "deal_id": "318262997741",
   "swan_score": 3
  },
  {
   "deal_id": "318298893041",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "318685633254",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "318739982031",
   "swan_score": 3
  },
  {
@@ -284,6 +392,10 @@
   "swan_score": 3
  },
  {
+  "deal_id": "321156434670",
+  "swan_score": 3
+ },
+ {
   "deal_id": "321636974271",
   "swan_score": 3
  },
@@ -300,7 +412,15 @@
   "swan_score": 3
  },
  {
+  "deal_id": "322981226202",
+  "swan_score": 3
+ },
+ {
   "deal_id": "323197892327",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "323415429841",
   "swan_score": 3
  },
  {
@@ -332,7 +452,19 @@
   "swan_score": 3
  },
  {
+  "deal_id": "324904534773",
+  "swan_score": 3
+ },
+ {
   "deal_id": "324905111233",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "324978206430",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "324988560102",
   "swan_score": 3
  },
  {
@@ -349,6 +481,10 @@
  },
  {
   "deal_id": "325548921571",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "325607459532",
   "swan_score": 3
  },
  {
@@ -416,6 +552,14 @@
   "swan_score": 3
  },
  {
+  "deal_id": "328552853195",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "328552945372",
+  "swan_score": 3
+ },
+ {
   "deal_id": "328558251720",
   "swan_score": 3
  },
@@ -424,7 +568,19 @@
   "swan_score": 3
  },
  {
+  "deal_id": "328736296648",
+  "swan_score": 3
+ },
+ {
   "deal_id": "329142495987",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "329189306092",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "329464762102",
   "swan_score": 3
  },
  {
@@ -492,6 +648,10 @@
   "swan_score": 3
  },
  {
+  "deal_id": "335179400903",
+  "swan_score": 3
+ },
+ {
   "deal_id": "337058250479",
   "swan_score": 3
  },
@@ -505,6 +665,10 @@
  },
  {
   "deal_id": "337550322387",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "337551051506",
   "swan_score": 3
  },
  {
@@ -528,7 +692,15 @@
   "swan_score": 3
  },
  {
+  "deal_id": "340260803309",
+  "swan_score": 3
+ },
+ {
   "deal_id": "340260833992",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "340262828772",
   "swan_score": 3
  },
  {
@@ -576,6 +748,10 @@
   "swan_score": 3
  },
  {
+  "deal_id": "345470209773",
+  "swan_score": 3
+ },
+ {
   "deal_id": "345479550674",
   "swan_score": 3
  },
@@ -596,11 +772,27 @@
   "swan_score": 3
  },
  {
+  "deal_id": "348238139113",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "348760690422",
+  "swan_score": 3
+ },
+ {
   "deal_id": "349207629520",
   "swan_score": 3
  },
  {
+  "deal_id": "349395678963",
+  "swan_score": 3
+ },
+ {
   "deal_id": "349395680957",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "349820955332",
   "swan_score": 3
  },
  {
@@ -616,6 +808,10 @@
   "swan_score": 3
  },
  {
+  "deal_id": "352122363583",
+  "swan_score": 3
+ },
+ {
   "deal_id": "352920519392",
   "swan_score": 3
  },
@@ -628,15 +824,19 @@
   "swan_score": 3
  },
  {
-  "deal_id": "271436098256",
-  "swan_score": 4
+  "deal_id": "355876272862",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "357046123217",
+  "swan_score": 3
+ },
+ {
+  "deal_id": "372353458930",
+  "swan_score": 3
  },
  {
   "deal_id": "276098107121",
-  "swan_score": 4
- },
- {
-  "deal_id": "296228755141",
   "swan_score": 4
  },
  {
@@ -644,23 +844,15 @@
   "swan_score": 4
  },
  {
-  "deal_id": "305538257599",
-  "swan_score": 4
- },
- {
   "deal_id": "315891103479",
   "swan_score": 4
  },
  {
-  "deal_id": "316279417532",
+  "deal_id": "316210420439",
   "swan_score": 4
  },
  {
-  "deal_id": "316919251687",
-  "swan_score": 4
- },
- {
-  "deal_id": "318685633254",
+  "deal_id": "316936683229",
   "swan_score": 4
  },
  {
@@ -672,31 +864,11 @@
   "swan_score": 4
  },
  {
-  "deal_id": "328552853195",
-  "swan_score": 4
- },
- {
-  "deal_id": "337551051506",
-  "swan_score": 4
- },
- {
   "deal_id": "339244906175",
   "swan_score": 4
  },
  {
-  "deal_id": "340260803309",
-  "swan_score": 4
- },
- {
-  "deal_id": "340262828772",
-  "swan_score": 4
- },
- {
-  "deal_id": "348760690422",
-  "swan_score": 4
- },
- {
-  "deal_id": "349395678963",
+  "deal_id": "357046128321",
   "swan_score": 4
  },
  {

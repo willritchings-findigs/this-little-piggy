@@ -1,199 +1,199 @@
 {
-  "portal": "243635806",
-  "timezone": "America/New_York",
-  "as_of": "2026-11-16",
-  "pulled_at_et": "Nov 16, 2026 8:16 AM ET",
-  "stages": [
-    {
-      "id": "3753890497",
-      "label": "Intro & Challenge",
-      "pipeline": "2313721535",
-      "probability": 0.1,
-      "won": false,
-      "lost": false,
-      "order": 0
-    },
-    {
-      "id": "3753890498",
-      "label": "Discovery / Demo",
-      "pipeline": "2313721535",
-      "probability": 0.2,
-      "won": false,
-      "lost": false,
-      "order": 1
-    },
-    {
-      "id": "3753890499",
-      "label": "Business Case & Stakeholder Alignment",
-      "pipeline": "2313721535",
-      "probability": 0.4,
-      "won": false,
-      "lost": false,
-      "order": 2
-    },
-    {
-      "id": "3753890500",
-      "label": "Negotiation & Execution",
-      "pipeline": "2313721535",
-      "probability": 0.6,
-      "won": false,
-      "lost": false,
-      "order": 3
-    },
-    {
-      "id": "3753890501",
-      "label": "Trial",
-      "pipeline": "2313721535",
-      "probability": 0.8,
-      "won": false,
-      "lost": false,
-      "order": 4
-    },
-    {
-      "id": "3753890502",
-      "label": "Closed Won",
-      "pipeline": "2313721535",
-      "probability": 1.0,
-      "won": true,
-      "lost": false,
-      "order": 5
-    },
-    {
-      "id": "3753890503",
-      "label": "Closed Lost",
-      "pipeline": "2313721535",
-      "probability": 0.0,
-      "won": false,
-      "lost": true,
-      "order": 6
-    },
-    {
-      "id": "3752297191",
-      "label": "Intro & Challenge",
-      "pipeline": "2313830082",
-      "probability": 0.2,
-      "won": false,
-      "lost": false,
-      "order": 0
-    },
-    {
-      "id": "3752297192",
-      "label": "Discovery / Demo",
-      "pipeline": "2313830082",
-      "probability": 0.4,
-      "won": false,
-      "lost": false,
-      "order": 1
-    },
-    {
-      "id": "3752297193",
-      "label": "Business case & Stakeholder alignment",
-      "pipeline": "2313830082",
-      "probability": 0.6,
-      "won": false,
-      "lost": false,
-      "order": 2
-    },
-    {
-      "id": "3752297194",
-      "label": "Negotiation & Execution",
-      "pipeline": "2313830082",
-      "probability": 0.8,
-      "won": false,
-      "lost": false,
-      "order": 3
-    },
-    {
-      "id": "3752297195",
-      "label": "Implementation / Contract signed",
-      "pipeline": "2313830082",
-      "probability": 0.9,
-      "won": false,
-      "lost": false,
-      "order": 4
-    },
-    {
-      "id": "3752297196",
-      "label": "Closed Won",
-      "pipeline": "2313830082",
-      "probability": 1.0,
-      "won": true,
-      "lost": false,
-      "order": 5
-    },
-    {
-      "id": "3752297197",
-      "label": "Closed Lost",
-      "pipeline": "2313830082",
-      "probability": 0.0,
-      "won": false,
-      "lost": true,
-      "order": 6
-    }
-  ],
-  "owners": {
-    "1053057926": {
-      "name": "Phil Aroian",
-      "active": true
-    },
-    "167857460": {
-      "name": "Spencer Wuthrich",
-      "active": true
-    },
-    "2111244871": {
-      "name": "Ben de Winter",
-      "active": true
-    },
-    "1032502194": {
-      "name": "Matt Lynch",
-      "active": true
-    },
-    "686754956": {
-      "name": "Clay Stapleford",
-      "active": true
-    },
-    "26451111": {
-      "name": "Ian McLaughlin",
-      "active": true
-    },
-    "663611618": {
-      "name": "Reese Ryan",
-      "active": true
-    },
-    "1542312872": {
-      "name": "Hayden Ashwill",
-      "active": false
-    },
-    "1167601196": {
-      "name": "Charlie ODonoghue",
-      "active": true
-    },
-    "1229562943": {
-      "name": "Emma Kyber",
-      "active": true
-    },
-    "1326690751": {
-      "name": "Amos Brown",
-      "active": true
-    },
-    "166642714": {
-      "name": "Emma Ferer",
-      "active": true
-    },
-    "167140681": {
-      "name": "Liam Sirgo",
-      "active": true
-    },
-    "404749623": {
-      "name": "John Gallo",
-      "active": true
-    },
-    "8309346": {
-      "name": "Unassigned",
-      "active": true
-    }
+ "portal": "243635806",
+ "timezone": "America/New_York",
+ "as_of": "2026-11-23",
+ "pulled_at_et": "Nov 23, 2026 8:14 AM ET",
+ "stages": [
+  {
+   "id": "3753890497",
+   "label": "Intro & Challenge",
+   "pipeline": "2313721535",
+   "probability": 0.1,
+   "won": false,
+   "lost": false,
+   "order": 0
   },
-  "notes": [
-    "Discovery / Demo (New Logo) shows mixed probabilities on live deals (0.15 on 1 deal, 0.2 on 20); modal 0.2 kept for the stage. Fallback weighting uses each deal's own probability."
-  ]
+  {
+   "id": "3753890498",
+   "label": "Discovery / Demo",
+   "pipeline": "2313721535",
+   "probability": 0.2,
+   "won": false,
+   "lost": false,
+   "order": 1
+  },
+  {
+   "id": "3753890499",
+   "label": "Business Case & Stakeholder Alignment",
+   "pipeline": "2313721535",
+   "probability": 0.4,
+   "won": false,
+   "lost": false,
+   "order": 2
+  },
+  {
+   "id": "3753890500",
+   "label": "Negotiation & Execution",
+   "pipeline": "2313721535",
+   "probability": 0.6,
+   "won": false,
+   "lost": false,
+   "order": 3
+  },
+  {
+   "id": "3753890501",
+   "label": "Trial",
+   "pipeline": "2313721535",
+   "probability": 0.8,
+   "won": false,
+   "lost": false,
+   "order": 4
+  },
+  {
+   "id": "3753890502",
+   "label": "Closed Won",
+   "pipeline": "2313721535",
+   "probability": 1.0,
+   "won": true,
+   "lost": false,
+   "order": 5
+  },
+  {
+   "id": "3753890503",
+   "label": "Closed Lost",
+   "pipeline": "2313721535",
+   "probability": 0.0,
+   "won": false,
+   "lost": true,
+   "order": 6
+  },
+  {
+   "id": "3752297191",
+   "label": "Intro & Challenge",
+   "pipeline": "2313830082",
+   "probability": 0.2,
+   "won": false,
+   "lost": false,
+   "order": 0
+  },
+  {
+   "id": "3752297192",
+   "label": "Discovery / Demo",
+   "pipeline": "2313830082",
+   "probability": 0.4,
+   "won": false,
+   "lost": false,
+   "order": 1
+  },
+  {
+   "id": "3752297193",
+   "label": "Business case & Stakeholder alignment",
+   "pipeline": "2313830082",
+   "probability": 0.6,
+   "won": false,
+   "lost": false,
+   "order": 2
+  },
+  {
+   "id": "3752297194",
+   "label": "Negotiation & Execution",
+   "pipeline": "2313830082",
+   "probability": 0.8,
+   "won": false,
+   "lost": false,
+   "order": 3
+  },
+  {
+   "id": "3752297195",
+   "label": "Implementation / Contract signed",
+   "pipeline": "2313830082",
+   "probability": 0.9,
+   "won": false,
+   "lost": false,
+   "order": 4
+  },
+  {
+   "id": "3752297196",
+   "label": "Closed Won",
+   "pipeline": "2313830082",
+   "probability": 1.0,
+   "won": true,
+   "lost": false,
+   "order": 5
+  },
+  {
+   "id": "3752297197",
+   "label": "Closed Lost",
+   "pipeline": "2313830082",
+   "probability": 0.0,
+   "won": false,
+   "lost": true,
+   "order": 6
+  }
+ ],
+ "owners": {
+  "1053057926": {
+   "name": "Phil Aroian",
+   "active": true
+  },
+  "167857460": {
+   "name": "Spencer Wuthrich",
+   "active": true
+  },
+  "2111244871": {
+   "name": "Ben de Winter",
+   "active": true
+  },
+  "1032502194": {
+   "name": "Matt Lynch",
+   "active": true
+  },
+  "686754956": {
+   "name": "Clay Stapleford",
+   "active": true
+  },
+  "26451111": {
+   "name": "Ian McLaughlin",
+   "active": true
+  },
+  "663611618": {
+   "name": "Reese Ryan",
+   "active": true
+  },
+  "1542312872": {
+   "name": "Hayden Ashwill",
+   "active": false
+  },
+  "1167601196": {
+   "name": "Charlie ODonoghue",
+   "active": true
+  },
+  "1229562943": {
+   "name": "Emma Kyber",
+   "active": true
+  },
+  "1326690751": {
+   "name": "Amos Brown",
+   "active": true
+  },
+  "166642714": {
+   "name": "Emma Ferer",
+   "active": true
+  },
+  "167140681": {
+   "name": "Liam Sirgo",
+   "active": true
+  },
+  "404749623": {
+   "name": "John Gallo",
+   "active": true
+  },
+  "8309346": {
+   "name": "Unassigned",
+   "active": true
+  }
+ },
+ "notes": [
+  "Every in-scope stage showed a single probability on live deals this pull (the 2026-11 mixed Discovery / Demo probability has cleared). Trailing-30d SDR controls returned identical counts with window start = as_of - 30 and as_of - 29."
+ ]
 }
