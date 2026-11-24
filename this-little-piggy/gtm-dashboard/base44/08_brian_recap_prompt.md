@@ -2,11 +2,38 @@
 
 One paste for the Base44 builder, for the Findigs Hub app, after Stages 1 to 5 of `01_build_prompt.md` are live. It covers everything from the Will / Brian recap that belongs on the dashboard: the pulse-check framing, the meetings view, the pipeline view with qualified toggle and week-over-week waterfall, forecast change, the AI interpretation layer, and a client-health section. The RevOps Requests channel and the automation error channel are ops items, not dashboard items, and are left out.
 
+The dashboard in Base44 has been edited by hand since the migration began. The prompt therefore opens with a mandatory inspection step (Part 0): the builder inventories what exists, reports it, and treats the current state as the source of truth. Every change after that is additive. Nothing is deleted, renamed or rewritten wholesale.
+
 Definitions for the new metrics are written into the prompt as **provisional**, because they don't exist in Notion yet. The builder shows a "provisional definition" badge on those sections until the Notion rows are confirmed and `GtmConfig` is updated. Attach `07_scope_expansion_prompt.md` for the field inventory.
 
 ---
 
 ```
+IMPORTANT — READ FIRST. The GTM Dashboard in this app has been edited directly in Base44 since it was first built, and those edits are the current source of truth. Do not assume the page, entities or functions match any earlier specification. Before you change anything, complete Part 0 below and show me the inventory. Every change in this prompt is ADDITIVE: extend what exists, never delete, rename, overwrite or regenerate an existing page, component, entity, field, function or style. If something in this prompt conflicts with what you find, stop and ask me rather than resolving it yourself.
+
+==================================================
+PART 0 — INSPECT THE CURRENT STATE BEFORE ANY EDIT
+==================================================
+
+0.1 Inventory and report, without changing anything:
+   - Pages: every page whose name, route or content relates to the GTM dashboard (expected: Sales → GTM Dashboard, Sales → GTM Dashboard · Runs, possibly others I added). For each: route, sections present in order, components used, which entities and functions it reads or calls, and any filters, toggles or styles that differ from the standard component defaults.
+   - Entities: every Gtm* entity with its current field list (names, types, enums), permissions and row counts. Flag any field, enum value or entity that is not in 03_data_model.md — those are my edits and must be preserved.
+   - Backend functions: every function related to the dashboard (expected: refresh-gtm-dashboard, submit-gtm-controls, possibly split pull/build functions, possibly others). For each: inputs, what it writes, and any logic that departs from 05_hubspot_integration.md. Treat departures as intentional.
+   - Config: the current GtmConfig row, including any keys that are not in seed/config.json.
+   - Nav: where the dashboard pages sit in the Hub navigation and who can see them.
+   - Any customizations: renamed labels, reordered sections, hidden components, extra tiles, custom colors, extra DQ flags, changed copy. List each one explicitly.
+
+0.2 Report the inventory to me as a list and WAIT for my go-ahead before starting Part A. Mark anything you believe conflicts with Parts A–C.
+
+0.3 Before the first edit, create a restore point: a named checkpoint / version of the app (or, if the platform has none, export the current page definitions, entity schemas and function source into a new entity GtmBuildBackup {created_at, label, payload} so they can be restored). Tell me the checkpoint name.
+
+0.4 Rules for every later edit:
+   - Add new components, sections, fields, entities and functions alongside existing ones. Where this prompt says "replaces" (e.g. the pipeline view replacing the Sales pipeline KPI group and funnels), do NOT remove the existing components: add the new view, then HIDE the superseded components behind a feature flag in GtmConfig (config.ui.show_legacy_pipeline_group, default true until I flip it) so I can compare both and switch over myself.
+   - Extend existing functions by adding steps; do not rewrite them from scratch. Keep every existing output field and behavior intact. If a function must be split for runtime reasons, keep the original name as the entry point.
+   - Add fields to existing entities only; never drop or retype a field. New fields must be optional so existing rows stay valid.
+   - Keep my label, copy, order and style edits exactly as found. New sections follow the same conventions you observe in the existing page, not the earlier spec, where the two differ.
+   - After each Part (A, B, C), re-run the Part 0.1 inventory on the touched items and confirm that nothing listed in 0.1 was removed or changed other than the additions you made. Report any diff you did not intend.
+
 Extend the Sales → GTM Dashboard page and its refresh pipeline. The dashboard's purpose is an executive pulse check on the go-to-market org: pipeline, bookings, activity, forecast, and above all the rate of change week over week. Everything below is read-only against HubSpot, uses the Hub's component library and accessibility features, and follows the existing rule: numbers are exact and reconciled, nothing is estimated. Use the hubspot connector already configured; add no write scopes.
 
 New metric definitions in this prompt are PROVISIONAL. Store each one in GtmConfig.config.provisional as structured JSON (name, population, formula, window, null handling) and show a small "provisional definition" badge on every tile and chart that depends on one. When I later confirm them in Notion and update GtmConfig, the badge is removed by setting provisional = false on that definition. Never hardcode a definition in page or function code; read it from GtmConfig.
@@ -69,9 +96,9 @@ B1. Pulse strip (new, directly under the filter bar; unfiltered, like Compare vs
 
 B2. "This week's read" panel (new, under the Pulse strip). Shows the approved GtmInterpretation for the current snapshot: headline sentence; watch items as a compact list, each with evidence chips (metric · value · Δ) and a link that opens the drawer on its deal_ids / account_ids; "Lost this week" line; client health note; caveats in small text. Clearly labelled as AI-generated interpretation of the snapshot data, with generated time and as_of. gtm_leadership users see only approved content (or nothing, with no empty box). revops_admin users see drafts with Approve / Reject / Regenerate buttons and the validation log.
 
-B3. Tier 1 bookings tiles: unchanged.
+B3. Tier 1 bookings tiles: unchanged, including any edits I made to them.
 
-B4. Pipeline view (replaces the "Sales pipeline" KPI group and the two stage funnels; the forecast tiles stay):
+B4. Pipeline view (new; intended to supersede the "Sales pipeline" KPI group and the two stage funnels, but per Part 0.4 keep those in place behind config.ui.show_legacy_pipeline_group and let me switch; the forecast tiles stay as they are):
    - Segmented control "All open · Qualified (Stage 2+)" that switches every component in this view, with the provisional badge on "Qualified".
    - Four measure tiles: Deals (count) · Pipeline $ (Σ amount) · Units (Σ units__c) · Weighted $, each with the absolute WoW change and the Compare vs badge.
    - Week-over-week waterfall chart: Prior week gross → + Added → − Dropped (won) → − Dropped (lost) → − Dropped (other) → ± Moved → Current gross. Positive steps in the weighted/green viz role, negative in the gross/neutral role, endpoints in the actual/forest role. Labels show $ and count. A toggle switches the measure to Units. Clicking a step opens the drawer with those GtmMovement rows (account, owner, prior stage → stage, prior amount → amount, closed reason where present).
@@ -84,7 +111,7 @@ B5. Meetings section (new, after the pipeline view, title "Meetings"):
    - Drilldown: clicking a bar or tile opens the drawer listing deals (account linking to HubSpot, meeting date, source bucket, SDR owner, deal owner, stage, amount, units) with a source filter inside the drawer.
    - Respects the global filters and the Native-only toggle. Provisional badge on the section title.
 
-B6. Tier 2 remaining charts (cumulative forecast, by segment, by owner) and Tier 3 deal table: unchanged. Pipeline Generation and SDR sections: unchanged.
+B6. Tier 2 remaining charts (cumulative forecast, by segment, by owner) and Tier 3 deal table: unchanged. Pipeline Generation and SDR sections: unchanged. "Unchanged" means exactly as found in Part 0, not as described in any earlier document.
 
 B7. Client health section (new, after SDR pipeline generation, title "Client health", provisional badge; sub-line says it uses the Customer population and ignores the deal filters):
    - Tiles: Churned YTD (count · ARR) · At-risk accounts (count · ARR) · Expected year-end churn range (low – high ARR, definition in the sub-line) · Support tickets QTD (with issues last 90 days in the sub-line). WoW deltas and Compare vs badges on each.
@@ -111,6 +138,7 @@ C3. Access: unchanged (gtm_leadership, revops_admin, admins).
 WHEN DONE
 ==================================================
 With no filters applied, show me:
+0. The post-build inventory diff against Part 0.1: everything added, and confirmation that nothing pre-existing was removed or changed, with the checkpoint name to restore if I disagree.
 1. The Pulse strip values and deltas.
 2. The movement block (all and qualified) and proof that added − dropped − moved_out + moved_in = current gross − prior gross to the cent.
 3. Meetings current week, prior week, YTD total, and confirmation that YTD total equals the count of pg rows with demo_booked__c populated.

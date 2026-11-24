@@ -1,5 +1,7 @@
 # Scope expansion — Stages 6 to 8 (from the Will / Brian recap)
 
+> **Current-state guard.** The dashboard has been edited by hand in Base44 since the migration began. Prepend Part 0 of `08_brian_recap_prompt.md` (inspect, report, wait, checkpoint, additive-only rules) to any stage below before pasting it, and read "replaces" as "add alongside and hide the old one behind a config flag".
+
 Brian's recap covered four things: dashboard scope, an AI interpretation layer, a RevOps Requests Slack channel, and an automation-error channel. Only the first two belong to the Base44 GTM Dashboard. This file triages the recap, lists the definitions that must be confirmed in Notion before building, and gives the next three stages of the Base44 prompt. Run them after Stages 1 to 5 in `01_build_prompt.md` are live and reconciled.
 
 ## 1. Triage
