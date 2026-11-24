@@ -14,6 +14,7 @@ The current dashboard is a static HTML file rebuilt weekly from HubSpot by `gtm-
 | `04_metric_definitions.md` | Every number on the dashboard: population, formula, window, nulls | Stage 3 reference. Mirrors Notion → Data Definitions and `config.json`; if they disagree, Notion wins. |
 | `05_hubspot_integration.md` | The refresh function: HubSpot endpoints, filters, pagination, owners, stages, Swan join, tie-out gates, scheduling | Stage 2 reference. |
 | `06_qa_checklist.md` | Acceptance tests mirroring `qa.py`, plus what to check against the current HTML | Run after stage 5 and after every later change. |
+| `07_scope_expansion_prompt.md` | Triage of the Will / Brian recap, the Notion definitions it needs, and Stages 6–8: Pulse strip, meetings view, qualified pipeline and week-over-week waterfall, AI interpretation layer, client health discovery and build | Only after Stages 1–5 are reconciled. Stage 6 needs four new Notion rows first; Stage 8 needs discovery, then rows. |
 | `seed/` | `config.json` mirror, `kpi_history.json` (12 weekly snapshots), `stages.json`, `owners.json`, `controls_2026-11-23.json` | Import so the builder has real shapes and a Compare vs history on day one. |
 
 ## Order of operations
