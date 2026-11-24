@@ -9,7 +9,7 @@ The current dashboard is a static HTML file rebuilt weekly from HubSpot by `gtm-
 | File | What it is | How to use it |
 |---|---|---|
 | `01_build_prompt.md` | The prompts to paste into the Base44 builder, in five stages | Paste stage by stage. Don't skip ahead; each stage assumes the previous one deployed. |
-| `02_design_spec.md` | Visual spec: tokens, type, layout, every component and chart | Attach or paste when the builder asks about look and feel, or when a render drifts off-brand. |
+| `02_design_spec.md` | Design guidance: section order, every chart's encoding, viz color roles, formatting, states; reference tokens from the HTML build | Attach in Stages 3 to 5. The Hub's own design system takes precedence on chrome and components. |
 | `03_data_model.md` | Base44 entity schemas (JSON) and the derived-field rules | Stage 1 reference. The builder should create these entities exactly. |
 | `04_metric_definitions.md` | Every number on the dashboard: population, formula, window, nulls | Stage 3 reference. Mirrors Notion → Data Definitions and `config.json`; if they disagree, Notion wins. |
 | `05_hubspot_integration.md` | The refresh function: HubSpot endpoints, filters, pagination, owners, stages, Swan join, tie-out gates, scheduling | Stage 2 reference. |
@@ -33,7 +33,7 @@ The current dashboard is a static HTML file rebuilt weekly from HubSpot by `gtm-
 - **Stop, don't estimate.** A refresh that fails a tie-out writes a run record with `status = failed` and leaves the previous snapshot live. The dashboard never shows a number that didn't reconcile.
 - **Tie-out changes shape.** The public HubSpot API has no SQL aggregate endpoint, so dollar-sum controls can't be reproduced the way `query_crm_data` did. Counts can (search `total`). Dollar controls become an optional document the function accepts. See `05_hubspot_integration.md → Tie-out`.
 - **Stage probabilities improve.** Base44 reads them from the pipelines API, not observed from deals, which retires DQ-9.
-- **The Hub owns navigation.** The dashboard is a page inside the Hub, inheriting its shell. Dashboard tokens are scoped to the page.
+- **The Hub owns the look.** The dashboard is a new page at Sales → GTM Dashboard, built from the Hub's component library, theme and accessibility features. It doesn't need to match the HTML pixel for pixel; `02_design_spec.md` guides structure, chart encodings and formatting. Numbers are exact, design is native.
 
 ## What this does not replace yet
 

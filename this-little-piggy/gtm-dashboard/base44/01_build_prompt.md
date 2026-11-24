@@ -2,6 +2,8 @@
 
 Paste these into the Base44 builder for the **Findigs Hub** app, one stage at a time, in order. Each stage ends with a check; don't start the next until it passes. Where a stage says "attach", upload the named file from this folder (or paste its contents) in the same message.
 
+**Design posture for every stage.** The dashboard lives as a **new page in the Findigs Hub at Sales → GTM Dashboard**. It does not need to be a pixel copy of the current HTML file. Build it with the Hub's existing component library, theme, typography, navigation and accessibility features (keyboard navigation, focus states, contrast, responsive layout, screen-reader labels) so it feels native to the Hub. `02_design_spec.md` is guidance for information architecture, chart encodings, data-viz colors, formatting and states, not a pixel contract. What *is* exact: every number, window, filter rule and data-quality flag in `04_metric_definitions.md`.
+
 Before Stage 1: connect the HubSpot connector in the app's connectors panel as the app builder, read-only scopes only: `crm.objects.deals.read`, `crm.objects.companies.read`, `crm.objects.owners.read`, `crm.schemas.deals.read`, `crm.schemas.pipelines.read`.
 
 ---
@@ -33,7 +35,7 @@ Seed data (import, don't retype):
 - GtmOwner: the 15 rows in owners.json.
 - GtmKpiHistory: the 12 entries in kpi_history.json (asOf → as_of; tier1, pg, sdr objects verbatim; snapshot_id blank).
 
-Admin page "GTM dashboard · Runs" (admins only): a table of GtmSnapshot rows sorted by pulled_at desc with as_of, status, is_current, trigger, counts.open_n / won_n / created_n, dollar_tieout, duration_ms, and a details drawer showing count_controls, dollar_controls, dq, stage_notes and error. Add a "Refresh now" button that is disabled with the note "function not deployed yet" until Stage 2.
+Admin page "GTM Dashboard · Runs" (admins only), created as a new page under Sales in the Hub navigation (it will sit next to the dashboard page added in Stage 3; hide it from non-admins): a table of GtmSnapshot rows sorted by pulled_at desc with as_of, status, is_current, trigger, counts.open_n / won_n / created_n, dollar_tieout, duration_ms, and a details drawer showing count_controls, dollar_controls, dq, stage_notes and error. Add a "Refresh now" button that is disabled with the note "function not deployed yet" until Stage 2.
 
 Do not invent any additional fields or entities. Do not add sample GtmDeal or GtmSnapshot rows.
 
@@ -85,27 +87,31 @@ When done: run it once with trigger "manual" and show me the resulting GtmSnapsh
 > Attach: `02_design_spec.md`, `04_metric_definitions.md`
 
 ```
-Build the page "GTM executive dashboard" that renders the current GtmSnapshot (is_current = true) and its GtmDeal rows. Follow the attached 02_design_spec.md for every visual decision and 04_metric_definitions.md for every number. This stage covers the header, the sticky filter bar, Tier 1 (10 KPI tiles), Tier 2 (five charts) and Tier 3 (deal table), plus the drilldown drawer. Pipeline Generation and SDR come in the next stage; leave placeholder sections for them.
+Create a NEW page in this app at Sales → GTM Dashboard (add it to the Sales section of the Hub navigation; do not modify any existing page). The page renders the current GtmSnapshot (is_current = true) and its GtmDeal rows.
+
+Design posture: build the page with this app's existing component library, theme, typography, spacing and accessibility features (keyboard navigation, focus states, contrast, responsive breakpoints, aria labels) so it looks and behaves like the rest of the Findigs Hub. Use the attached 02_design_spec.md as guidance for information architecture, section order, which charts exist and how they're encoded, data-viz colors, number formatting and empty/loading/stale states. It does not need to match the reference HTML pixel for pixel. Where the spec and the Hub's design system disagree on chrome, components or type, follow the Hub. Where they disagree on a data-viz color role, chart encoding or number format, follow the spec. Follow 04_metric_definitions.md exactly for every number; nothing there is optional.
+
+This stage covers the header, the filter bar, Tier 1 (10 KPI tiles), Tier 2 (five charts) and Tier 3 (deal table), plus the drilldown panel. Pipeline Generation and SDR come in the next stage; leave placeholder sections for them.
 
 Data loading:
 - Load the current GtmSnapshot, then its GtmDeal rows where population = "tier" (one query), then rows where population = "pg" (one query, needed for the owner filter list and the next stage). Hold them in page state; all filtering and aggregation happens client-side. Never query HubSpot from the page.
 - If no reconciled snapshot exists, render the empty state from the spec.
 
-Scope the design tokens from section 1 of the spec to the page root class .gtm-dashboard so they don't affect the rest of the Hub. Load Findigs Sans 400/500/700/900 from media.findigs.com as described unless the Hub already provides it. No Google Fonts. Never use raw Tailwind color literals inside this page; paint only with the tokens.
+Use the Hub's existing theme tokens and fonts. Only add the data-viz color roles from spec §1 (actual, gross, weighted, count, unassigned) as page-scoped tokens if the Hub's theme has no equivalents, and map them to the Hub's palette where it does. Don't load new fonts and don't use Google Fonts. Don't change the Hub's global styles.
 
-Header (spec §3): Findigs horizontal logo, title, sub-line; right side shows "Data last refreshed {pulled_at_label}", the as-of line with the current quarter label and dates from snapshot.windows, and the scope pill with the filtered tier row count. Show the stale chip when as_of is more than 8 days old and the "did not reconcile" chip when the most recent GtmSnapshot is failed.
+Page header (spec §3, using the Hub's standard page header component; the Hub's own logo and nav already exist, so don't add another logo): title "GTM Dashboard", sub-line; right side shows "Data last refreshed {pulled_at_label}", the as-of line with the current quarter label and dates from snapshot.windows, and the scope pill with the filtered tier row count. Show the stale chip when as_of is more than 8 days old and the "did not reconcile" chip when the most recent GtmSnapshot is failed.
 
-Filter bar (spec §3): Deal owner (multi, options = union of owner_name across tier AND pg rows), Deal stage (multi, grouped by pipeline using GtmStage display order), Segment (multi), Amount min/max, Units min/max, Close date from/to, Compare vs (build the control now but leave it hidden; Stage 5 wires it), Reset. Sticky under the Hub header. Filters are global state shared by every section.
+Filter bar (spec §3), built from the Hub's existing filter/select/date-picker components: Deal owner (multi, options = union of owner_name across tier AND pg rows), Deal stage (multi, grouped by pipeline using GtmStage display order), Segment (multi), Amount min/max, Units min/max, Close date from/to, Compare vs (build the control now but leave it hidden; Stage 5 wires it), Reset. Sticky under the Hub header if the Hub supports sticky toolbars; otherwise at the top of the page. Filters are global state shared by every section.
 
 Filtering rule (same as the reference implementation): a row passes when owner_name ∈ selected owners AND stage_id ∈ selected stages AND segment ∈ selected segments AND amount within range AND units within range AND close_date within range (null close_date fails a date range only when a bound is set).
 
 Tier 1 tiles, computed from the filtered tier rows exactly as 04_metric_definitions.md says: Bookings QTD, Bookings YTD, Average sales price, Average sales cycle (with the migration-cohort warn chip and post-cutoff secondary figure), New Logo bookings YTD, Upsell / Expansion bookings YTD, Gross open pipeline, Weighted open pipeline (stored / fallback split in the sub-line), Current-quarter forecast, Current-year forecast. Use snapshot.windows for the QTD/YTD windows; do not recompute them in the browser. Leave the Compare badge element in each tile empty for now. Every tile is a button that opens the drilldown drawer with that tile's population and the definition text from the spec.
 
-Tier 2: cumulative forecast line chart, two stage funnels, by-segment grouped bars, by-owner horizontal grouped bars, per spec §5 rows T2-1 to T2-5. Use the viz tokens for colors. Tooltips, legends and empty states as specified.
+Tier 2: cumulative forecast line chart, two stage funnels, by-segment grouped bars, by-owner horizontal grouped bars, per spec §5 rows T2-1 to T2-5. Use whatever charting library this app already uses (Recharts if none). Keep the encodings and color roles from the spec; tooltips, legends and empty states as specified.
 
-Tier 3: the deal table per spec §4, sortable, default amount desc, tags, HubSpot links, table note.
+Tier 3: the deal table using the Hub's table component, sortable, default amount desc, with the tags, HubSpot links and table note from spec §4.
 
-Drilldown drawer per spec §4.
+Drilldown: use the Hub's drawer or side-panel component; contents per spec §4.
 
 Number and date formatting per spec §6; put the formatters in one shared utility and use it everywhere (tiles, axes, tables, tooltips).
 
@@ -156,7 +162,7 @@ Finish the GTM executive dashboard.
 
 1. Compare vs. Load GtmKpiHistory sorted by as_of. The current entry is the one matching the current snapshot's as_of; prior entries are everything earlier, newest first. If there are no prior entries, hide the Compare vs control and render no badges. Otherwise populate the dropdown with prior as_of dates (first option suffixed "(most recent)"), default to the first, and on every tile render the badge: delta = (current − prior) ÷ |prior| using the same keys (tier1.qtd ↔ Bookings QTD tile, etc.; pg.* for the four Pipeline Generation tiles; sdr.booked30/held30/heldopp30/opp30 for the SDR tiles). Prior 0 → "new" (blank if current also 0); either side missing → blank; |delta| < 0.0005 → flat. Colors and arrows per 02_design_spec.md §4. Badges compare the unfiltered history values and must not change when page filters change. Tooltip "vs {prior as_of}: {prior value formatted}".
 
-2. Access. Create a Hub role or group "gtm_leadership". Users in gtm_leadership, revops_admin, or admins can open the dashboard page and read GtmSnapshot, GtmDeal, GtmKpiHistory, GtmStage, GtmOwner and GtmConfig. Nobody else can read them. Only revops_admin and admins see the Refresh now button, the Runs admin page and the Submit controls form. Keep GtmControlDocument admin-only. Add the dashboard to the Hub navigation for those groups only.
+2. Access. Create a Hub role or group "gtm_leadership". Users in gtm_leadership, revops_admin, or admins can open the dashboard page and read GtmSnapshot, GtmDeal, GtmKpiHistory, GtmStage, GtmOwner and GtmConfig. Nobody else can read them. Only revops_admin and admins see the Refresh now button, the Runs admin page and the Submit controls form. Keep GtmControlDocument admin-only. The Sales → GTM Dashboard page and the Sales → GTM Dashboard · Runs admin page appear in the Hub navigation only for the groups allowed to open them.
 
 3. Scheduling. If this app supports scheduled function triggers, schedule refresh-gtm-dashboard every Monday at 08:00 America/New_York with input { "trigger": "schedule" }. If it doesn't, expose the function so it can be called by an external scheduler with the app's service key and tell me the exact URL and auth header to use.
 
@@ -173,9 +179,9 @@ Finish the GTM executive dashboard.
 
 ## Follow-up prompts you may need
 
-**When a render drifts off-brand**
+**When a render drifts from the Hub or from the spec**
 ```
-The {component} doesn't match 02_design_spec.md §{n}. Re-read that section and fix only {component}: {what's wrong}. Don't touch any number or formula.
+The {component} doesn't look like the rest of the Hub / doesn't follow 02_design_spec.md §{n}. Rebuild only {component} using the Hub's {component library name} component, keeping the data encoding from the spec: {what's wrong}. Don't touch any number or formula.
 ```
 
 **When a number disagrees with the HTML build**

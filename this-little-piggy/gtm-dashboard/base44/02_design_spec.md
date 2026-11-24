@@ -1,12 +1,14 @@
 # Design spec — GTM executive dashboard in the Findigs Hub
 
-This is the visual contract for the Base44 build. It reproduces the current HTML dashboard (`gtm-dashboard/template.html`) inside the Hub's shell. When something here conflicts with the Hub's global navigation or page chrome, the Hub wins for chrome and this spec wins for everything inside the dashboard page.
+This is design **guidance** for the Base44 build, derived from the current HTML dashboard (`gtm-dashboard/template.html`). The new page lives in the Findigs Hub at **Sales → GTM Dashboard** and should be built from the Hub's own component library, theme, typography and accessibility features so it feels native. It does not need to match the HTML pixel for pixel.
+
+Precedence: the Hub's design system wins on chrome, components, type and spacing. This spec wins on information architecture (what sections and charts exist and in what order), chart encodings, data-viz color roles, number and date formatting, and page states. `04_metric_definitions.md` wins on every number and is not negotiable. Sections 1 to 4 below describe the reference implementation; treat them as the intent to preserve, not CSS to copy.
 
 Brand mode: **new brand** (Findigs, post 2026-07-27 cutover). Light surfaces, borderless cards, green as accent not flood, no illustration, no "Floop" arrow.
 
 ## 1. Tokens
 
-Scope these to the dashboard page root (for example `.gtm-dashboard`) so they don't leak into the rest of the Hub. Use them by semantic role; never paint with raw Tailwind literals.
+Reference palette from the HTML build. Map these to the Hub's existing theme tokens wherever an equivalent exists; add only the `--viz-*` roles as page-scoped tokens if the Hub has none. Use them by semantic role; never paint with raw color literals.
 
 ```css
 .gtm-dashboard {
