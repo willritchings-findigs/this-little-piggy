@@ -143,7 +143,7 @@ In this order, so a failure never leaves a half-written current snapshot:
 2. Upsert `GtmKpiHistory` for `as_of` (replace same-day), then delete entries older than 26 weeks before `as_of`.
 3. Update the new `GtmSnapshot`: `status = reconciled`, counts, headline, windows, controls, dq, duration.
 4. Set `is_current = false` on the previous current snapshot and mark it `superseded`; set `is_current = true` on the new one.
-5. Delete `GtmDeal` rows belonging to snapshots older than the 3 most recent reconciled ones.
+5. Delete `GtmDeal` rows belonging to snapshots other than the 3 most recent reconciled ones (current plus previous 2).
 
 On any failure before step 3: set `status = failed`, `failed_step`, `error`; delete any `GtmDeal` rows created for this snapshot; leave `is_current` untouched.
 

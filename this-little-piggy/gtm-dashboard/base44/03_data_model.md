@@ -238,4 +238,4 @@ Optional dollar-level controls from an independent aggregate source (today: the 
 
 ## Retention
 
-Keep `GtmDeal` rows for the current snapshot plus the previous 3 reconciled snapshots (so a failed refresh never leaves the page empty and an admin can diff). Delete older deal rows at the end of each reconciled refresh. Keep every `GtmSnapshot` row forever (it is the audit log, the equivalent of `runs/runs.jsonl`).
+Keep `GtmDeal` rows for the 3 most recent reconciled snapshots (current plus the previous 2), so a failed refresh never leaves the page empty and the week-over-week diff has its prior. Delete older deal rows at the end of each reconciled refresh. (Decision 2026-11-24, matching the deployed code.) Keep every `GtmSnapshot` row forever (it is the audit log, the equivalent of `runs/runs.jsonl`).

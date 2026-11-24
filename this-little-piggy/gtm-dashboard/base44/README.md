@@ -16,6 +16,7 @@ The current dashboard is a static HTML file rebuilt weekly from HubSpot by `gtm-
 | `06_qa_checklist.md` | Acceptance tests mirroring `qa.py`, plus what to check against the current HTML | Run after stage 5 and after every later change. |
 | `07_scope_expansion_prompt.md` | Triage of the Will / Brian recap, the Notion definitions it needs, and Stages 6–8: Pulse strip, meetings view, qualified pipeline and week-over-week waterfall, AI interpretation layer, client health discovery and build | Only after Stages 1–5 are reconciled. Stage 6 needs four new Notion rows first; Stage 8 needs discovery, then rows. |
 | `08_brian_recap_prompt.md` | One paste-ready prompt covering everything from the Will / Brian recap: pulse strip, meetings, qualified pipeline and waterfall, forecast change, AI "This week's read", client health. New definitions are marked provisional until confirmed in Notion. | Alternative to Stages 6–8 in `07_...` when you want one build pass instead of three. |
+| `09_base44_part0_answers.md` | Decisions on Base44's Part 0 inventory questions (qualified definition, funnel card, Slack, degrade vs fail, source buckets, retention) and a paste-ready reply | Paste the reply block after Base44 reports its inventory. |
 | `seed/` | `config.json` mirror, `kpi_history.json` (12 weekly snapshots), `stages.json`, `owners.json`, `controls_2026-11-23.json` | Import so the builder has real shapes and a Compare vs history on day one. |
 
 ## Order of operations
