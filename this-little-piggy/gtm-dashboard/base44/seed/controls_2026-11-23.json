@@ -1,0 +1,163 @@
+{
+ "open_count": 108,
+ "open_gross": 76503019.03,
+ "open_hs_projected_amount": 13307929.908,
+ "open_weighted_amount_stored": 2954983.96,
+ "won_count": 76,
+ "won_amount": 7742036.12,
+ "won_units": 133810,
+ "won_acv": 4074612.24,
+ "created_count": 762,
+ "created_amount": 188722380.32,
+ "created_by_record_source": {
+  "SALESFORCE": {
+   "n": 512,
+   "a": 95222904.6
+  },
+  "CRM_UI": {
+   "n": 249,
+   "a": 93267555.72
+  },
+  "MOBILE_IOS": {
+   "n": 1,
+   "a": 231920
+  }
+ },
+ "created_by_drill_down": {
+  "Unassigned": {
+   "n": 1,
+   "a": 94160.0
+  },
+  "Bing Ads": {
+   "n": 1,
+   "a": 20865.0
+  },
+  "Bing Organic": {
+   "n": 7,
+   "a": 3728134.55
+  },
+  "Chatgpt": {
+   "n": 1,
+   "a": 98490.0
+  },
+  "Conferences Bizdev": {
+   "n": 28,
+   "a": 3598847.33
+  },
+  "Conferences Outbound": {
+   "n": 1,
+   "a": 58850.0
+  },
+  "Customer Referral": {
+   "n": 2,
+   "a": 1103223.5
+  },
+  "Direct Traffic": {
+   "n": 61,
+   "a": 5154404.45
+  },
+  "Facebook Organic": {
+   "n": 1,
+   "a": 150228.0
+  },
+  "Google Ads": {
+   "n": 3,
+   "a": 537942.5
+  },
+  "Google Organic": {
+   "n": 44,
+   "a": 20716881.4
+  },
+  "LinkedIn Ads": {
+   "n": 3,
+   "a": 150010.01
+  },
+  "Meta Ads": {
+   "n": 52,
+   "a": 4348593.2
+  },
+  "Outbound AE": {
+   "n": 22,
+   "a": 9136141.1
+  },
+  "Outbound SDR": {
+   "n": 385,
+   "a": 89741644.44
+  },
+  "Referral": {
+   "n": 1,
+   "a": 187785.0
+  },
+  "Referral Website": {
+   "n": 3,
+   "a": 265889.25
+  },
+  "Rental History Questionnaire": {
+   "n": 11,
+   "a": 199999.15
+  },
+  "SalesIntel": {
+   "n": 13,
+   "a": 1757179.5
+  },
+  "Yahoo Organic": {
+   "n": 1,
+   "a": 56730.24
+  },
+  "Zoominfo": {
+   "n": 120,
+   "a": 47188381.7
+  },
+  "Bisnow": {
+   "n": 1,
+   "a": 428000.0
+  }
+ },
+ "created_swan": {
+  "5": {
+   "n": 2,
+   "a": 534225
+  },
+  "4": {
+   "n": 10,
+   "a": 2611857.5
+  },
+  "3": {
+   "n": 209,
+   "a": 39554293.73
+  },
+  "null": {
+   "n": 541,
+   "a": 146022004.09
+  }
+ },
+ "sdr_opp_count": 761,
+ "sdr_opp_amount": 188619970.32,
+ "sdr_by_channel": {
+  "Outbound": {
+   "n": 456,
+   "a": 102989506.14
+  },
+  "Inbound": {
+   "n": 185,
+   "a": 35193338.65
+  },
+  "Referral": {
+   "n": 97,
+   "a": 46125926.18
+  },
+  "Event": {
+   "n": 20,
+   "a": 3741531.35
+  },
+  "null": {
+   "n": 3,
+   "a": 569668
+  }
+ },
+ "sdr_meeting_booked_30d": 51,
+ "sdr_meeting_held_30d": 33,
+ "sdr_opp_from_held_30d": 33,
+ "sdr_opp_30d_count": 47,
+ "sdr_opp_30d_amount": 15863097.75
+}

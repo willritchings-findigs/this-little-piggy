@@ -1,0 +1,128 @@
+[
+ {
+  "id": "3753890497",
+  "label": "Intro & Challenge",
+  "pipeline": "2313721535",
+  "probability": 0.1,
+  "won": false,
+  "lost": false,
+  "order": 0
+ },
+ {
+  "id": "3753890498",
+  "label": "Discovery / Demo",
+  "pipeline": "2313721535",
+  "probability": 0.2,
+  "won": false,
+  "lost": false,
+  "order": 1
+ },
+ {
+  "id": "3753890499",
+  "label": "Business Case & Stakeholder Alignment",
+  "pipeline": "2313721535",
+  "probability": 0.4,
+  "won": false,
+  "lost": false,
+  "order": 2
+ },
+ {
+  "id": "3753890500",
+  "label": "Negotiation & Execution",
+  "pipeline": "2313721535",
+  "probability": 0.6,
+  "won": false,
+  "lost": false,
+  "order": 3
+ },
+ {
+  "id": "3753890501",
+  "label": "Trial",
+  "pipeline": "2313721535",
+  "probability": 0.8,
+  "won": false,
+  "lost": false,
+  "order": 4
+ },
+ {
+  "id": "3753890502",
+  "label": "Closed Won",
+  "pipeline": "2313721535",
+  "probability": 1.0,
+  "won": true,
+  "lost": false,
+  "order": 5
+ },
+ {
+  "id": "3753890503",
+  "label": "Closed Lost",
+  "pipeline": "2313721535",
+  "probability": 0.0,
+  "won": false,
+  "lost": true,
+  "order": 6
+ },
+ {
+  "id": "3752297191",
+  "label": "Intro & Challenge",
+  "pipeline": "2313830082",
+  "probability": 0.2,
+  "won": false,
+  "lost": false,
+  "order": 0
+ },
+ {
+  "id": "3752297192",
+  "label": "Discovery / Demo",
+  "pipeline": "2313830082",
+  "probability": 0.4,
+  "won": false,
+  "lost": false,
+  "order": 1
+ },
+ {
+  "id": "3752297193",
+  "label": "Business case & Stakeholder alignment",
+  "pipeline": "2313830082",
+  "probability": 0.6,
+  "won": false,
+  "lost": false,
+  "order": 2
+ },
+ {
+  "id": "3752297194",
+  "label": "Negotiation & Execution",
+  "pipeline": "2313830082",
+  "probability": 0.8,
+  "won": false,
+  "lost": false,
+  "order": 3
+ },
+ {
+  "id": "3752297195",
+  "label": "Implementation / Contract signed",
+  "pipeline": "2313830082",
+  "probability": 0.9,
+  "won": false,
+  "lost": false,
+  "order": 4
+ },
+ {
+  "id": "3752297196",
+  "label": "Closed Won",
+  "pipeline": "2313830082",
+  "probability": 1.0,
+  "won": true,
+  "lost": false,
+  "order": 5
+ },
+ {
+  "id": "3752297197",
+  "label": "Closed Lost",
+  "pipeline": "2313830082",
+  "probability": 0.0,
+  "won": false,
+  "lost": true,
+  "order": 6
+ }
+]
